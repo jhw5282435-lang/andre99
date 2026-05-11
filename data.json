@@ -1,8 +1,8 @@
 {
   "_meta": {
     "version": "v1.1",
-    "last_updated": "2026.05.09",
-    "tickers_count": 5,
+    "last_updated": "2026.05.11",
+    "tickers_count": 8,
     "update_protocol": "사용자가 Claude에 '안드레99 [TICKER] 갱신' 요청 → 이 JSON 형식으로 출력 → 사용자가 data.json 파일 업데이트"
   },
   "stocks": {
@@ -300,6 +300,183 @@
       "verdict": {
         "h": "5종 중 <em>가장 안정</em>적인 종목",
         "d": "정량 가치 <b>$96</b> · 시장가 <b>$118</b><br>괴리 <b>+23%만</b> = 시장이 거의 정확<br>5년 기댓값 <b>$159</b> · 현재가 대비 <b>+34%</b>"
+      }
+    },
+    "IREN": {
+      "name": "IREN Limited (Iris Energy)",
+      "sector": "AI 인프라 · BTC 채굴 → 데이터센터 전환",
+      "price": 60.76,
+      "chg_day": 4.9,
+      "chg_52w": 797,
+      "models": [
+        {"name": "Forward 12M",   "weight": "20%", "fv": 12.50, "gap": -79.4, "note": "fwd EPS $0.36 (적자 전환)"},
+        {"name": "3년 멀티플",     "weight": "30%", "fv": 48.00, "gap": -21.0, "note": "AI 클라우드 PSR 14x 가정"},
+        {"name": "5년 DCF",       "weight": "35%", "fv": 22.30, "gap": -63.3, "note": "BTC 의존도 + 자본집약"},
+        {"name": "Reverse DCF",   "weight": "15%", "fv": null,  "gap": null,  "note": "EXTREME · g 60%+"},
+        {"name": "PCM (피어)",    "weight": "+추가", "fv": 55.00, "gap": -9.5,  "note": "데이터센터 peer"}
+      ],
+      "fv_avg": 34.45,
+      "indicators": [
+        {"k": "선행 PER",  "v": "−62x",   "cls": "bear", "sub": "적자 전환 (FY26)"},
+        {"k": "매출 성장", "v": "+32%",   "cls": "good", "sub": "3년 CAGR 전망"},
+        {"k": "52주 수익", "v": "+797%",  "cls": "good", "sub": "$6.77 → $60.76"},
+        {"k": "시가총액",  "v": "$20B",   "cls": "",     "sub": "대형주 진입"},
+        {"k": "주식수",    "v": "335M",   "cls": "",     "sub": "희석 기준"},
+        {"k": "설비투자",  "v": "$1.2B",  "cls": "",     "sub": "자본집약 · AI 인프라"}
+      ],
+      "scenarios": [
+        {"name": "비관",     "prob": 15, "fv": 20,    "cls": "bear",  "desc": "BTC 약세 + AI 계약 차질"},
+        {"name": "보수",     "prob": 25, "fv": 45,    "cls": "cons",  "desc": "BTC 채굴만 + AI 일부"},
+        {"name": "컨센",     "prob": 30, "fv": 77,    "cls": "cons",  "desc": "Goldman/월街 평균"},
+        {"name": "낙관",     "prob": 25, "fv": 150,   "cls": "bull",  "desc": "NVIDIA 딜 풀가동"},
+        {"name": "Moonshot", "prob": 5,  "fv": 400,   "cls": "moon",  "desc": "AI 인프라 메이저 진입"}
+      ],
+      "expected": 89,
+      "peers": {
+        "saas": [
+          {"tk": "IREN", "gap": -43, "cls": "bear"},
+          {"tk": "MARA", "gap": -55, "cls": "bear"},
+          {"tk": "RIOT", "gap": -50, "cls": "bear"},
+          {"tk": "CLSK", "gap": -45, "cls": "bear"},
+          {"tk": "HUT",  "gap": -38, "cls": "warn"}
+        ],
+        "sec": [
+          {"tk": "NVDA", "gap": -10, "cls": "good"},
+          {"tk": "EQIX", "gap": -8,  "cls": "good"},
+          {"tk": "DLR",  "gap": -12, "cls": "good"},
+          {"tk": "VRT",  "gap": -15, "cls": "warn"},
+          {"tk": "SMCI", "gap": -25, "cls": "warn"}
+        ]
+      },
+      "cfm": {
+        "total": 2.2,
+        "modules": [
+          {"name": "M1 · 추세",     "weight": 0.4, "score": 2.8, "cls": "good", "desc": "현재가 > 모든 SMA · NVIDIA 발표 후 골든크로스"},
+          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": 2.0, "cls": "good", "desc": "<b>RSI</b> 72 · <b>MACD</b> 강 양전 · 5일 +40%"},
+          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 1.0, "cls": "good", "desc": "지지 <b>$50</b> (-18%) · 저항 <b>$77</b> (+27%) · 컨센 PT $77"}
+        ]
+      },
+      "verdict": {
+        "h": "<em>BTC → AI 인프라</em> 전환의 베타 플레이",
+        "d": "정량 가치 <b>$34</b> · 시장가 <b>$60</b> · NVIDIA $3.4B 딜<br>차이 <b>$26 = AI 인프라 메이저 진입 시나리오에 베팅</b><br>5년 기댓값 <b>$89</b> · 현재가 대비 <b>+46%</b> · 변동성 <b>매우 큼</b> (±$120)"
+      }
+    },
+    "GOOGL": {
+      "name": "Alphabet Inc. (Class A)",
+      "sector": "Big Tech · Search · Cloud · AI",
+      "price": 399.50,
+      "chg_day": -0.30,
+      "chg_52w": 136.5,
+      "models": [
+        {"name": "Forward 12M",   "weight": "20%", "fv": 380.00, "gap": -4.9,  "note": "fwd EPS $13.11 × 29x"},
+        {"name": "3년 멀티플",     "weight": "30%", "fv": 450.00, "gap": 12.6,  "note": "Cloud 가속 + AI 옵션"},
+        {"name": "5년 DCF",       "weight": "35%", "fv": 320.00, "gap": -19.9, "note": "Capex 사이클 단기 압박"},
+        {"name": "Reverse DCF",   "weight": "15%", "fv": 410.00, "gap": 2.6,   "note": "내재 g 14% 합리적"},
+        {"name": "PCM (피어)",    "weight": "+추가", "fv": 425.00, "gap": 6.4,   "note": "Big Tech 평균"}
+      ],
+      "fv_avg": 397.00,
+      "indicators": [
+        {"k": "선행 PER",  "v": "30.6x",  "cls": "good", "sub": "Big Tech 평균 28x"},
+        {"k": "매출 성장", "v": "+22%",   "cls": "good", "sub": "YoY · Cloud +63%"},
+        {"k": "52주 수익", "v": "+136%",  "cls": "good", "sub": "$152 → $399"},
+        {"k": "시가총액",  "v": "$4.84T", "cls": "",     "sub": "시총 Top 3"},
+        {"k": "주식수",    "v": "5.82B",  "cls": "",     "sub": "희석 기준"},
+        {"k": "설비투자",  "v": "$35.7B", "cls": "",     "sub": "Q1 · AI 인프라 폭증"}
+      ],
+      "scenarios": [
+        {"name": "비관",     "prob": 5,  "fv": 200,   "cls": "bear", "desc": "AI 검색 점유율 잠식"},
+        {"name": "보수",     "prob": 25, "fv": 380,   "cls": "cons", "desc": "Search + Cloud 안정"},
+        {"name": "컨센",     "prob": 35, "fv": 480,   "cls": "cons", "desc": "월街 PT $480"},
+        {"name": "낙관",     "prob": 30, "fv": 650,   "cls": "bull", "desc": "TPU 인프라 본격화"},
+        {"name": "Moonshot", "prob": 5,  "fv": 1200,  "cls": "moon", "desc": "Waymo + AGI 통합 플랫폼"}
+      ],
+      "expected": 504,
+      "peers": {
+        "saas": [
+          {"tk": "GOOGL", "gap": 6,   "cls": "good"},
+          {"tk": "MSFT",  "gap": -3,  "cls": "good"},
+          {"tk": "META",  "gap": -8,  "cls": "good"},
+          {"tk": "AMZN",  "gap": -5,  "cls": "good"},
+          {"tk": "AAPL",  "gap": -12, "cls": "good"}
+        ],
+        "sec": [
+          {"tk": "NVDA", "gap": -10, "cls": "good"},
+          {"tk": "ORCL", "gap": -8,  "cls": "good"},
+          {"tk": "CRM",  "gap": -30, "cls": "warn"},
+          {"tk": "NOW",  "gap": -27, "cls": "warn"},
+          {"tk": "ADBE", "gap": -10, "cls": "good"}
+        ]
+      },
+      "cfm": {
+        "total": 1.8,
+        "modules": [
+          {"name": "M1 · 추세",     "weight": 0.4, "score": 2.2, "cls": "good", "desc": "현재가 $399 > 모든 SMA · 강세 추세 지속"},
+          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": 1.5, "cls": "good", "desc": "<b>RSI</b> 65 · <b>MACD</b> 양전 · 30일 +29%"},
+          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 1.5, "cls": "good", "desc": "지지 <b>$384</b> (-4%) · 저항 <b>$420</b> (+5%) · 52주 신고가 근접"}
+        ]
+      },
+      "verdict": {
+        "h": "Big Tech 중 <em>가장 정확하게 가격 책정</em>됨",
+        "d": "정량 가치 <b>$397</b> · 시장가 <b>$399</b> · 괴리 <b>0%</b><br>Q1 EPS $5.11 (컨센 +92% 비트) · Cloud +63% · TPU 본격화<br>5년 기댓값 <b>$504</b> · 현재가 대비 <b>+26%</b> · 가장 안정적"
+      }
+    },
+    "LITE": {
+      "name": "Lumentum Holdings Inc.",
+      "sector": "AI 광학 부품 · 옵티컬 (OCS · CPO)",
+      "price": 901.50,
+      "chg_day": 1.3,
+      "chg_52w": 1452,
+      "models": [
+        {"name": "Forward 12M",   "weight": "20%", "fv": 350.00, "gap": -61.2, "note": "fwd EPS $10 × 35x"},
+        {"name": "3년 멀티플",     "weight": "30%", "fv": 720.00, "gap": -20.1, "note": "매출 90% 성장 가정"},
+        {"name": "5년 DCF",       "weight": "35%", "fv": 450.00, "gap": -50.1, "note": "EBITDA 41% 마진 가정"},
+        {"name": "Reverse DCF",   "weight": "15%", "fv": null,   "gap": null,  "note": "EXTREME · g 60%+"},
+        {"name": "PCM (피어)",    "weight": "+추가", "fv": 600.00, "gap": -33.4, "note": "광학 peer (COHR 등)"}
+      ],
+      "fv_avg": 530.00,
+      "indicators": [
+        {"k": "선행 PER",  "v": "167x",   "cls": "bear", "sub": "5년 중앙값 35x"},
+        {"k": "매출 성장", "v": "+90%",   "cls": "good", "sub": "Q3 YoY · 가속 중"},
+        {"k": "52주 수익", "v": "+1452%", "cls": "good", "sub": "$64 → $901"},
+        {"k": "시가총액",  "v": "$70B",   "cls": "",     "sub": "Nasdaq 100 편입"},
+        {"k": "주식수",    "v": "95M",    "cls": "",     "sub": "희석 기준"},
+        {"k": "설비투자",  "v": "$280M",  "cls": "",     "sub": "TTM · CAPEX 확장 중"}
+      ],
+      "scenarios": [
+        {"name": "비관",     "prob": 15, "fv": 250,   "cls": "bear", "desc": "AI 캡스 사이클 종료 + 마진 압박"},
+        {"name": "보수",     "prob": 25, "fv": 550,   "cls": "cons", "desc": "OCS 본격화 · CPO 일부"},
+        {"name": "컨센",     "prob": 30, "fv": 1000,  "cls": "cons", "desc": "월街 PT $1000-$1100"},
+        {"name": "낙관",     "prob": 25, "fv": 1800,  "cls": "bull", "desc": "OCS + CPO 풀가동 (NVDA 직투)"},
+        {"name": "Moonshot", "prob": 5,  "fv": 3500,  "cls": "moon", "desc": "AI 광학 표준 독점"}
+      ],
+      "expected": 1095,
+      "peers": {
+        "saas": [
+          {"tk": "LITE", "gap": -33, "cls": "warn"},
+          {"tk": "COHR", "gap": -25, "cls": "warn"},
+          {"tk": "AAOI", "gap": -45, "cls": "bear"},
+          {"tk": "VIAV", "gap": -15, "cls": "warn"},
+          {"tk": "CSCO", "gap": -8,  "cls": "good"}
+        ],
+        "sec": [
+          {"tk": "NVDA", "gap": -10, "cls": "good"},
+          {"tk": "AVGO", "gap": -8,  "cls": "good"},
+          {"tk": "MRVL", "gap": -15, "cls": "warn"},
+          {"tk": "AMAT", "gap": -12, "cls": "good"},
+          {"tk": "LRCX", "gap": -10, "cls": "good"}
+        ]
+      },
+      "cfm": {
+        "total": 2.5,
+        "modules": [
+          {"name": "M1 · 추세",     "weight": 0.4, "score": 2.9, "cls": "good", "desc": "현재가 > 모든 SMA · 강세 추세 · YTD +128%"},
+          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": 2.5, "cls": "good", "desc": "<b>RSI</b> 78 (과매수) · <b>MACD</b> 강 양전 · 52주 신고가 근접"},
+          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 1.5, "cls": "good", "desc": "지지 <b>$866</b> (-4%) · 저항 <b>$1021</b> (+13%) · 컨센 PT $830-$1200"}
+        ]
+      },
+      "verdict": {
+        "h": "<em>AI 광학 슈퍼사이클</em>의 베타 플레이",
+        "d": "정량 가치 <b>$530</b> · 시장가 <b>$901</b> · NVIDIA 직투 + Nasdaq 100 편입<br>차이 <b>$371 = OCS · CPO 풀가동 + AI 캡스 지속 베팅</b><br>5년 기댓값 <b>$1095</b> · 변동성 <b>극단</b> (±$700)"
       }
     }
   }
