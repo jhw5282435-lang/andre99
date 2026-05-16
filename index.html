@@ -341,12 +341,35 @@ function renderTabs() {
   }).join('');
 }
 
-function searchTicker() {
+// Cloudflare Worker URL (Finnhub 프록시)
+const WORKER_URL = 'https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
+
+async function searchTicker() {
   const input = document.getElementById('tickerInput').value.toUpperCase().trim();
   if (!input) return;
-  if (DATA.stocks[input]) switchTicker(input);
-  else { activeTicker = input; renderTabs(); renderEmpty(input); }
   document.getElementById('tickerInput').value = '';
+  
+  if (DATA.stocks[input]) {
+    switchTicker(input);
+  } else {
+    activeTicker = input;
+    renderTabs();
+    renderLoading(input);
+    
+    try {
+      const res = await fetch(`${WORKER_URL}/?symbol=${input}`);
+      const liveData = await res.json();
+      
+      if (liveData.error || !liveData.name) {
+        renderEmpty(input, liveData.error);
+        return;
+      }
+      
+      renderLiveData(input, liveData);
+    } catch (e) {
+      renderEmpty(input, '네트워크 오류: ' + e.message);
+    }
+  }
 }
 
 function switchTicker(tk) {
@@ -358,19 +381,207 @@ function switchTicker(tk) {
 
 function setHorizon(h) { horizon = h; renderContent(); }
 
-function renderEmpty(tk) {
+function renderLoading(tk) {
   document.getElementById('content').innerHTML = `
     <div class="empty-state">
       <div class="icon">${tk}</div>
-      <div class="title">아직 분석되지 않은 종목입니다</div>
-      <div class="desc">Claude에게: <code>안드레99 ${tk} 갱신</code></div>
+      <div class="title">실시간 데이터 불러오는 중...</div>
+      <div class="desc">Finnhub API 호출 중 (1-2초)</div>
+    </div>
+  `;
+}
+
+function renderEmpty(tk, errMsg) {
+  document.getElementById('content').innerHTML = `
+    <div class="empty-state">
+      <div class="icon">${tk}</div>
+      <div class="title">데이터를 가져올 수 없습니다</div>
+      <div class="desc">
+        ${errMsg ? `<span style="color:#C0392B;">${errMsg}</span><br><br>` : ''}
+        종목 코드를 확인하거나 Claude에게:<br>
+        <code>안드레99 ${tk} 갱신</code>
+      </div>
+    </div>
+  `;
+}
+
+function renderLiveData(tk, d) {
+  const c = document.getElementById('content');
+  
+  // 시총 포맷
+  const formatNum = (n) => {
+    if (n >= 1e12) return `$${(n/1e12).toFixed(2)}T`;
+    if (n >= 1e9) return `$${(n/1e9).toFixed(1)}B`;
+    if (n >= 1e6) return `$${(n/1e6).toFixed(0)}M`;
+    return `$${n.toFixed(2)}`;
+  };
+  
+  // 지표 분류 (PER, 매출 성장 등에 cls 부여)
+  const perCls = d.per > 50 ? 'bear' : (d.per > 25 ? 'warn' : 'good');
+  const growthCls = d.revenue_growth_yoy > 25 ? 'good' : (d.revenue_growth_yoy > 0 ? 'warn' : 'bear');
+  const chg52wCls = d.chg_52w > 20 ? 'good' : (d.chg_52w > 0 ? 'warn' : 'bear');
+  const roeCls = d.roe > 20 ? 'good' : (d.roe > 0 ? 'warn' : 'bear');
+  const marginCls = d.operating_margin > 20 ? 'good' : (d.operating_margin > 0 ? 'warn' : 'bear');
+  
+  c.innerHTML = `
+    <!-- 헤더 카드 -->
+    <div class="card full fade-in">
+      <div class="card-head">
+        <span class="ttl">${tk} · 실시간 정량 데이터 (Finnhub)</span>
+        <span class="meta">${new Date(d.timestamp).toLocaleString('ko-KR')}</span>
+      </div>
+      <div class="card-body">
+        <div class="stock-head">
+          <div>
+            <div class="ticker">${tk}</div>
+            <div class="name">${d.name} · ${d.sector}</div>
+          </div>
+          <div class="price-area">
+            <div class="price">$${d.price.toFixed(2)}</div>
+            <div class="chg ${d.chg_day >= 0 ? 'up' : 'down'}">
+              ${d.chg_day >= 0 ? '▲' : '▼'} ${Math.abs(d.chg_day).toFixed(2)}% 
+              ($${Math.abs(d.chg_day_abs).toFixed(2)})
+            </div>
+          </div>
+        </div>
+        
+        <!-- 안내 박스 -->
+        <div class="limit-box" style="background:#FFFBF0; border-color:#B8941F;">
+          <div class="l" style="color:#8B6F0E;">신규 종목 · 정량 데이터만 표시</div>
+          <div class="d">
+            <b>1.</b> 시나리오 (Bull/Base/Bear) = 표시되지 않음<br>
+            <b>2.</b> PCM 피어 비교 = 표시되지 않음<br>
+            <b>3.</b> VERDICT = 표시되지 않음<br><br>
+            깊은 분석 원하시면 Claude에게: <code style="background:#FFFBF0; padding:2px 6px; border:1px solid #E8DBA0;">안드레99 ${tk} 갱신</code>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 6 핵심 지표 -->
+    <div class="card fade-in">
+      <div class="card-head">
+        <span class="ttl">핵심 지표 12개 (실시간)</span>
+        <span class="meta">Finnhub</span>
+      </div>
+      <div class="card-body">
+        <div class="ind-matrix">
+          <div class="cell">
+            <div class="k">PER (TTM)</div>
+            <div class="v ${perCls}">${d.per.toFixed(1)}x</div>
+            <div class="sub">${d.per > 50 ? '고평가' : d.per > 25 ? '주의' : '합리'}</div>
+          </div>
+          <div class="cell">
+            <div class="k">매출 성장 YoY</div>
+            <div class="v ${growthCls}">${d.revenue_growth_yoy > 0 ? '+' : ''}${d.revenue_growth_yoy.toFixed(1)}%</div>
+            <div class="sub">TTM 기준</div>
+          </div>
+          <div class="cell">
+            <div class="k">52주 수익</div>
+            <div class="v ${chg52wCls}">${d.chg_52w > 0 ? '+' : ''}${d.chg_52w.toFixed(1)}%</div>
+            <div class="sub">연간 변동</div>
+          </div>
+          <div class="cell">
+            <div class="k">시가총액</div>
+            <div class="v">${d.market_cap}</div>
+            <div class="sub">${d.market_cap_raw > 1e11 ? '메가캡' : d.market_cap_raw > 1e10 ? '대형주' : '중·소형'}</div>
+          </div>
+          <div class="cell">
+            <div class="k">EPS (TTM)</div>
+            <div class="v">${d.eps > 0 ? '$' + d.eps.toFixed(2) : '적자'}</div>
+            <div class="sub">주당순이익</div>
+          </div>
+          <div class="cell">
+            <div class="k">베타</div>
+            <div class="v">${d.beta.toFixed(2)}</div>
+            <div class="sub">${d.beta > 1.5 ? '고변동' : d.beta > 1 ? '시장+' : '안정'}</div>
+          </div>
+          <div class="cell">
+            <div class="k">영업이익률</div>
+            <div class="v ${marginCls}">${d.operating_margin.toFixed(1)}%</div>
+            <div class="sub">TTM</div>
+          </div>
+          <div class="cell">
+            <div class="k">ROE</div>
+            <div class="v ${roeCls}">${d.roe.toFixed(1)}%</div>
+            <div class="sub">자기자본수익률</div>
+          </div>
+          <div class="cell">
+            <div class="k">배당률</div>
+            <div class="v">${d.dividend_yield.toFixed(2)}%</div>
+            <div class="sub">${d.dividend_yield > 2 ? '배당주' : d.dividend_yield > 0 ? '소액배당' : '무배당'}</div>
+          </div>
+          <div class="cell">
+            <div class="k">PSR</div>
+            <div class="v">${d.psr.toFixed(1)}x</div>
+            <div class="sub">매출 배수</div>
+          </div>
+          <div class="cell">
+            <div class="k">52주 고점</div>
+            <div class="v">$${d.week52_high.toFixed(0)}</div>
+            <div class="sub">현재 ${((d.price/d.week52_high - 1)*100).toFixed(0)}%</div>
+          </div>
+          <div class="cell">
+            <div class="k">52주 저점</div>
+            <div class="v">$${d.week52_low.toFixed(0)}</div>
+            <div class="sub">현재 +${((d.price/d.week52_low - 1)*100).toFixed(0)}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 종합 정보 -->
+    <div class="card fade-in">
+      <div class="card-head">
+        <span class="ttl">기업 정보</span>
+        <span class="meta">Profile</span>
+      </div>
+      <div class="card-body">
+        <table class="dt">
+          <tbody>
+            <tr><td>회사명</td><td style="text-align:left; font-family: 'Noto Sans KR', sans-serif;">${d.name}</td></tr>
+            <tr><td>섹터</td><td style="text-align:left; font-family: 'Noto Sans KR', sans-serif;">${d.sector}</td></tr>
+            <tr><td>거래소</td><td style="text-align:left; font-family: 'Noto Sans KR', sans-serif; font-size:10px;">${d.exchange}</td></tr>
+            <tr><td>국가</td><td>${d.country}</td></tr>
+            <tr><td>IPO</td><td>${d.ipo}</td></tr>
+            <tr><td>주식수</td><td>${d.shares}</td></tr>
+            <tr><td>현재가</td><td>$${d.price.toFixed(2)}</td></tr>
+            <tr><td>당일 고가</td><td>$${d.high_day.toFixed(2)}</td></tr>
+            <tr><td>당일 저가</td><td>$${d.low_day.toFixed(2)}</td></tr>
+            <tr><td>전일 종가</td><td>$${d.prev_close.toFixed(2)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- TradingView 차트 -->
+    <div class="card fade-in">
+      <div class="card-head">
+        <span class="ttl">실시간 차트 (TradingView)</span>
+        <span class="meta">일봉</span>
+      </div>
+      <div class="card-body cfm-section">
+        <div class="tv-chart-wrap">
+          <iframe
+            src="https://s.tradingview.com/widgetembed/?symbol=${tk}&interval=D&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=1&saveimage=0&toolbarbg=F1F3F6&studies=%5B%22MASimple%40tv-basicstudies%22%5D&theme=light&style=2&timezone=Asia%2FSeoul&locale=kr"
+            class="tv-iframe"
+            frameborder="0"
+            allowfullscreen
+            allowtransparency="true"
+            scrolling="no">
+          </iframe>
+        </div>
+        <div class="tv-caption">
+          ▸ <b>${tk}</b> 실시간 차트 · 일봉 + 이동평균선
+        </div>
+      </div>
     </div>
   `;
 }
 
 function renderContent() {
   const s = DATA.stocks[activeTicker];
-  if (!s) { renderEmpty(activeTicker); return; }
+  if (!s) { renderEmpty(activeTicker, '사전 산출되지 않은 종목'); return; }
   const c = document.getElementById('content');
   
   const scenarios = horizon === '12m' ? s.scenarios_12m : s.scenarios_5y;
