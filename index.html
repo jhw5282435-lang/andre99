@@ -408,26 +408,32 @@ function renderEmpty(tk, errMsg) {
 function renderLiveData(tk, d) {
   const c = document.getElementById('content');
   
-  // 시총 포맷
-  const formatNum = (n) => {
-    if (n >= 1e12) return `$${(n/1e12).toFixed(2)}T`;
-    if (n >= 1e9) return `$${(n/1e9).toFixed(1)}B`;
-    if (n >= 1e6) return `$${(n/1e6).toFixed(0)}M`;
-    return `$${n.toFixed(2)}`;
-  };
-  
-  // 지표 분류 (PER, 매출 성장 등에 cls 부여)
+  // 지표 분류
   const perCls = d.per > 50 ? 'bear' : (d.per > 25 ? 'warn' : 'good');
   const growthCls = d.revenue_growth_yoy > 25 ? 'good' : (d.revenue_growth_yoy > 0 ? 'warn' : 'bear');
   const chg52wCls = d.chg_52w > 20 ? 'good' : (d.chg_52w > 0 ? 'warn' : 'bear');
   const roeCls = d.roe > 20 ? 'good' : (d.roe > 0 ? 'warn' : 'bear');
   const marginCls = d.operating_margin > 20 ? 'good' : (d.operating_margin > 0 ? 'warn' : 'bear');
   
+  // 자동 적정가
+  const v = d.valuation || {};
+  const r = d.recommendation || {};
+  const fvAvgCls = v.gap_avg > 15 ? 'good' : (v.gap_avg > -15 ? 'warn' : 'bear');
+  const recCls = r.bullish_pct > 60 ? 'good' : (r.bullish_pct > 40 ? 'warn' : 'bear');
+  
+  // 적정가 모델 표 (값 없는 모델 제외)
+  const valuationRows = [
+    { name: 'Forward PER',  fv: v.fv_per,    gap: v.gap_per,    note: `EPS × 섹터 PER ${v.sector_per}x` },
+    { name: 'PEG',          fv: v.fv_peg,    gap: v.gap_peg,    note: 'EPS × 성장률 (max 40%)' },
+    { name: 'PSR',          fv: v.fv_psr,    gap: v.gap_psr,    note: `섹터 평균 PSR ${v.sector_psr}x` },
+    { name: 'Graham Number',fv: v.fv_graham, gap: v.gap_graham, note: '√(22.5 × EPS × BVPS)' }
+  ].filter(m => m.fv > 0);
+  
   c.innerHTML = `
     <!-- 헤더 카드 -->
     <div class="card full fade-in">
       <div class="card-head">
-        <span class="ttl">${tk} · 실시간 정량 데이터 (Finnhub)</span>
+        <span class="ttl">${tk} · 실시간 자동 분석 (Finnhub)</span>
         <span class="meta">${new Date(d.timestamp).toLocaleString('ko-KR')}</span>
       </div>
       <div class="card-body">
@@ -444,19 +450,112 @@ function renderLiveData(tk, d) {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+    
+    <!-- ★ 자동 적정가 카드 (메인) -->
+    <div class="card full fade-in">
+      <div class="card-head">
+        <span class="ttl">★ 자동 적정가 5개 모델</span>
+        <span class="meta">규칙 기반 자동 계산</span>
+      </div>
+      <div class="card-body">
+        ${valuationRows.length > 0 ? `
+        <table class="dt">
+          <thead><tr><th>모델</th><th>적정가</th><th>현재가 대비</th></tr></thead>
+          <tbody>
+            ${valuationRows.map(m => {
+              const gapCls = m.gap > 15 ? 'good' : (m.gap > -15 ? '' : 'bear');
+              return `
+                <tr>
+                  <td>${m.name}<br><span style="font-size:8px;color:#888;">${m.note}</span></td>
+                  <td>$${m.fv.toFixed(2)}</td>
+                  <td class="${gapCls}">${m.gap > 0 ? '+' : ''}${m.gap}%</td>
+                </tr>
+              `;
+            }).join('')}
+            <tr class="fv-row">
+              <td>가중평균 (4개 모델)</td>
+              <td>$${v.fv_avg ? v.fv_avg.toFixed(2) : '-'}</td>
+              <td class="${fvAvgCls}">${v.gap_avg > 0 ? '+' : ''}${v.gap_avg || 0}%</td>
+            </tr>
+          </tbody>
+        </table>
         
-        <!-- 안내 박스 -->
-        <div class="limit-box" style="background:#FFFBF0; border-color:#B8941F;">
-          <div class="l" style="color:#8B6F0E;">신규 종목 · 정량 데이터만 표시</div>
+        <div class="scenario-summary">
+          <div class="l">자동 산출 적정가 (4개 모델 평균)</div>
+          <div class="v">$${v.fv_avg ? v.fv_avg.toFixed(2) : '계산 불가'}</div>
+          <div class="sub">현재가 $${d.price.toFixed(2)} 대비 ${v.gap_avg > 0 ? '+' : ''}${v.gap_avg || 0}%</div>
+        </div>
+        ` : `
+        <div style="padding:20px; text-align:center; color:#888; font-size:12px;">
+          EPS, 매출 등 데이터 부족으로 자동 적정가 계산 불가<br>
+          (적자 기업 또는 신규 상장사일 가능성)
+        </div>
+        `}
+        
+        <div class="limit-box" style="margin-top:14px;">
+          <div class="l">자동 적정가의 한계</div>
           <div class="d">
-            <b>1.</b> 시나리오 (Bull/Base/Bear) = 표시되지 않음<br>
-            <b>2.</b> PCM 피어 비교 = 표시되지 않음<br>
-            <b>3.</b> VERDICT = 표시되지 않음<br><br>
-            깊은 분석 원하시면 Claude에게: <code style="background:#FFFBF0; padding:2px 6px; border:1px solid #E8DBA0;">안드레99 ${tk} 갱신</code>
+            <b>1.</b> 섹터 평균 PER/PSR은 5년 중앙값 (개별 회사 특수성 미반영)<br>
+            <b>2.</b> 시나리오 (Bull/Base/Bear), 트리거, VERDICT = 표시 X<br>
+            <b>3.</b> 깊은 분석은 Claude에게: <code style="background:#FFFBF0; padding:2px 6px; border:1px solid #E8DBA0;">안드레99 ${tk} 갱신</code>
           </div>
         </div>
       </div>
     </div>
+    
+    <!-- 애널리스트 추천 (Finnhub Recommendation) -->
+    ${r.total > 0 ? `
+    <div class="card full fade-in">
+      <div class="card-head">
+        <span class="ttl">애널리스트 추천 분포</span>
+        <span class="meta">${r.period}</span>
+      </div>
+      <div class="card-body">
+        <div class="ind-matrix" style="grid-template-columns: repeat(5, 1fr);">
+          <div class="cell" style="background:#E8F0E8;">
+            <div class="k">Strong Buy</div>
+            <div class="v good">${r.strong_buy}</div>
+            <div class="sub">${r.total > 0 ? Math.round(r.strong_buy/r.total*100) : 0}%</div>
+          </div>
+          <div class="cell" style="background:#F0F5F0;">
+            <div class="k">Buy</div>
+            <div class="v good">${r.buy}</div>
+            <div class="sub">${r.total > 0 ? Math.round(r.buy/r.total*100) : 0}%</div>
+          </div>
+          <div class="cell">
+            <div class="k">Hold</div>
+            <div class="v">${r.hold}</div>
+            <div class="sub">${r.total > 0 ? Math.round(r.hold/r.total*100) : 0}%</div>
+          </div>
+          <div class="cell" style="background:#FBF0F0;">
+            <div class="k">Sell</div>
+            <div class="v bear">${r.sell}</div>
+            <div class="sub">${r.total > 0 ? Math.round(r.sell/r.total*100) : 0}%</div>
+          </div>
+          <div class="cell" style="background:#F5E8E8;">
+            <div class="k">Strong Sell</div>
+            <div class="v bear">${r.strong_sell}</div>
+            <div class="sub">${r.total > 0 ? Math.round(r.strong_sell/r.total*100) : 0}%</div>
+          </div>
+        </div>
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;">
+          <div style="background:#F0F5F0; padding:12px; text-align:center; border:1px solid #1B365D;">
+            <div style="font-size:9px; color:#555;">매수 비중</div>
+            <div style="font-family:'EB Garamond',serif; font-size:24px; color:#1B365D; font-weight:700;">${r.bullish_pct}%</div>
+            <div style="font-size:9px; color:#555;">${r.strong_buy + r.buy}명 / ${r.total}명</div>
+          </div>
+          <div style="background:#FBF0F0; padding:12px; text-align:center; border:1px solid #C0392B;">
+            <div style="font-size:9px; color:#555;">매도 비중</div>
+            <div style="font-family:'EB Garamond',serif; font-size:24px; color:#C0392B; font-weight:700;">${r.bearish_pct}%</div>
+            <div style="font-size:9px; color:#555;">${r.sell + r.strong_sell}명 / ${r.total}명</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    ` : ''}
     
     <!-- 6 핵심 지표 -->
     <div class="card fade-in">
@@ -555,7 +654,7 @@ function renderLiveData(tk, d) {
     </div>
     
     <!-- TradingView 차트 -->
-    <div class="card fade-in">
+    <div class="card full fade-in">
       <div class="card-head">
         <span class="ttl">실시간 차트 (TradingView)</span>
         <span class="meta">일봉</span>
