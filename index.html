@@ -15,8 +15,6 @@
     color: #1a1a1a;
     min-height: 100vh;
   }
-
-  /* 글로벌 헤더 */
   .global-header {
     background: #002B5C;
     color: #fff;
@@ -35,137 +33,48 @@
     flex-wrap: wrap;
     gap: 10px;
   }
-  .global-header .brand {
-    font-family: 'EB Garamond', serif;
-    font-size: 20px;
-    font-weight: 700;
-  }
-  .global-header .brand .ver {
-    font-size: 11px;
-    color: #B8941F;
-    margin-left: 6px;
-    letter-spacing: 0.1em;
-  }
-  .global-header .meta {
-    font-size: 10px;
-    color: rgba(255,255,255,0.7);
-    letter-spacing: 0.1em;
-  }
+  .global-header .brand { font-family: 'EB Garamond', serif; font-size: 20px; font-weight: 700; }
+  .global-header .brand .ver { font-size: 11px; color: #B8941F; margin-left: 6px; letter-spacing: 0.1em; }
+  .global-header .meta { font-size: 10px; color: rgba(255,255,255,0.7); letter-spacing: 0.1em; }
   .global-header .meta .live { color: #ff6b3d; }
-  .global-header .meta .live::before {
-    content: '●';
-    margin-right: 4px;
-    animation: pulse 2s ease-in-out infinite;
-  }
+  .global-header .meta .live::before { content: '●'; margin-right: 4px; animation: pulse 2s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-  /* 종목 입력칸 + 탭 */
-  .ticker-bar {
-    background: #fff;
-    border-bottom: 2px solid #002B5C;
-    padding: 0;
-  }
-  .ticker-bar .row {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 10px 14px;
-  }
-  .ticker-input-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-    align-items: stretch;
-  }
+  .ticker-bar { background: #fff; border-bottom: 2px solid #002B5C; }
+  .ticker-bar .row { max-width: 1200px; margin: 0 auto; padding: 10px 14px; }
+  .ticker-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
   .ticker-input {
-    flex: 1;
-    padding: 10px 14px;
-    font-family: 'EB Garamond', serif;
-    font-size: 14px;
-    font-weight: 600;
-    border: 1px solid #ddd;
-    border-radius: 0;
-    background: #FAFBFC;
-    color: #002B5C;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    flex: 1; padding: 10px 14px;
+    font-family: 'EB Garamond', serif; font-size: 14px; font-weight: 600;
+    border: 1px solid #ddd; background: #FAFBFC; color: #002B5C;
+    text-transform: uppercase; letter-spacing: 0.1em;
   }
-  .ticker-input:focus {
-    outline: none;
-    border-color: #002B5C;
-    background: #fff;
-  }
+  .ticker-input:focus { outline: none; border-color: #002B5C; background: #fff; }
   .ticker-btn {
-    padding: 10px 18px;
-    font-family: 'Noto Serif KR', serif;
-    font-size: 12px;
-    font-weight: 600;
-    background: #002B5C;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    letter-spacing: 0.05em;
+    padding: 10px 18px; font-family: 'Noto Serif KR', serif; font-size: 12px;
+    font-weight: 600; background: #002B5C; color: #fff; border: none; cursor: pointer;
   }
   .ticker-btn:hover { background: #001f43; }
-  .ticker-tabs-row {
-    display: flex;
-    gap: 4px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 2px;
-  }
+  .ticker-tabs-row { display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
   .ticker-tab {
-    padding: 6px 12px;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all 0.15s;
-    text-align: center;
-    min-width: 70px;
-    background: #FAFBFC;
-    flex-shrink: 0;
+    padding: 6px 12px; cursor: pointer; border: 1px solid transparent;
+    text-align: center; min-width: 70px; background: #FAFBFC; flex-shrink: 0;
   }
   .ticker-tab:hover { background: #fff; border-color: #ddd; }
-  .ticker-tab.active {
-    background: #002B5C;
-    color: #fff;
-  }
-  .ticker-tab .tk {
-    font-family: 'EB Garamond', serif;
-    font-size: 13px;
-    font-weight: 700;
-    color: inherit;
-    line-height: 1;
-  }
-  .ticker-tab.active .tk { color: #fff; }
-  .ticker-tab .px {
-    font-size: 9px;
-    color: #555;
-    margin-top: 2px;
-  }
+  .ticker-tab.active { background: #002B5C; color: #fff; }
+  .ticker-tab .tk { font-family: 'EB Garamond', serif; font-size: 13px; font-weight: 700; }
+  .ticker-tab .px { font-size: 9px; color: #555; margin-top: 2px; }
   .ticker-tab.active .px { color: rgba(255,255,255,0.8); }
   .ticker-tab .px.up { color: #1B365D; }
   .ticker-tab .px.down { color: #C0392B; }
-  .ticker-tab.active .px.up,
-  .ticker-tab.active .px.down { color: #fff; }
+  .ticker-tab.active .px.up, .ticker-tab.active .px.down { color: #fff; }
 
-  /* 컨텐츠 */
-  .content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 16px;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
+  .content { max-width: 1200px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
   @media (min-width: 768px) {
-    .content {
-      grid-template-columns: 1fr 1fr;
-      padding: 20px;
-      gap: 20px;
-    }
+    .content { grid-template-columns: 1fr 1fr; padding: 20px; gap: 20px; }
     .card.full { grid-column: 1 / -1; }
   }
 
-  /* 카드 */
   .card {
     background: #fff;
     border-top: 3px solid #002B5C;
@@ -173,130 +82,93 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
   .card-head {
-    padding: 12px 16px 10px;
-    border-bottom: 1px solid #ddd;
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
+    padding: 12px 16px 10px; border-bottom: 1px solid #ddd;
+    display: flex; justify-content: space-between; align-items: baseline;
   }
-  .card-head .ttl {
-    font-family: 'Noto Serif KR', serif;
-    font-size: 14px;
-    color: #002B5C;
-    font-weight: 700;
-  }
-  .card-head .meta {
-    font-size: 9px;
-    color: #888;
-    letter-spacing: 0.05em;
-  }
+  .card-head .ttl { font-family: 'Noto Serif KR', serif; font-size: 14px; color: #002B5C; font-weight: 700; }
+  .card-head .meta { font-size: 9px; color: #888; letter-spacing: 0.05em; }
   .card-body { padding: 14px 16px; }
 
-  /* 종목 헤드 */
   .stock-head {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 14px;
-    align-items: end;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #ddd;
-    margin-bottom: 14px;
+    display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: end;
+    padding-bottom: 10px; border-bottom: 1px solid #ddd; margin-bottom: 14px;
   }
-  .stock-head .ticker {
-    font-family: 'EB Garamond', serif;
-    font-size: 28px;
-    font-weight: 700;
-    color: #002B5C;
-    line-height: 1;
-  }
-  .stock-head .name {
-    font-size: 11px;
-    color: #555;
-    margin-top: 4px;
-  }
+  .stock-head .ticker { font-family: 'EB Garamond', serif; font-size: 28px; font-weight: 700; color: #002B5C; line-height: 1; }
+  .stock-head .name { font-size: 11px; color: #555; margin-top: 4px; }
   .stock-head .price-area { text-align: right; }
-  .stock-head .price {
-    font-family: 'EB Garamond', serif;
-    font-size: 24px;
-    font-weight: 700;
-    color: #000;
-    line-height: 1;
-  }
-  .stock-head .chg {
-    font-size: 11px;
-    margin-top: 3px;
-    font-weight: 700;
-  }
+  .stock-head .price { font-family: 'EB Garamond', serif; font-size: 24px; font-weight: 700; color: #000; line-height: 1; }
+  .stock-head .chg { font-size: 11px; margin-top: 3px; font-weight: 700; }
   .stock-head .chg.up { color: #1B365D; }
   .stock-head .chg.down { color: #C0392B; }
 
-  /* 시나리오 */
+  /* 시나리오 토글 */
+  .horizon-toggle {
+    display: flex; gap: 0; margin-bottom: 10px; border: 1px solid #002B5C;
+  }
+  .horizon-toggle button {
+    flex: 1; padding: 8px; background: #fff; border: none; cursor: pointer;
+    font-family: 'Noto Serif KR', serif; font-size: 11px; color: #002B5C; font-weight: 600;
+  }
+  .horizon-toggle button.active { background: #002B5C; color: #fff; }
+
   .scenario-section {
-    background: #FAFBFC;
-    border: 1px solid #002B5C;
-    padding: 14px;
-    margin-bottom: 14px;
+    background: #FAFBFC; border: 1px solid #002B5C;
+    padding: 14px; margin-bottom: 14px;
   }
   .scenario-section .lbl {
-    font-family: 'Noto Serif KR', serif;
-    font-size: 11px;
-    color: #002B5C;
-    font-weight: 700;
-    margin-bottom: 10px;
-    letter-spacing: 0.05em;
+    font-family: 'Noto Serif KR', serif; font-size: 11px;
+    color: #002B5C; font-weight: 700; margin-bottom: 10px; letter-spacing: 0.05em;
   }
-  .scenario-section .lbl::before {
-    content: '★ ';
-    color: #B8941F;
-  }
+  .scenario-section .lbl::before { content: '★ '; color: #B8941F; }
   .scenario-row {
-    display: grid;
-    grid-template-columns: 70px 50px 1fr 60px;
-    gap: 8px;
-    align-items: center;
-    padding: 7px 0;
-    border-bottom: 1px dashed #ddd;
-    font-size: 11px;
+    display: grid; grid-template-columns: 50px 40px 1fr 60px; gap: 8px;
+    align-items: center; padding: 7px 0; border-bottom: 1px dashed #ddd; font-size: 11px;
   }
   .scenario-row:last-child { border-bottom: none; }
   .scenario-row .name { font-family: 'Noto Serif KR', serif; font-weight: 700; }
   .scenario-row .name.bear { color: #C0392B; }
   .scenario-row .name.cons { color: #002B5C; }
   .scenario-row .name.bull { color: #1B365D; }
-  .scenario-row .name.moon { color: #B8941F; }
   .scenario-row .prob { font-family: 'Courier New', monospace; text-align: right; color: #555; font-size: 10px; }
-  .scenario-row .bar-wrap {
-    height: 16px;
-    background: #fff;
-    border: 1px solid #ddd;
-    position: relative;
-    overflow: hidden;
-  }
+  .scenario-row .bar-wrap { height: 16px; background: #fff; border: 1px solid #ddd; position: relative; overflow: hidden; }
   .scenario-row .bar { height: 100%; position: absolute; top: 0; left: 0; }
   .scenario-row .bar.bear { background: #C0392B; }
   .scenario-row .bar.cons { background: #002B5C; }
   .scenario-row .bar.bull { background: #1B365D; }
-  .scenario-row .bar.moon { background: #B8941F; }
   .scenario-row .price { text-align: right; font-family: 'EB Garamond', serif; font-weight: 700; color: #000; font-size: 12px; }
-  .scenario-summary {
-    background: #002B5C;
-    color: #fff;
-    padding: 10px 12px;
-    margin-top: 10px;
-    text-align: center;
-  }
+
+  .trigger-list { margin-top: 10px; padding: 8px 10px; background: #fff; border: 1px dashed #ddd; }
+  .trigger-list .ttl { font-family: 'Noto Serif KR', serif; font-size: 9px; color: #555; font-weight: 700; margin-bottom: 5px; letter-spacing: 0.05em; }
+  .trigger-list .item { font-size: 10px; color: #4a4a4a; line-height: 1.5; padding: 2px 0; }
+  .trigger-list .item b { color: #002B5C; font-family: 'Noto Serif KR', serif; }
+
+  .scenario-summary { background: #002B5C; color: #fff; padding: 10px 12px; margin-top: 10px; text-align: center; }
   .scenario-summary .l { font-size: 9px; letter-spacing: 0.1em; margin-bottom: 4px; color: rgba(255,255,255,0.7); }
   .scenario-summary .v { font-family: 'EB Garamond', serif; font-size: 22px; font-weight: 700; }
   .scenario-summary .sub { font-size: 10px; margin-top: 4px; color: #B8941F; }
 
-  /* 6 지표 */
-  .ind-matrix {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: #ddd;
-    border: 1px solid #ddd;
+  /* Risk-Reward 카드 */
+  .rr-card { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: #ddd; border: 1px solid #ddd; margin-bottom: 14px; }
+  .rr-card .cell { background: #fff; padding: 12px 10px; text-align: center; }
+  .rr-card .cell .k { font-size: 9px; color: #555; font-weight: 600; margin-bottom: 4px; letter-spacing: 0.05em; }
+  .rr-card .cell .v { font-family: 'EB Garamond', serif; font-size: 18px; font-weight: 700; line-height: 1; }
+  .rr-card .cell .v.bear { color: #C0392B; }
+  .rr-card .cell .v.good { color: #1B365D; }
+  .rr-card .cell .sub { font-size: 8px; color: #888; margin-top: 3px; }
+
+  /* 컨센서스 비교 */
+  .consensus-card {
+    background: #FFFBF0; border: 1px solid #E8DBA0; border-left: 3px solid #B8941F;
+    padding: 10px 12px; margin-bottom: 14px;
   }
+  .consensus-card .ttl { font-family: 'Noto Serif KR', serif; font-size: 10px; color: #8B6F0E; font-weight: 700; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px dotted #E8DBA0; }
+  .consensus-card .ttl::before { content: '⚖ '; }
+  .consensus-card .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 11px; }
+  .consensus-card .row .label { color: #555; }
+  .consensus-card .row .value { font-family: 'EB Garamond', serif; font-weight: 700; color: #1a1a1a; }
+  .consensus-card .diff { margin-top: 6px; padding-top: 6px; border-top: 1px dotted #E8DBA0; font-size: 10px; text-align: center; color: #8B6F0E; font-weight: 600; }
+
+  .ind-matrix { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #ddd; border: 1px solid #ddd; }
   .ind-matrix .cell { background: #fff; padding: 9px 10px; }
   .ind-matrix .cell .k { font-size: 9px; color: #555; font-weight: 600; margin-bottom: 3px; }
   .ind-matrix .cell .v { font-family: 'EB Garamond', serif; font-size: 15px; font-weight: 700; line-height: 1; }
@@ -304,55 +176,19 @@
   .ind-matrix .cell .v.good { color: #1B365D; }
   .ind-matrix .cell .sub { font-size: 8px; color: #888; margin-top: 2px; }
 
-  /* 표 */
   table.dt { width: 100%; border-collapse: collapse; }
-  table.dt th {
-    text-align: left;
-    padding: 6px;
-    background: #F5F5F5;
-    border-bottom: 1px solid #002B5C;
-    font-size: 9px;
-    color: #555;
-    font-weight: 600;
-  }
+  table.dt th { text-align: left; padding: 6px; background: #F5F5F5; border-bottom: 1px solid #002B5C; font-size: 9px; color: #555; font-weight: 600; }
   table.dt th:not(:first-child) { text-align: right; }
-  table.dt td {
-    padding: 6px;
-    border-bottom: 1px solid #eee;
-    font-size: 11px;
-  }
-  table.dt td:not(:first-child) {
-    text-align: right;
-    font-family: 'Courier New', monospace;
-    font-weight: 700;
-  }
+  table.dt td { padding: 6px; border-bottom: 1px solid #eee; font-size: 11px; }
+  table.dt td:not(:first-child) { text-align: right; font-family: 'Courier New', monospace; font-weight: 700; }
   table.dt td.bear { color: #C0392B; }
   table.dt td.good { color: #1B365D; }
-  table.dt tr.fv-row td {
-    background: #F8F9FB;
-    font-weight: 700;
-    color: #002B5C;
-    border-bottom: 2px solid #002B5C;
-  }
+  table.dt tr.fv-row td { background: #F8F9FB; font-weight: 700; color: #002B5C; border-bottom: 2px solid #002B5C; }
 
-  /* 피어 */
-  .peer-row {
-    display: grid;
-    grid-template-columns: 60px 1fr 50px;
-    gap: 6px;
-    align-items: center;
-    padding: 5px 0;
-    font-size: 10px;
-  }
+  .peer-row { display: grid; grid-template-columns: 60px 1fr 50px; gap: 6px; align-items: center; padding: 5px 0; font-size: 10px; }
   .peer-row .tk { font-family: 'EB Garamond', serif; font-weight: 700; }
   .peer-row .tk.target { color: #002B5C; }
-  .peer-row .gap-bar {
-    height: 12px;
-    background: #FAFBFC;
-    border: 1px solid #ddd;
-    position: relative;
-    overflow: hidden;
-  }
+  .peer-row .gap-bar { height: 12px; background: #FAFBFC; border: 1px solid #ddd; position: relative; overflow: hidden; }
   .peer-row .gap-bar .center { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: #999; }
   .peer-row .gap-bar .fill { position: absolute; top: 1px; bottom: 1px; right: 50%; background: #C0392B; }
   .peer-row .gap-bar .fill.warn { background: #B8741F; }
@@ -362,45 +198,45 @@
   .peer-row .gap.warn { color: #B8741F; }
   .peer-row .gap.good { color: #1B365D; }
   .peer-section + .peer-section { margin-top: 12px; }
-  .peer-section .ttl {
-    font-family: 'Noto Serif KR', serif;
-    font-size: 11px;
-    font-weight: 700;
-    margin-bottom: 4px;
-    padding-bottom: 3px;
-    border-bottom: 1px solid #ddd;
-    display: flex;
-    justify-content: space-between;
-  }
+  .peer-section .ttl { font-family: 'Noto Serif KR', serif; font-size: 11px; font-weight: 700; margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; }
   .peer-section .ttl.saas { color: #C0392B; }
   .peer-section .ttl.sec { color: #1B365D; }
   .peer-section .ttl .meta { font-size: 9px; color: #555; font-weight: 400; }
 
-  /* CFM */
-  .cfm-section svg {
+  .cfm-section .tv-chart-wrap {
     width: 100%;
-    height: 130px;
+    height: 360px;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    overflow: hidden;
+    position: relative;
+    background: #FAFBFC;
+  }
+  .cfm-section .tv-iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
     display: block;
-    border-bottom: 1px solid #ddd;
   }
-  .cfm-legend {
-    display: flex;
-    gap: 12px;
-    margin-top: 6px;
-    padding-top: 6px;
-    font-size: 9px;
-    color: #555;
-    flex-wrap: wrap;
-  }
-  .cfm-legend .item { display: flex; align-items: center; gap: 4px; }
-  .cfm-legend .line { display: inline-block; width: 14px; height: 2px; }
-  .cfm-modules { margin-top: 12px; }
-  .cfm-mini {
+  .cfm-section .tv-caption {
     background: #FAFBFC;
     border: 1px solid #ddd;
-    padding: 8px 10px;
-    margin-bottom: 6px;
+    border-top: none;
+    padding: 6px 10px;
+    font-size: 10px;
+    color: #555;
+    line-height: 1.4;
   }
+  .cfm-section .tv-caption b {
+    color: #002B5C;
+    font-family: 'EB Garamond', serif;
+    font-weight: 700;
+  }
+  @media (min-width: 768px) {
+    .cfm-section .tv-chart-wrap { height: 400px; }
+  }
+  .cfm-modules { margin-top: 12px; }
+  .cfm-mini { background: #FAFBFC; border: 1px solid #ddd; padding: 8px 10px; margin-bottom: 6px; }
   .cfm-mini .head { display: flex; justify-content: space-between; margin-bottom: 4px; }
   .cfm-mini .name { font-family: 'Noto Serif KR', serif; font-size: 10px; color: #002B5C; font-weight: 700; }
   .cfm-mini .score { font-family: 'EB Garamond', serif; font-size: 13px; font-weight: 700; }
@@ -410,98 +246,29 @@
   .cfm-mini .score.good { color: #1B365D; }
   .cfm-mini .desc { font-size: 10px; color: #4a4a4a; line-height: 1.4; }
   .cfm-mini .desc b { color: #002B5C; font-family: 'EB Garamond', serif; }
-  .cfm-total {
-    background: #002B5C;
-    color: #fff;
-    text-align: center;
-    padding: 10px;
-    margin-top: 8px;
-  }
+  .cfm-total { background: #002B5C; color: #fff; text-align: center; padding: 10px; margin-top: 8px; }
   .cfm-total .l { font-size: 9px; letter-spacing: 0.1em; color: rgba(255,255,255,0.7); }
   .cfm-total .v { font-family: 'EB Garamond', serif; font-size: 20px; font-weight: 700; margin-top: 2px; }
 
-  /* VERDICT */
-  .verdict {
-    background: #FAFBFC;
-    border-left: 4px solid #002B5C;
-    padding: 14px 16px;
-  }
+  .verdict { background: #FAFBFC; border-left: 4px solid #002B5C; padding: 14px 16px; }
   .verdict .l { font-family: 'Noto Serif KR', serif; font-size: 10px; color: #002B5C; font-weight: 700; margin-bottom: 6px; }
   .verdict .h { font-family: 'Noto Serif KR', serif; font-size: 15px; color: #1a1a1a; font-weight: 700; line-height: 1.4; margin-bottom: 8px; }
   .verdict .h em { font-style: normal; color: #002B5C; }
   .verdict .d { font-size: 11px; color: #4a4a4a; line-height: 1.6; }
   .verdict .d b { color: #002B5C; font-weight: 700; }
 
-  .limit-box {
-    background: #FFF8F0;
-    border: 1px dashed #B8741F;
-    padding: 10px 12px;
-    margin-top: 10px;
-  }
+  .limit-box { background: #FFF8F0; border: 1px dashed #B8741F; padding: 10px 12px; margin-top: 10px; }
   .limit-box .l { font-family: 'Noto Serif KR', serif; font-size: 10px; color: #B8741F; font-weight: 700; margin-bottom: 5px; }
   .limit-box .l::before { content: '⚠ '; }
   .limit-box .d { font-size: 10px; color: #4a4a4a; line-height: 1.5; }
 
-  /* 약어 */
-  .acronym-box {
-    background: #FFFBF0;
-    border: 1px solid #E8DBA0;
-    border-left: 3px solid #B8941F;
-    padding: 8px 11px;
-    margin-top: 10px;
-  }
-  .acronym-box .ttl { font-family: 'Noto Serif KR', serif; font-size: 10px; color: #8B6F0E; font-weight: 700; margin-bottom: 5px; padding-bottom: 3px; border-bottom: 1px dotted #E8DBA0; }
-  .acronym-box .ttl::before { content: 'A·B·C '; font-family: 'EB Garamond', serif; font-style: italic; }
-  .acronym-box .item { display: grid; grid-template-columns: 50px 1fr; gap: 8px; padding: 3px 0; font-size: 9px; line-height: 1.4; }
-  .acronym-box .item .acr { color: #8B6F0E; font-weight: 700; font-family: 'EB Garamond', serif; font-size: 10px; }
-  .acronym-box .item .full b { color: #1a1a1a; font-weight: 600; }
+  .empty-state { background: #fff; border: 1px dashed #ddd; padding: 40px 20px; text-align: center; grid-column: 1 / -1; }
+  .empty-state .icon { font-family: 'EB Garamond', serif; font-size: 40px; color: #002B5C; margin-bottom: 12px; }
+  .empty-state .title { font-family: 'Noto Serif KR', serif; font-size: 16px; color: #1a1a1a; font-weight: 700; margin-bottom: 8px; }
+  .empty-state .desc { font-size: 12px; color: #555; line-height: 1.6; }
+  .empty-state .desc code { background: #FFFBF0; border: 1px solid #E8DBA0; padding: 2px 6px; color: #8B6F0E; font-family: 'Courier New', monospace; font-size: 11px; }
 
-  /* 미존재 종목 안내 */
-  .empty-state {
-    background: #fff;
-    border: 1px dashed #ddd;
-    padding: 40px 20px;
-    text-align: center;
-    grid-column: 1 / -1;
-  }
-  .empty-state .icon {
-    font-family: 'EB Garamond', serif;
-    font-size: 40px;
-    color: #002B5C;
-    margin-bottom: 12px;
-  }
-  .empty-state .title {
-    font-family: 'Noto Serif KR', serif;
-    font-size: 16px;
-    color: #1a1a1a;
-    font-weight: 700;
-    margin-bottom: 8px;
-  }
-  .empty-state .desc {
-    font-size: 12px;
-    color: #555;
-    line-height: 1.6;
-  }
-  .empty-state .desc code {
-    background: #FFFBF0;
-    border: 1px solid #E8DBA0;
-    padding: 2px 6px;
-    color: #8B6F0E;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-  }
-
-  /* 푸터 */
-  .footer {
-    background: #002B5C;
-    color: #fff;
-    padding: 14px 18px;
-    margin-top: 20px;
-    text-align: center;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    line-height: 1.6;
-  }
+  .footer { background: #002B5C; color: #fff; padding: 14px 18px; margin-top: 20px; text-align: center; font-size: 10px; letter-spacing: 0.1em; line-height: 1.6; }
   .footer .ver { color: #B8941F; font-weight: 700; }
   .footer .small { font-size: 9px; color: rgba(255,255,255,0.6); margin-top: 4px; }
 
@@ -511,15 +278,13 @@
 </head>
 <body>
 
-<!-- 헤더 -->
 <div class="global-header">
   <div class="row">
-    <div class="brand">ANDRE99 <span class="ver">v3.0</span></div>
+    <div class="brand">ANDRE99 <span class="ver">v1.2 (월街 방법론)</span></div>
     <div class="meta"><span class="live" id="lastUpdate">LIVE</span></div>
   </div>
 </div>
 
-<!-- 종목 입력 + 탭 -->
 <div class="ticker-bar">
   <div class="row">
     <div class="ticker-input-row">
@@ -530,20 +295,18 @@
   </div>
 </div>
 
-<!-- 컨텐츠 -->
 <div class="content" id="content"></div>
 
-<!-- 푸터 -->
 <div class="footer">
-  ANDRE99 <span class="ver">v3.0</span> · PROBABILISTIC GROWTH STOCK VALUATION
+  ANDRE99 <span class="ver">v1.2</span> · MORGAN STANLEY RISK-REWARD + GOLDMAN BULL/BEAR FRAMEWORK
   <div class="small">투자자문 아님 · 교육 콘텐츠 · DYOR · @andre99</div>
 </div>
 
 <script>
 let DATA = null;
 let activeTicker = 'PLTR';
+let horizon = '12m';
 
-// 데이터 로딩
 async function loadData() {
   try {
     const res = await fetch('data.json');
@@ -562,7 +325,6 @@ async function loadData() {
   }
 }
 
-// 탭 렌더링
 function renderTabs() {
   const tickers = Object.keys(DATA.stocks);
   const row = document.getElementById('tabRow');
@@ -582,13 +344,8 @@ function renderTabs() {
 function searchTicker() {
   const input = document.getElementById('tickerInput').value.toUpperCase().trim();
   if (!input) return;
-  if (DATA.stocks[input]) {
-    switchTicker(input);
-  } else {
-    activeTicker = input;
-    renderTabs();
-    renderEmpty(input);
-  }
+  if (DATA.stocks[input]) switchTicker(input);
+  else { activeTicker = input; renderTabs(); renderEmpty(input); }
   document.getElementById('tickerInput').value = '';
 }
 
@@ -599,40 +356,36 @@ function switchTicker(tk) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function setHorizon(h) { horizon = h; renderContent(); }
+
 function renderEmpty(tk) {
-  const c = document.getElementById('content');
-  c.innerHTML = `
+  document.getElementById('content').innerHTML = `
     <div class="empty-state">
       <div class="icon">${tk}</div>
       <div class="title">아직 분석되지 않은 종목입니다</div>
-      <div class="desc">
-        Claude에게 다음과 같이 요청하세요:<br><br>
-        <code>안드레99 ${tk} 갱신</code><br><br>
-        Claude가 JSON 데이터를 생성하면, <code>data.json</code> 파일의<br>
-        <code>"stocks"</code> 안에 <code>"${tk}"</code> 키로 추가하면 됩니다.
-      </div>
+      <div class="desc">Claude에게: <code>안드레99 ${tk} 갱신</code></div>
     </div>
   `;
 }
 
-// 컨텐츠 렌더링
 function renderContent() {
   const s = DATA.stocks[activeTicker];
-  if (!s) {
-    renderEmpty(activeTicker);
-    return;
-  }
-
+  if (!s) { renderEmpty(activeTicker); return; }
   const c = document.getElementById('content');
-  const maxFv = Math.max(...s.scenarios.map(x => x.fv));
+  
+  const scenarios = horizon === '12m' ? s.scenarios_12m : s.scenarios_5y;
+  const expected = horizon === '12m' ? s.expected_12m : s.expected_5y;
+  const maxFv = Math.max(...scenarios.map(x => x.fv));
   const saasAvg = (s.peers.saas.reduce((a,b)=>a+b.gap,0)/s.peers.saas.length).toFixed(1);
   const secAvg = (s.peers.sec.reduce((a,b)=>a+b.gap,0)/s.peers.sec.length).toFixed(1);
+  const consGap = ((expected/s.consensus_pt - 1)*100).toFixed(1);
+  const rrClass = s.risk_reward.ratio >= 2 ? 'good' : (s.risk_reward.ratio >= 1.5 ? '' : 'bear');
 
   c.innerHTML = `
-    <!-- 카드 1: 시나리오 메인 -->
+    <!-- 메인: 시나리오 -->
     <div class="card full fade-in">
       <div class="card-head">
-        <span class="ttl">${activeTicker} · 시나리오 적정가 (v3.0 핵심)</span>
+        <span class="ttl">${activeTicker} · Risk-Reward Framework (Morgan Stanley 방식)</span>
         <span class="meta">${DATA._meta.last_updated}</span>
       </div>
       <div class="card-body">
@@ -648,10 +401,44 @@ function renderContent() {
             </div>
           </div>
         </div>
+
+        <!-- Risk-Reward 카드 -->
+        <div class="rr-card">
+          <div class="cell">
+            <div class="k">Bull Upside</div>
+            <div class="v good">+${s.risk_reward.bull_upside.toFixed(0)}%</div>
+            <div class="sub">12개월 상승 여력</div>
+          </div>
+          <div class="cell" style="background:#FAFBFC;">
+            <div class="k">Risk-Reward Ratio</div>
+            <div class="v ${rrClass}">${s.risk_reward.ratio.toFixed(2)}</div>
+            <div class="sub">${s.risk_reward.verdict}</div>
+          </div>
+          <div class="cell">
+            <div class="k">Bear Downside</div>
+            <div class="v bear">${s.risk_reward.bear_downside.toFixed(0)}%</div>
+            <div class="sub">12개월 하락 위험</div>
+          </div>
+        </div>
+
+        <!-- 컨센서스 비교 -->
+        <div class="consensus-card">
+          <div class="ttl">월街 컨센서스 vs 안드레99</div>
+          <div class="row"><span class="label">월街 평균 PT (12개월)</span><span class="value">$${s.consensus_pt}</span></div>
+          <div class="row"><span class="label">안드레99 12M Base</span><span class="value">$${s.scenarios_12m[1].fv}</span></div>
+          <div class="row"><span class="label">안드레99 12M 기댓값</span><span class="value">$${s.expected_12m}</span></div>
+          <div class="diff">기댓값 vs 월街 PT 차이: ${consGap >= 0 ? '+' : ''}${consGap}%</div>
+        </div>
+
+        <!-- 시나리오 horizon 토글 -->
+        <div class="horizon-toggle">
+          <button class="${horizon === '12m' ? 'active' : ''}" onclick="setHorizon('12m')">12개월 (Morgan Stanley 표준)</button>
+          <button class="${horizon === '5y' ? 'active' : ''}" onclick="setHorizon('5y')">5년 (장기 시나리오)</button>
+        </div>
         
         <div class="scenario-section">
-          <div class="lbl">5-시나리오 분포 모델</div>
-          ${s.scenarios.map(sc => {
+          <div class="lbl">3-시나리오 (Bull / Base / Bear)</div>
+          ${scenarios.map(sc => {
             const w = (sc.fv / maxFv) * 100;
             return `
               <div class="scenario-row">
@@ -662,47 +449,36 @@ function renderContent() {
               </div>
             `;
           }).join('')}
+          
+          <div class="trigger-list">
+            <div class="ttl">시나리오별 트리거 (Goldman Sachs 방식 · specific triggers)</div>
+            ${scenarios.map(sc => `<div class="item"><b>${sc.name}:</b> ${sc.trigger}</div>`).join('')}
+          </div>
+
           <div class="scenario-summary">
-            <div class="l">5년 후 확률 가중 기댓값</div>
-            <div class="v">$${s.expected}</div>
-            <div class="sub">현재가 $${s.price} 대비 ${((s.expected/s.price - 1)*100).toFixed(1)}%</div>
+            <div class="l">${horizon === '12m' ? '12개월' : '5년'} 확률 가중 기댓값</div>
+            <div class="v">$${expected}</div>
+            <div class="sub">현재가 $${s.price} 대비 ${((expected/s.price - 1)*100).toFixed(1)}%</div>
           </div>
         </div>
       </div>
     </div>
     
-    <!-- 카드 2: 6 지표 -->
+    <!-- 6 지표 -->
     <div class="card fade-in">
-      <div class="card-head">
-        <span class="ttl">표 · 핵심 지표 6개</span>
-        <span class="meta">v0.5a 실측</span>
-      </div>
+      <div class="card-head"><span class="ttl">표 · 핵심 지표 6개</span><span class="meta">실측</span></div>
       <div class="card-body">
         <div class="ind-matrix">
           ${s.indicators.map(i => `
-            <div class="cell">
-              <div class="k">${i.k}</div>
-              <div class="v ${i.cls}">${i.v}</div>
-              <div class="sub">${i.sub}</div>
-            </div>
+            <div class="cell"><div class="k">${i.k}</div><div class="v ${i.cls}">${i.v}</div><div class="sub">${i.sub}</div></div>
           `).join('')}
-        </div>
-        <div class="acronym-box">
-          <div class="ttl">영문 약어 풀이</div>
-          <div class="item"><span class="acr">EPS</span><span class="full"><b>Earnings Per Share</b> · 주당순이익</span></div>
-          <div class="item"><span class="acr">PER</span><span class="full"><b>Price-Earnings Ratio</b> · 주가수익비율</span></div>
-          <div class="item"><span class="acr">YoY</span><span class="full"><b>Year-over-Year</b> · 전년 동기 대비</span></div>
-          <div class="item"><span class="acr">CAPEX</span><span class="full"><b>Capital Expenditure</b> · 설비투자</span></div>
         </div>
       </div>
     </div>
     
-    <!-- 카드 3: 5개 모델 -->
+    <!-- 5개 모델 -->
     <div class="card fade-in">
-      <div class="card-head">
-        <span class="ttl">표 · 모델별 적정가 분해</span>
-        <span class="meta">v0.5a 결함 수정</span>
-      </div>
+      <div class="card-head"><span class="ttl">정량 모델 (Bear 시나리오 input)</span><span class="meta">참고용</span></div>
       <div class="card-body">
         <table class="dt">
           <thead><tr><th>모델</th><th>가중치</th><th>적정가</th><th>괴리</th></tr></thead>
@@ -716,34 +492,20 @@ function renderContent() {
               </tr>
             `).join('')}
             <tr class="fv-row">
-              <td>정량 평균 (Reverse 제외)</td>
-              <td>—</td>
-              <td>$${s.fv_avg}</td>
+              <td>정량 평균</td><td>—</td><td>$${s.fv_avg}</td>
               <td>${((s.fv_avg/s.price - 1)*100).toFixed(1)}%</td>
             </tr>
           </tbody>
         </table>
-        <div class="acronym-box">
-          <div class="ttl">영문 약어 풀이</div>
-          <div class="item"><span class="acr">DCF</span><span class="full"><b>Discounted Cash Flow</b> · 미래 현금을 현재가치로 환산</span></div>
-          <div class="item"><span class="acr">PSR</span><span class="full"><b>Price-Sales Ratio</b> · 시총이 매출의 몇 배인지</span></div>
-          <div class="item"><span class="acr">PCM</span><span class="full"><b>Peer Comparison Module</b> · 비슷한 회사 5종 평균 비교</span></div>
-        </div>
       </div>
     </div>
     
-    <!-- 카드 4: 피어 -->
+    <!-- 피어 -->
     <div class="card fade-in">
-      <div class="card-head">
-        <span class="ttl">PCM · 피어 비교</span>
-        <span class="meta">11종 멀티 섹터</span>
-      </div>
+      <div class="card-head"><span class="ttl">PCM · 피어 비교</span><span class="meta">11종</span></div>
       <div class="card-body">
         <div class="peer-section">
-          <div class="ttl saas">
-            <span>① 동일 섹터 5종</span>
-            <span class="meta">평균 ${saasAvg}%</span>
-          </div>
+          <div class="ttl saas"><span>① 동일 섹터 5종</span><span class="meta">평균 ${saasAvg}%</span></div>
           ${s.peers.saas.map(p => {
             const w = Math.min(Math.abs(p.gap), 50);
             return `
@@ -756,10 +518,7 @@ function renderContent() {
           }).join('')}
         </div>
         <div class="peer-section">
-          <div class="ttl sec">
-            <span>② 다섹터 검증 5종</span>
-            <span class="meta">평균 ${secAvg}%</span>
-          </div>
+          <div class="ttl sec"><span>② 다섹터 검증 5종</span><span class="meta">평균 ${secAvg}%</span></div>
           ${s.peers.sec.map(p => {
             const w = Math.min(Math.abs(p.gap), 50);
             return `
@@ -774,29 +533,22 @@ function renderContent() {
       </div>
     </div>
     
-    <!-- 카드 5: CFM -->
+    <!-- CFM -->
     <div class="card fade-in">
-      <div class="card-head">
-        <span class="ttl">CFM · 차트 분석</span>
-        <span class="meta">3-모듈</span>
-      </div>
+      <div class="card-head"><span class="ttl">CFM · 차트 분석</span><span class="meta">3-모듈</span></div>
       <div class="card-body cfm-section">
-        <svg viewBox="0 0 380 130" preserveAspectRatio="none">
-          <line x1="40" y1="20" x2="380" y2="20" stroke="#eee" stroke-width="0.5"/>
-          <line x1="40" y1="65" x2="380" y2="65" stroke="#eee" stroke-width="0.5"/>
-          <line x1="40" y1="105" x2="380" y2="105" stroke="#eee" stroke-width="0.5"/>
-          <path d="M 50 35 L 100 40 L 150 50 L 200 60 L 250 70 L 300 75 L 360 78" stroke="#C0392B" stroke-width="1.2" fill="none" opacity="0.7"/>
-          <path d="M 50 30 L 100 35 L 150 45 L 200 50 L 250 65 L 300 75 L 360 70" stroke="#B8741F" stroke-width="1.2" fill="none" opacity="0.7"/>
-          <path d="M 50 38 L 100 30 L 150 40 L 200 45 L 250 60 L 300 80 L 360 73" stroke="#002B5C" stroke-width="1.2" fill="none" opacity="0.85"/>
-          <path d="M 50 45 L 80 25 L 110 35 L 140 30 L 170 28 L 200 38 L 230 55 L 260 80 L 290 95 L 320 90 L 350 85" stroke="#000" stroke-width="1.5" fill="none"/>
-          <circle cx="350" cy="85" r="3" fill="#000"/>
-          <text x="350" y="78" font-family="EB Garamond" font-size="9" fill="#000" text-anchor="end" font-weight="700">$${s.price}</text>
-        </svg>
-        <div class="cfm-legend">
-          <div class="item"><span class="line" style="background:#000;"></span> 가격</div>
-          <div class="item"><span class="line" style="background:#002B5C;"></span> 21 SMA</div>
-          <div class="item"><span class="line" style="background:#B8741F;"></span> 50 SMA</div>
-          <div class="item"><span class="line" style="background:#C0392B;"></span> 200 SMA</div>
+        <div class="tv-chart-wrap">
+          <iframe
+            src="https://s.tradingview.com/widgetembed/?symbol=NASDAQ%3A${activeTicker}&interval=D&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=1&saveimage=0&toolbarbg=F1F3F6&studies=%5B%22MASimple%40tv-basicstudies%22%5D&theme=light&style=2&timezone=Asia%2FSeoul&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%22header_compare%22%5D&locale=kr"
+            class="tv-iframe"
+            frameborder="0"
+            allowfullscreen
+            allowtransparency="true"
+            scrolling="no">
+          </iframe>
+        </div>
+        <div class="tv-caption">
+          ▸ <b>${activeTicker}</b> 실시간 차트 (TradingView) · 일봉 + 이동평균선
         </div>
         <div class="cfm-modules">
           ${s.cfm.modules.map(m => `
@@ -816,24 +568,22 @@ function renderContent() {
       </div>
     </div>
     
-    <!-- 카드 6: VERDICT -->
+    <!-- VERDICT -->
     <div class="card full fade-in">
-      <div class="card-head">
-        <span class="ttl">VERDICT · 통합 결론</span>
-        <span class="meta">v0.5b 시나리오</span>
-      </div>
+      <div class="card-head"><span class="ttl">VERDICT · 통합 결론</span><span class="meta">v1.2 월街 방법론</span></div>
       <div class="card-body">
         <div class="verdict">
-          <div class="l">▸ 통합 결론 (시나리오 + PCM + CFM)</div>
+          <div class="l">▸ 통합 결론 (Risk-Reward + 컨센서스 + CFM)</div>
           <div class="h">${s.verdict.h}</div>
           <div class="d">${s.verdict.d}</div>
         </div>
         <div class="limit-box">
-          <div class="l">현재 모델의 한계</div>
+          <div class="l">모델 한계 (v1.2 시점)</div>
           <div class="d">
-            <b>1.</b> 5-시나리오 확률 = 수동 배정 (분기별 갱신)<br>
-            <b>2.</b> 데이터 = 정적 (Claude 호출 갱신)<br>
-            <b>3.</b> 5년 후 검증 불가능
+            <b>1.</b> 시나리오 확률 = 수동 배정 (v1.3에서 옵션 IV 자동화 예정)<br>
+            <b>2.</b> 12개월 타겟은 Morgan Stanley 표준, 5년은 보조<br>
+            <b>3.</b> Risk-Reward Ratio: 2+ 매우 매력적 / 1.5+ 매력적 / 1+ 균형 / 1- 위험<br>
+            <b>4.</b> 백테스트 미실시 (v0.7 누적 후 검증)
           </div>
         </div>
       </div>
@@ -841,10 +591,7 @@ function renderContent() {
   `;
 }
 
-// 시작
 loadData();
-
-// 엔터로 검색
 document.getElementById('tickerInput').addEventListener('keypress', e => {
   if (e.key === 'Enter') searchTicker();
 });
