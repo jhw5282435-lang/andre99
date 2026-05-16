@@ -1,9 +1,10 @@
 {
   "_meta": {
-    "version": "v1.1",
+    "version": "v1.2",
     "last_updated": "2026.05.11",
     "tickers_count": 8,
-    "update_protocol": "사용자가 Claude에 '안드레99 [TICKER] 갱신' 요청 → 이 JSON 형식으로 출력 → 사용자가 data.json 파일 업데이트"
+    "methodology": "Morgan Stanley Risk-Reward + Goldman Sachs Bull/Bear Framework",
+    "update_protocol": "사용자가 Claude에 '안드레99 [TICKER] 갱신' 요청 → 이 JSON 형식으로 출력"
   },
   "stocks": {
     "PLTR": {
@@ -12,10 +13,11 @@
       "price": 144.07,
       "chg_day": -2.76,
       "chg_52w": -30.5,
+      "consensus_pt": 182,
       "models": [
-        {"name": "Forward 12M",   "weight": "20%", "fv": 22.75, "gap": -84.2, "note": "fwd EPS $0.65 직접"},
+        {"name": "Forward 12M",   "weight": "20%", "fv": 22.75, "gap": -84.2, "note": "fwd EPS $0.65"},
         {"name": "3년 멀티플",     "weight": "30%", "fv": 65.99, "gap": -54.2, "note": ""},
-        {"name": "5년 DCF",       "weight": "35%", "fv": 17.58, "gap": -87.8, "note": "정통 DCF · 보수 시나리오"},
+        {"name": "5년 DCF",       "weight": "35%", "fv": 17.58, "gap": -87.8, "note": "정통 DCF"},
         {"name": "Reverse DCF",   "weight": "15%", "fv": null,  "gap": null,  "note": "EXTREME · g 60%+"},
         {"name": "PCM (피어)",    "weight": "+추가", "fv": 73.00, "gap": -49.3, "note": "SaaS 5종 평균"}
       ],
@@ -28,14 +30,24 @@
         {"k": "주식수",    "v": "2.30B",  "cls": "",     "sub": "희석 기준"},
         {"k": "설비투자",  "v": "$13M",   "cls": "",     "sub": "TTM · 자본경량"}
       ],
-      "scenarios": [
-        {"name": "비관",     "prob": 5,  "fv": 40,    "cls": "bear",  "desc": "SaaS 거품 붕괴"},
-        {"name": "보수",     "prob": 30, "fv": 120,   "cls": "cons",  "desc": "매출 +30% CAGR"},
-        {"name": "컨센",     "prob": 30, "fv": 250,   "cls": "cons",  "desc": "월街 평균 가정"},
-        {"name": "낙관",     "prob": 30, "fv": 500,   "cls": "bull",  "desc": "정부 메가 계약"},
-        {"name": "Moonshot", "prob": 5,  "fv": 1200,  "cls": "moon",  "desc": "AI 표준화"}
+      "scenarios_12m": [
+        {"name": "Bear",  "prob": 25, "fv": 85,  "cls": "bear", "trigger": "SaaS 멀티플 압축 + 정부 계약 지연"},
+        {"name": "Base",  "prob": 50, "fv": 150, "cls": "cons", "trigger": "매출 +60% YoY 유지 (월街 컨센)"},
+        {"name": "Bull",  "prob": 25, "fv": 230, "cls": "bull", "trigger": "AIP 상업 가속 + 정부 신규 계약"}
       ],
-      "expected": 258,
+      "expected_12m": 148,
+      "scenarios_5y": [
+        {"name": "Bear",  "prob": 25, "fv": 60,  "cls": "bear", "trigger": "SaaS 거품 붕괴 + 멀티플 정상화"},
+        {"name": "Base",  "prob": 50, "fv": 200, "cls": "cons", "trigger": "매출 +30% CAGR · PSR 정상화"},
+        {"name": "Bull",  "prob": 25, "fv": 450, "cls": "bull", "trigger": "정부 AI 표준 + 상업 폭발"}
+      ],
+      "expected_5y": 228,
+      "risk_reward": {
+        "bull_upside": 59.6,
+        "bear_downside": -41.0,
+        "ratio": 1.45,
+        "verdict": "균형"
+      },
       "peers": {
         "saas": [
           {"tk": "PLTR", "gap": -76, "cls": "bear"},
@@ -56,14 +68,14 @@
       "cfm": {
         "total": -1.6,
         "modules": [
-          {"name": "M1 · 추세",     "weight": 0.4, "score": -2.0, "cls": "bear", "desc": "현재가 < 21SMA < 200SMA < 50SMA · 데드크로스 임박"},
-          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": -1.5, "cls": "warn", "desc": "<b>RSI</b> 42.6 · <b>MACD</b> -1.0 음전 · 52주 -30%"},
-          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": -1.0, "cls": "neu",  "desc": "지지 <b>$128</b> (-9%) · 저항 <b>$165</b> (+17%) · 단기 -편향"}
+          {"name": "M1 · 추세",     "weight": 0.4, "score": -2.0, "cls": "bear", "desc": "현재가 < 21SMA < 200SMA · 데드크로스 임박"},
+          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": -1.5, "cls": "warn", "desc": "<b>RSI</b> 42.6 · <b>MACD</b> 음전"},
+          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": -1.0, "cls": "neu",  "desc": "지지 <b>$128</b> · 저항 <b>$165</b>"}
         ]
       },
       "verdict": {
-        "h": "시장가 +$108 = <em>비정량 가치 베팅</em>",
-        "d": "정량 모델 가치 <b>$35</b> (DCF/PCM 평균) · 시장가 <b>$144</b><br>차이 <b>$108 = 낙관 + Moonshot 시나리오에 50%+ 베팅</b><br>5년 기댓값 <b>$258</b> · 현재가 대비 <b>+79%</b> (CAGR +12.4%)"
+        "h": "<em>월街 컨센 +27%</em> vs 안드레99 Base +4%",
+        "d": "12M Base <b>$150</b> · 월街 PT <b>$182</b> · 차이 +21%<br>안드레99가 월街보다 보수적 (CFM -1.6 반영)<br>Risk-Reward <b>1.45</b> = 균형 · 비관 시 -41%, 낙관 +60%"
       }
     },
     "TSLA": {
@@ -72,30 +84,41 @@
       "price": 240.50,
       "chg_day": -1.85,
       "chg_52w": -22.0,
+      "consensus_pt": 295,
       "models": [
         {"name": "Forward 12M",   "weight": "20%", "fv": 95.20,  "gap": -60.4, "note": "fwd EPS $2.72"},
         {"name": "3년 멀티플",     "weight": "30%", "fv": 145.30, "gap": -39.6, "note": ""},
-        {"name": "5년 DCF",       "weight": "35%", "fv": 88.50,  "gap": -63.2, "note": "자율주행 옵션 미반영"},
+        {"name": "5년 DCF",       "weight": "35%", "fv": 88.50,  "gap": -63.2, "note": ""},
         {"name": "Reverse DCF",   "weight": "15%", "fv": 180.00, "gap": -25.2, "note": "내재 g 35%"},
-        {"name": "PCM (피어)",    "weight": "+추가", "fv": 110.00, "gap": -54.3, "note": "EV peer 평균"}
+        {"name": "PCM (피어)",    "weight": "+추가", "fv": 110.00, "gap": -54.3, "note": "EV peer"}
       ],
       "fv_avg": 118.75,
       "indicators": [
         {"k": "선행 PER",  "v": "88.5x", "cls": "bear", "sub": "자동차 평균 8x"},
         {"k": "매출 성장", "v": "+12%",  "cls": "warn", "sub": "YoY · 둔화"},
         {"k": "52주 수익", "v": "−22%",  "cls": "bear", "sub": "고점 대비"},
-        {"k": "시가총액",  "v": "$770B", "cls": "",     "sub": "울트라 메가캡"},
+        {"k": "시가총액",  "v": "$770B", "cls": "",     "sub": "메가캡"},
         {"k": "주식수",    "v": "3.20B", "cls": "",     "sub": "희석 기준"},
         {"k": "설비투자",  "v": "$9.2B", "cls": "",     "sub": "TTM · 자본집약"}
       ],
-      "scenarios": [
-        {"name": "비관",     "prob": 10, "fv": 80,    "cls": "bear", "desc": "EV 경쟁 격화"},
-        {"name": "보수",     "prob": 30, "fv": 180,   "cls": "cons", "desc": "자동차 사업만"},
-        {"name": "컨센",     "prob": 30, "fv": 320,   "cls": "cons", "desc": "월街 평균"},
-        {"name": "낙관",     "prob": 25, "fv": 600,   "cls": "bull", "desc": "FSD 본격화"},
-        {"name": "Moonshot", "prob": 5,  "fv": 2000,  "cls": "moon", "desc": "로보택시 + Optimus"}
+      "scenarios_12m": [
+        {"name": "Bear",  "prob": 30, "fv": 160, "cls": "bear", "trigger": "EV 경쟁 격화 + FSD 지연"},
+        {"name": "Base",  "prob": 45, "fv": 260, "cls": "cons", "trigger": "EV 회복 + FSD 점진"},
+        {"name": "Bull",  "prob": 25, "fv": 400, "cls": "bull", "trigger": "로보택시 출시 + 사이버캡 양산"}
       ],
-      "expected": 380,
+      "expected_12m": 265,
+      "scenarios_5y": [
+        {"name": "Bear",  "prob": 30, "fv": 120, "cls": "bear", "trigger": "EV 점유율 하락 + FSD 실패"},
+        {"name": "Base",  "prob": 45, "fv": 320, "cls": "cons", "trigger": "FSD 점진적 상용화"},
+        {"name": "Bull",  "prob": 25, "fv": 700, "cls": "bull", "trigger": "로보택시 + Optimus 매스 시장"}
+      ],
+      "expected_5y": 355,
+      "risk_reward": {
+        "bull_upside": 66.3,
+        "bear_downside": -33.5,
+        "ratio": 1.98,
+        "verdict": "매력적"
+      },
       "peers": {
         "saas": [
           {"tk": "TSLA", "gap": -50, "cls": "bear"},
@@ -115,14 +138,14 @@
       "cfm": {
         "total": -1.2,
         "modules": [
-          {"name": "M1 · 추세",     "weight": 0.4, "score": -1.5, "cls": "warn", "desc": "50SMA $245 · 200SMA $260 · 데드크로스 진행"},
-          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": -1.0, "cls": "neu",  "desc": "<b>RSI</b> 45 · <b>MACD</b> 약 음전 · 52주 -22%"},
-          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": -1.0, "cls": "neu",  "desc": "지지 <b>$220</b> (-9%) · 저항 <b>$280</b> (+17%)"}
+          {"name": "M1 · 추세",     "weight": 0.4, "score": -1.5, "cls": "warn", "desc": "데드크로스 진행"},
+          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": -1.0, "cls": "neu",  "desc": "<b>RSI</b> 45 · <b>MACD</b> 약 음전"},
+          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": -1.0, "cls": "neu",  "desc": "지지 <b>$220</b> · 저항 <b>$280</b>"}
         ]
       },
       "verdict": {
-        "h": "<em>FSD 옵션 가치</em>가 핵심 변수",
-        "d": "정량 가치 <b>$118</b> · 시장가 <b>$240</b><br>차이 <b>$122 = FSD/로보택시/Optimus 옵션 베팅</b><br>5년 기댓값 <b>$380</b> · 현재가 대비 <b>+58%</b>"
+        "h": "월街 컨센 <em>+23%</em> · Risk-Reward 1.98",
+        "d": "12M Base <b>$260</b> · 월街 PT <b>$295</b> · 차이 +13%<br>FSD 옵션 가치가 Bull/Bear 격차 결정<br>Risk-Reward <b>1.98</b> = 매력적 · 비관 -34%, 낙관 +66%"
       }
     },
     "NVDA": {
@@ -131,10 +154,11 @@
       "price": 178.20,
       "chg_day": 1.20,
       "chg_52w": -15.5,
+      "consensus_pt": 210,
       "models": [
         {"name": "Forward 12M",   "weight": "20%", "fv": 145.30, "gap": -18.5, "note": "fwd EPS $4.15"},
         {"name": "3년 멀티플",     "weight": "30%", "fv": 165.00, "gap": -7.4,  "note": ""},
-        {"name": "5년 DCF",       "weight": "35%", "fv": 122.50, "gap": -31.3, "note": "AI capex 사이클 가정"},
+        {"name": "5년 DCF",       "weight": "35%", "fv": 122.50, "gap": -31.3, "note": ""},
         {"name": "Reverse DCF",   "weight": "15%", "fv": 178.00, "gap": -0.1,  "note": "내재 g 32%"},
         {"name": "PCM (피어)",    "weight": "+추가", "fv": 155.00, "gap": -13.0, "note": "반도체 peer"}
       ],
@@ -145,16 +169,26 @@
         {"k": "52주 수익", "v": "−15%",   "cls": "warn", "sub": "조정 중"},
         {"k": "시가총액",  "v": "$4.4T",  "cls": "",     "sub": "시총 1위"},
         {"k": "주식수",    "v": "24.5B",  "cls": "",     "sub": "희석 기준"},
-        {"k": "설비투자",  "v": "$3.5B",  "cls": "",     "sub": "TTM · 팹리스"}
+        {"k": "설비투자",  "v": "$3.5B",  "cls": "",     "sub": "팹리스"}
       ],
-      "scenarios": [
-        {"name": "비관",     "prob": 10, "fv": 90,    "cls": "bear", "desc": "AI 캡스 사이클 종료"},
-        {"name": "보수",     "prob": 30, "fv": 150,   "cls": "cons", "desc": "매출 +40% CAGR"},
-        {"name": "컨센",     "prob": 35, "fv": 220,   "cls": "cons", "desc": "월街 평균"},
-        {"name": "낙관",     "prob": 20, "fv": 350,   "cls": "bull", "desc": "데이터센터 확장"},
-        {"name": "Moonshot", "prob": 5,  "fv": 600,   "cls": "moon", "desc": "AGI 인프라 독점"}
+      "scenarios_12m": [
+        {"name": "Bear",  "prob": 25, "fv": 140, "cls": "bear", "trigger": "AI 캡스 사이클 둔화 + 중국 매출 차질"},
+        {"name": "Base",  "prob": 55, "fv": 215, "cls": "cons", "trigger": "데이터센터 +70% YoY 유지"},
+        {"name": "Bull",  "prob": 20, "fv": 290, "cls": "bull", "trigger": "Rubin 양산 가속 + 마진 확대"}
       ],
-      "expected": 217,
+      "expected_12m": 211,
+      "scenarios_5y": [
+        {"name": "Bear",  "prob": 25, "fv": 110, "cls": "bear", "trigger": "AI 캡스 사이클 종료"},
+        {"name": "Base",  "prob": 55, "fv": 280, "cls": "cons", "trigger": "매출 +40% CAGR"},
+        {"name": "Bull",  "prob": 20, "fv": 450, "cls": "bull", "trigger": "AGI 인프라 독점"}
+      ],
+      "expected_5y": 272,
+      "risk_reward": {
+        "bull_upside": 62.7,
+        "bear_downside": -21.4,
+        "ratio": 2.93,
+        "verdict": "매우 매력적"
+      },
       "peers": {
         "saas": [
           {"tk": "NVDA", "gap": -10, "cls": "good"},
@@ -174,14 +208,14 @@
       "cfm": {
         "total": 0.4,
         "modules": [
-          {"name": "M1 · 추세",     "weight": 0.4, "score": 1.0, "cls": "good", "desc": "현재가 > 50SMA · 골든크로스 형성"},
-          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": 0.0, "cls": "neu",  "desc": "<b>RSI</b> 52 · <b>MACD</b> 중립 · 회복 중"},
-          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 0.5, "cls": "neu",  "desc": "지지 <b>$160</b> (-10%) · 저항 <b>$210</b> (+18%)"}
+          {"name": "M1 · 추세",     "weight": 0.4, "score": 1.0, "cls": "good", "desc": "골든크로스 형성"},
+          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": 0.0, "cls": "neu",  "desc": "<b>RSI</b> 52 · 회복 중"},
+          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 0.5, "cls": "neu",  "desc": "지지 <b>$160</b> · 저항 <b>$210</b>"}
         ]
       },
       "verdict": {
-        "h": "5종 중 <em>가장 균형 잡힌</em> 종목",
-        "d": "정량 가치 <b>$153</b> · 시장가 <b>$178</b><br>괴리 <b>+16%만</b> = 시장이 거의 정확하게 가격 책정<br>5년 기댓값 <b>$217</b> · 현재가 대비 <b>+22%</b>"
+        "h": "<em>Risk-Reward 2.93</em> · 가장 매력적",
+        "d": "12M Base <b>$215</b> · 월街 PT <b>$210</b> · 거의 일치<br>안드레99 = 월街 컨센과 가장 합치<br>Risk-Reward <b>2.93</b> = 매우 매력적 · 비관 -21%, 낙관 +63%"
       }
     },
     "COIN": {
@@ -190,10 +224,11 @@
       "price": 215.40,
       "chg_day": -3.50,
       "chg_52w": -38.0,
+      "consensus_pt": 280,
       "models": [
         {"name": "Forward 12M",   "weight": "20%", "fv": 95.50,  "gap": -55.7, "note": "fwd EPS $2.73"},
         {"name": "3년 멀티플",     "weight": "30%", "fv": 130.20, "gap": -39.6, "note": ""},
-        {"name": "5년 DCF",       "weight": "35%", "fv": 75.30,  "gap": -65.0, "note": "거래량 변동성"},
+        {"name": "5년 DCF",       "weight": "35%", "fv": 75.30,  "gap": -65.0, "note": ""},
         {"name": "Reverse DCF",   "weight": "15%", "fv": null,   "gap": null,  "note": "EXTREME"},
         {"name": "PCM (피어)",    "weight": "+추가", "fv": 100.00, "gap": -53.6, "note": "핀테크 peer"}
       ],
@@ -201,19 +236,29 @@
       "indicators": [
         {"k": "선행 PER",  "v": "78.9x",  "cls": "bear", "sub": "핀테크 평균 18x"},
         {"k": "매출 성장", "v": "+45%",   "cls": "good", "sub": "YoY · 사이클"},
-        {"k": "52주 수익", "v": "−38%",   "cls": "bear", "sub": "BTC 조정 동조"},
+        {"k": "52주 수익", "v": "−38%",   "cls": "bear", "sub": "BTC 조정"},
         {"k": "시가총액",  "v": "$53B",   "cls": "",     "sub": "대형주"},
         {"k": "주식수",    "v": "0.25B",  "cls": "",     "sub": "희석 기준"},
         {"k": "설비투자",  "v": "$45M",   "cls": "",     "sub": "TTM · 경량"}
       ],
-      "scenarios": [
-        {"name": "비관",     "prob": 15, "fv": 50,    "cls": "bear", "desc": "BTC 약세 + 규제"},
-        {"name": "보수",     "prob": 30, "fv": 130,   "cls": "cons", "desc": "거래량 정상화"},
-        {"name": "컨센",     "prob": 25, "fv": 280,   "cls": "cons", "desc": "월街 평균"},
-        {"name": "낙관",     "prob": 25, "fv": 500,   "cls": "bull", "desc": "BTC 상승 사이클"},
-        {"name": "Moonshot", "prob": 5,  "fv": 1200,  "cls": "moon", "desc": "코인 ETF 폭발"}
+      "scenarios_12m": [
+        {"name": "Bear",  "prob": 35, "fv": 130, "cls": "bear", "trigger": "BTC $50K 하향 + 거래량 감소"},
+        {"name": "Base",  "prob": 40, "fv": 240, "cls": "cons", "trigger": "BTC $80K 유지 + 거래량 정상"},
+        {"name": "Bull",  "prob": 25, "fv": 400, "cls": "bull", "trigger": "BTC $120K + 알트코인 사이클"}
       ],
-      "expected": 264,
+      "expected_12m": 244,
+      "scenarios_5y": [
+        {"name": "Bear",  "prob": 35, "fv": 80,  "cls": "bear", "trigger": "BTC 약세 + 규제 강화"},
+        {"name": "Base",  "prob": 40, "fv": 280, "cls": "cons", "trigger": "BTC 사이클 정상"},
+        {"name": "Bull",  "prob": 25, "fv": 600, "cls": "bull", "trigger": "BTC ETF 폭발 + L2 확장"}
+      ],
+      "expected_5y": 290,
+      "risk_reward": {
+        "bull_upside": 85.7,
+        "bear_downside": -39.6,
+        "ratio": 2.16,
+        "verdict": "매력적"
+      },
       "peers": {
         "saas": [
           {"tk": "COIN", "gap": -55, "cls": "bear"},
@@ -235,12 +280,12 @@
         "modules": [
           {"name": "M1 · 추세",     "weight": 0.4, "score": -2.5, "cls": "bear", "desc": "52주 -38% · 모든 SMA 위로"},
           {"name": "M2 · 모멘텀",   "weight": 0.4, "score": -1.5, "cls": "warn", "desc": "<b>RSI</b> 38 · <b>MACD</b> 강 음전"},
-          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": -1.0, "cls": "neu",  "desc": "지지 <b>$190</b> (-12%) · 저항 <b>$260</b> (+21%)"}
+          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": -1.0, "cls": "neu",  "desc": "지지 <b>$190</b> · 저항 <b>$260</b>"}
         ]
       },
       "verdict": {
-        "h": "<em>BTC 사이클</em>에 운명이 묶임",
-        "d": "정량 가치 <b>$100</b> · 시장가 <b>$215</b><br>차이 <b>$115 = BTC 상승 사이클 + ETF 베팅</b><br>5년 기댓값 <b>$264</b> · 변동성 가장 큼 (±$200)"
+        "h": "<em>BTC 사이클</em>이 운명 결정",
+        "d": "12M Base <b>$240</b> · 월街 PT <b>$280</b> · 차이 +17%<br>Bear 확률 35% (BTC 변동성 반영)<br>Risk-Reward <b>2.16</b> = 매력적 · 비관 -40%, 낙관 +86%"
       }
     },
     "SHOP": {
@@ -249,6 +294,7 @@
       "price": 118.50,
       "chg_day": 0.80,
       "chg_52w": -8.5,
+      "consensus_pt": 135,
       "models": [
         {"name": "Forward 12M",   "weight": "20%", "fv": 78.40,  "gap": -33.8, "note": "fwd EPS $2.24"},
         {"name": "3년 멀티플",     "weight": "30%", "fv": 105.20, "gap": -11.2, "note": ""},
@@ -265,14 +311,24 @@
         {"k": "주식수",    "v": "1.28B",  "cls": "",     "sub": "희석 기준"},
         {"k": "설비투자",  "v": "$80M",   "cls": "",     "sub": "TTM · 경량"}
       ],
-      "scenarios": [
-        {"name": "비관",     "prob": 10, "fv": 60,    "cls": "bear", "desc": "커머스 둔화"},
-        {"name": "보수",     "prob": 30, "fv": 100,   "cls": "cons", "desc": "매출 +20% CAGR"},
-        {"name": "컨센",     "prob": 35, "fv": 165,   "cls": "cons", "desc": "월街 평균"},
-        {"name": "낙관",     "prob": 20, "fv": 260,   "cls": "bull", "desc": "엔터프라이즈 확장"},
-        {"name": "Moonshot", "prob": 5,  "fv": 500,   "cls": "moon", "desc": "글로벌 커머스 OS"}
+      "scenarios_12m": [
+        {"name": "Bear",  "prob": 25, "fv": 90,  "cls": "bear", "trigger": "GMV 둔화 + 멀티플 압축"},
+        {"name": "Base",  "prob": 55, "fv": 135, "cls": "cons", "trigger": "GMV +20% 유지 (월街 컨센)"},
+        {"name": "Bull",  "prob": 20, "fv": 180, "cls": "bull", "trigger": "엔터프라이즈 가속 + 마진 확대"}
       ],
-      "expected": 159,
+      "expected_12m": 134,
+      "scenarios_5y": [
+        {"name": "Bear",  "prob": 25, "fv": 70,  "cls": "bear", "trigger": "커머스 둔화"},
+        {"name": "Base",  "prob": 55, "fv": 180, "cls": "cons", "trigger": "매출 +20% CAGR"},
+        {"name": "Bull",  "prob": 20, "fv": 320, "cls": "bull", "trigger": "글로벌 커머스 OS"}
+      ],
+      "expected_5y": 181,
+      "risk_reward": {
+        "bull_upside": 51.9,
+        "bear_downside": -24.1,
+        "ratio": 2.16,
+        "verdict": "매력적"
+      },
       "peers": {
         "saas": [
           {"tk": "SHOP", "gap": -19, "cls": "warn"},
@@ -292,46 +348,57 @@
       "cfm": {
         "total": 0.2,
         "modules": [
-          {"name": "M1 · 추세",     "weight": 0.4, "score": 0.5, "cls": "neu", "desc": "50SMA $115 · 200SMA $108 · 횡보"},
+          {"name": "M1 · 추세",     "weight": 0.4, "score": 0.5, "cls": "neu", "desc": "횡보"},
           {"name": "M2 · 모멘텀",   "weight": 0.4, "score": 0.0, "cls": "neu", "desc": "<b>RSI</b> 50 · <b>MACD</b> 중립"},
-          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 0.0, "cls": "neu", "desc": "지지 <b>$108</b> (-9%) · 저항 <b>$135</b> (+14%)"}
+          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 0.0, "cls": "neu", "desc": "지지 <b>$108</b> · 저항 <b>$135</b>"}
         ]
       },
       "verdict": {
-        "h": "5종 중 <em>가장 안정</em>적인 종목",
-        "d": "정량 가치 <b>$96</b> · 시장가 <b>$118</b><br>괴리 <b>+23%만</b> = 시장이 거의 정확<br>5년 기댓값 <b>$159</b> · 현재가 대비 <b>+34%</b>"
+        "h": "<em>월街 컨센과 가장 일치</em>",
+        "d": "12M Base <b>$135</b> · 월街 PT <b>$135</b> · 완전 일치<br>가장 안정적인 종목 (CFM +0.2)<br>Risk-Reward <b>2.16</b> = 매력적 · 비관 -24%, 낙관 +52%"
       }
     },
     "IREN": {
-      "name": "IREN Limited (Iris Energy)",
-      "sector": "AI 인프라 · BTC 채굴 → 데이터센터 전환",
+      "name": "IREN Limited",
+      "sector": "AI 인프라 · BTC 채굴",
       "price": 60.76,
       "chg_day": 4.9,
       "chg_52w": 797,
+      "consensus_pt": 77,
       "models": [
-        {"name": "Forward 12M",   "weight": "20%", "fv": 12.50, "gap": -79.4, "note": "fwd EPS $0.36 (적자 전환)"},
-        {"name": "3년 멀티플",     "weight": "30%", "fv": 48.00, "gap": -21.0, "note": "AI 클라우드 PSR 14x 가정"},
-        {"name": "5년 DCF",       "weight": "35%", "fv": 22.30, "gap": -63.3, "note": "BTC 의존도 + 자본집약"},
-        {"name": "Reverse DCF",   "weight": "15%", "fv": null,  "gap": null,  "note": "EXTREME · g 60%+"},
+        {"name": "Forward 12M",   "weight": "20%", "fv": 12.50, "gap": -79.4, "note": "fwd EPS $0.36"},
+        {"name": "3년 멀티플",     "weight": "30%", "fv": 48.00, "gap": -21.0, "note": "AI 클라우드 PSR"},
+        {"name": "5년 DCF",       "weight": "35%", "fv": 22.30, "gap": -63.3, "note": "BTC 의존"},
+        {"name": "Reverse DCF",   "weight": "15%", "fv": null,  "gap": null,  "note": "EXTREME"},
         {"name": "PCM (피어)",    "weight": "+추가", "fv": 55.00, "gap": -9.5,  "note": "데이터센터 peer"}
       ],
       "fv_avg": 34.45,
       "indicators": [
-        {"k": "선행 PER",  "v": "−62x",   "cls": "bear", "sub": "적자 전환 (FY26)"},
-        {"k": "매출 성장", "v": "+32%",   "cls": "good", "sub": "3년 CAGR 전망"},
+        {"k": "선행 PER",  "v": "−62x",   "cls": "bear", "sub": "적자 전환"},
+        {"k": "매출 성장", "v": "+32%",   "cls": "good", "sub": "3년 CAGR"},
         {"k": "52주 수익", "v": "+797%",  "cls": "good", "sub": "$6.77 → $60.76"},
         {"k": "시가총액",  "v": "$20B",   "cls": "",     "sub": "대형주 진입"},
         {"k": "주식수",    "v": "335M",   "cls": "",     "sub": "희석 기준"},
-        {"k": "설비투자",  "v": "$1.2B",  "cls": "",     "sub": "자본집약 · AI 인프라"}
+        {"k": "설비투자",  "v": "$1.2B",  "cls": "",     "sub": "AI 인프라"}
       ],
-      "scenarios": [
-        {"name": "비관",     "prob": 15, "fv": 20,    "cls": "bear",  "desc": "BTC 약세 + AI 계약 차질"},
-        {"name": "보수",     "prob": 25, "fv": 45,    "cls": "cons",  "desc": "BTC 채굴만 + AI 일부"},
-        {"name": "컨센",     "prob": 30, "fv": 77,    "cls": "cons",  "desc": "Goldman/월街 평균"},
-        {"name": "낙관",     "prob": 25, "fv": 150,   "cls": "bull",  "desc": "NVIDIA 딜 풀가동"},
-        {"name": "Moonshot", "prob": 5,  "fv": 400,   "cls": "moon",  "desc": "AI 인프라 메이저 진입"}
+      "scenarios_12m": [
+        {"name": "Bear",  "prob": 35, "fv": 35,  "cls": "bear", "trigger": "BTC $50K 하향 + NVIDIA 딜 차질"},
+        {"name": "Base",  "prob": 40, "fv": 70,  "cls": "cons", "trigger": "AI 클라우드 단계적 가동"},
+        {"name": "Bull",  "prob": 25, "fv": 130, "cls": "bull", "trigger": "NVIDIA $3.4B 풀가동 + 추가 계약"}
       ],
-      "expected": 89,
+      "expected_12m": 72,
+      "scenarios_5y": [
+        {"name": "Bear",  "prob": 35, "fv": 25,  "cls": "bear", "trigger": "BTC 약세 + AI 캡스 둔화"},
+        {"name": "Base",  "prob": 40, "fv": 100, "cls": "cons", "trigger": "AI 클라우드 정착"},
+        {"name": "Bull",  "prob": 25, "fv": 250, "cls": "bull", "trigger": "AI 인프라 메이저"}
+      ],
+      "expected_5y": 113,
+      "risk_reward": {
+        "bull_upside": 114.0,
+        "bear_downside": -42.4,
+        "ratio": 2.69,
+        "verdict": "매우 매력적 (고변동성)"
+      },
       "peers": {
         "saas": [
           {"tk": "IREN", "gap": -43, "cls": "bear"},
@@ -351,14 +418,14 @@
       "cfm": {
         "total": 2.2,
         "modules": [
-          {"name": "M1 · 추세",     "weight": 0.4, "score": 2.8, "cls": "good", "desc": "현재가 > 모든 SMA · NVIDIA 발표 후 골든크로스"},
-          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": 2.0, "cls": "good", "desc": "<b>RSI</b> 72 · <b>MACD</b> 강 양전 · 5일 +40%"},
-          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 1.0, "cls": "good", "desc": "지지 <b>$50</b> (-18%) · 저항 <b>$77</b> (+27%) · 컨센 PT $77"}
+          {"name": "M1 · 추세",     "weight": 0.4, "score": 2.8, "cls": "good", "desc": "NVIDIA 발표 후 골든크로스"},
+          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": 2.0, "cls": "good", "desc": "<b>RSI</b> 72 · 5일 +40%"},
+          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 1.0, "cls": "good", "desc": "지지 <b>$50</b> · 저항 <b>$77</b>"}
         ]
       },
       "verdict": {
-        "h": "<em>BTC → AI 인프라</em> 전환의 베타 플레이",
-        "d": "정량 가치 <b>$34</b> · 시장가 <b>$60</b> · NVIDIA $3.4B 딜<br>차이 <b>$26 = AI 인프라 메이저 진입 시나리오에 베팅</b><br>5년 기댓값 <b>$89</b> · 현재가 대비 <b>+46%</b> · 변동성 <b>매우 큼</b> (±$120)"
+        "h": "<em>BTC → AI</em> 전환 베타 플레이",
+        "d": "12M Base <b>$70</b> · 월街 PT <b>$77</b> · 차이 +10%<br>Bear 확률 35% (BTC 변동성)<br>Risk-Reward <b>2.69</b> = 매우 매력적 · 단 변동성 큼"
       }
     },
     "GOOGL": {
@@ -367,30 +434,41 @@
       "price": 399.50,
       "chg_day": -0.30,
       "chg_52w": 136.5,
+      "consensus_pt": 480,
       "models": [
-        {"name": "Forward 12M",   "weight": "20%", "fv": 380.00, "gap": -4.9,  "note": "fwd EPS $13.11 × 29x"},
-        {"name": "3년 멀티플",     "weight": "30%", "fv": 450.00, "gap": 12.6,  "note": "Cloud 가속 + AI 옵션"},
-        {"name": "5년 DCF",       "weight": "35%", "fv": 320.00, "gap": -19.9, "note": "Capex 사이클 단기 압박"},
-        {"name": "Reverse DCF",   "weight": "15%", "fv": 410.00, "gap": 2.6,   "note": "내재 g 14% 합리적"},
+        {"name": "Forward 12M",   "weight": "20%", "fv": 380.00, "gap": -4.9,  "note": "fwd EPS $13.11"},
+        {"name": "3년 멀티플",     "weight": "30%", "fv": 450.00, "gap": 12.6,  "note": "Cloud 가속"},
+        {"name": "5년 DCF",       "weight": "35%", "fv": 320.00, "gap": -19.9, "note": "Capex 압박"},
+        {"name": "Reverse DCF",   "weight": "15%", "fv": 410.00, "gap": 2.6,   "note": "내재 g 14%"},
         {"name": "PCM (피어)",    "weight": "+추가", "fv": 425.00, "gap": 6.4,   "note": "Big Tech 평균"}
       ],
       "fv_avg": 397.00,
       "indicators": [
         {"k": "선행 PER",  "v": "30.6x",  "cls": "good", "sub": "Big Tech 평균 28x"},
-        {"k": "매출 성장", "v": "+22%",   "cls": "good", "sub": "YoY · Cloud +63%"},
+        {"k": "매출 성장", "v": "+22%",   "cls": "good", "sub": "Cloud +63%"},
         {"k": "52주 수익", "v": "+136%",  "cls": "good", "sub": "$152 → $399"},
         {"k": "시가총액",  "v": "$4.84T", "cls": "",     "sub": "시총 Top 3"},
         {"k": "주식수",    "v": "5.82B",  "cls": "",     "sub": "희석 기준"},
-        {"k": "설비투자",  "v": "$35.7B", "cls": "",     "sub": "Q1 · AI 인프라 폭증"}
+        {"k": "설비투자",  "v": "$35.7B", "cls": "",     "sub": "Q1 · AI 인프라"}
       ],
-      "scenarios": [
-        {"name": "비관",     "prob": 5,  "fv": 200,   "cls": "bear", "desc": "AI 검색 점유율 잠식"},
-        {"name": "보수",     "prob": 25, "fv": 380,   "cls": "cons", "desc": "Search + Cloud 안정"},
-        {"name": "컨센",     "prob": 35, "fv": 480,   "cls": "cons", "desc": "월街 PT $480"},
-        {"name": "낙관",     "prob": 30, "fv": 650,   "cls": "bull", "desc": "TPU 인프라 본격화"},
-        {"name": "Moonshot", "prob": 5,  "fv": 1200,  "cls": "moon", "desc": "Waymo + AGI 통합 플랫폼"}
+      "scenarios_12m": [
+        {"name": "Bear",  "prob": 20, "fv": 320, "cls": "bear", "trigger": "AI 검색 잠식 + Capex 마진 압박"},
+        {"name": "Base",  "prob": 55, "fv": 460, "cls": "cons", "trigger": "Cloud +50% YoY 유지"},
+        {"name": "Bull",  "prob": 25, "fv": 580, "cls": "bull", "trigger": "TPU 본격화 + Gemini Pro 확장"}
       ],
-      "expected": 504,
+      "expected_12m": 462,
+      "scenarios_5y": [
+        {"name": "Bear",  "prob": 20, "fv": 280, "cls": "bear", "trigger": "검색 점유율 잠식"},
+        {"name": "Base",  "prob": 55, "fv": 550, "cls": "cons", "trigger": "Search + Cloud 안정"},
+        {"name": "Bull",  "prob": 25, "fv": 800, "cls": "bull", "trigger": "AGI 인프라 + Waymo 확장"}
+      ],
+      "expected_5y": 559,
+      "risk_reward": {
+        "bull_upside": 45.2,
+        "bear_downside": -19.9,
+        "ratio": 2.27,
+        "verdict": "매력적"
+      },
       "peers": {
         "saas": [
           {"tk": "GOOGL", "gap": 6,   "cls": "good"},
@@ -410,46 +488,57 @@
       "cfm": {
         "total": 1.8,
         "modules": [
-          {"name": "M1 · 추세",     "weight": 0.4, "score": 2.2, "cls": "good", "desc": "현재가 $399 > 모든 SMA · 강세 추세 지속"},
-          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": 1.5, "cls": "good", "desc": "<b>RSI</b> 65 · <b>MACD</b> 양전 · 30일 +29%"},
-          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 1.5, "cls": "good", "desc": "지지 <b>$384</b> (-4%) · 저항 <b>$420</b> (+5%) · 52주 신고가 근접"}
+          {"name": "M1 · 추세",     "weight": 0.4, "score": 2.2, "cls": "good", "desc": "강세 추세 지속"},
+          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": 1.5, "cls": "good", "desc": "<b>RSI</b> 65 · 30일 +29%"},
+          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 1.5, "cls": "good", "desc": "지지 <b>$384</b> · 저항 <b>$420</b>"}
         ]
       },
       "verdict": {
-        "h": "Big Tech 중 <em>가장 정확하게 가격 책정</em>됨",
-        "d": "정량 가치 <b>$397</b> · 시장가 <b>$399</b> · 괴리 <b>0%</b><br>Q1 EPS $5.11 (컨센 +92% 비트) · Cloud +63% · TPU 본격화<br>5년 기댓값 <b>$504</b> · 현재가 대비 <b>+26%</b> · 가장 안정적"
+        "h": "<em>Big Tech 가장 안정</em>",
+        "d": "12M Base <b>$460</b> · 월街 PT <b>$480</b> · 차이 +4%<br>안드레99 ≈ 월街 컨센 (가장 정확)<br>Risk-Reward <b>2.27</b> = 매력적 · 비관 -20%, 낙관 +45%"
       }
     },
     "LITE": {
       "name": "Lumentum Holdings Inc.",
-      "sector": "AI 광학 부품 · 옵티컬 (OCS · CPO)",
+      "sector": "AI 광학 부품",
       "price": 901.50,
       "chg_day": 1.3,
       "chg_52w": 1452,
+      "consensus_pt": 1000,
       "models": [
-        {"name": "Forward 12M",   "weight": "20%", "fv": 350.00, "gap": -61.2, "note": "fwd EPS $10 × 35x"},
-        {"name": "3년 멀티플",     "weight": "30%", "fv": 720.00, "gap": -20.1, "note": "매출 90% 성장 가정"},
-        {"name": "5년 DCF",       "weight": "35%", "fv": 450.00, "gap": -50.1, "note": "EBITDA 41% 마진 가정"},
-        {"name": "Reverse DCF",   "weight": "15%", "fv": null,   "gap": null,  "note": "EXTREME · g 60%+"},
-        {"name": "PCM (피어)",    "weight": "+추가", "fv": 600.00, "gap": -33.4, "note": "광학 peer (COHR 등)"}
+        {"name": "Forward 12M",   "weight": "20%", "fv": 350.00, "gap": -61.2, "note": "fwd EPS $10"},
+        {"name": "3년 멀티플",     "weight": "30%", "fv": 720.00, "gap": -20.1, "note": "매출 90% 성장"},
+        {"name": "5년 DCF",       "weight": "35%", "fv": 450.00, "gap": -50.1, "note": "EBITDA 41%"},
+        {"name": "Reverse DCF",   "weight": "15%", "fv": null,   "gap": null,  "note": "EXTREME"},
+        {"name": "PCM (피어)",    "weight": "+추가", "fv": 600.00, "gap": -33.4, "note": "광학 peer"}
       ],
       "fv_avg": 530.00,
       "indicators": [
         {"k": "선행 PER",  "v": "167x",   "cls": "bear", "sub": "5년 중앙값 35x"},
-        {"k": "매출 성장", "v": "+90%",   "cls": "good", "sub": "Q3 YoY · 가속 중"},
+        {"k": "매출 성장", "v": "+90%",   "cls": "good", "sub": "Q3 YoY"},
         {"k": "52주 수익", "v": "+1452%", "cls": "good", "sub": "$64 → $901"},
-        {"k": "시가총액",  "v": "$70B",   "cls": "",     "sub": "Nasdaq 100 편입"},
+        {"k": "시가총액",  "v": "$70B",   "cls": "",     "sub": "Nasdaq 100"},
         {"k": "주식수",    "v": "95M",    "cls": "",     "sub": "희석 기준"},
-        {"k": "설비투자",  "v": "$280M",  "cls": "",     "sub": "TTM · CAPEX 확장 중"}
+        {"k": "설비투자",  "v": "$280M",  "cls": "",     "sub": "CAPEX 확장"}
       ],
-      "scenarios": [
-        {"name": "비관",     "prob": 15, "fv": 250,   "cls": "bear", "desc": "AI 캡스 사이클 종료 + 마진 압박"},
-        {"name": "보수",     "prob": 25, "fv": 550,   "cls": "cons", "desc": "OCS 본격화 · CPO 일부"},
-        {"name": "컨센",     "prob": 30, "fv": 1000,  "cls": "cons", "desc": "월街 PT $1000-$1100"},
-        {"name": "낙관",     "prob": 25, "fv": 1800,  "cls": "bull", "desc": "OCS + CPO 풀가동 (NVDA 직투)"},
-        {"name": "Moonshot", "prob": 5,  "fv": 3500,  "cls": "moon", "desc": "AI 광학 표준 독점"}
+      "scenarios_12m": [
+        {"name": "Bear",  "prob": 35, "fv": 600,  "cls": "bear", "trigger": "AI 캡스 둔화 + 멀티플 압축"},
+        {"name": "Base",  "prob": 40, "fv": 1050, "cls": "cons", "trigger": "OCS · CPO 본격화"},
+        {"name": "Bull",  "prob": 25, "fv": 1500, "cls": "bull", "trigger": "NVIDIA 직투 풀가동 + 광학 표준화"}
       ],
-      "expected": 1095,
+      "expected_12m": 1005,
+      "scenarios_5y": [
+        {"name": "Bear",  "prob": 35, "fv": 400,  "cls": "bear", "trigger": "AI 캡스 사이클 종료"},
+        {"name": "Base",  "prob": 40, "fv": 1200, "cls": "cons", "trigger": "광학 슈퍼사이클 지속"},
+        {"name": "Bull",  "prob": 25, "fv": 2200, "cls": "bull", "trigger": "AI 광학 표준 독점"}
+      ],
+      "expected_5y": 1170,
+      "risk_reward": {
+        "bull_upside": 66.4,
+        "bear_downside": -33.4,
+        "ratio": 1.99,
+        "verdict": "매력적 (극단 변동성)"
+      },
       "peers": {
         "saas": [
           {"tk": "LITE", "gap": -33, "cls": "warn"},
@@ -469,14 +558,14 @@
       "cfm": {
         "total": 2.5,
         "modules": [
-          {"name": "M1 · 추세",     "weight": 0.4, "score": 2.9, "cls": "good", "desc": "현재가 > 모든 SMA · 강세 추세 · YTD +128%"},
-          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": 2.5, "cls": "good", "desc": "<b>RSI</b> 78 (과매수) · <b>MACD</b> 강 양전 · 52주 신고가 근접"},
-          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 1.5, "cls": "good", "desc": "지지 <b>$866</b> (-4%) · 저항 <b>$1021</b> (+13%) · 컨센 PT $830-$1200"}
+          {"name": "M1 · 추세",     "weight": 0.4, "score": 2.9, "cls": "good", "desc": "YTD +128%"},
+          {"name": "M2 · 모멘텀",   "weight": 0.4, "score": 2.5, "cls": "good", "desc": "<b>RSI</b> 78 과매수"},
+          {"name": "M3 · 핵심 레벨", "weight": 0.2, "score": 1.5, "cls": "good", "desc": "지지 <b>$866</b> · 저항 <b>$1021</b>"}
         ]
       },
       "verdict": {
-        "h": "<em>AI 광학 슈퍼사이클</em>의 베타 플레이",
-        "d": "정량 가치 <b>$530</b> · 시장가 <b>$901</b> · NVIDIA 직투 + Nasdaq 100 편입<br>차이 <b>$371 = OCS · CPO 풀가동 + AI 캡스 지속 베팅</b><br>5년 기댓값 <b>$1095</b> · 변동성 <b>극단</b> (±$700)"
+        "h": "<em>AI 광학</em> 슈퍼사이클 베타",
+        "d": "12M Base <b>$1050</b> · 월街 PT <b>$1000</b> · 거의 일치<br>Bear 확률 35% (극단 변동성)<br>Risk-Reward <b>1.99</b> = 매력적 · 비관 -33%, 낙관 +66%"
       }
     }
   }
