@@ -203,6 +203,111 @@
   .peer-section .ttl.sec { color: #1B365D; }
   .peer-section .ttl .meta { font-size: 9px; color: #555; font-weight: 400; }
 
+  /* ═══ v1.7 안드레99 메인 적정가 카드 ═══ */
+  .andre99-main-card {
+    border-top: 4px solid #B8941F;
+    background: linear-gradient(to bottom, #FFFEF7 0%, #fff 80%);
+  }
+  .final-fv-display {
+    text-align: center;
+    padding: 16px 16px 16px;
+    border-bottom: 1px dashed #E8DBA0;
+    margin-bottom: 16px;
+  }
+  .final-fv-label {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 11px;
+    color: #8B6F0E;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .final-fv-number {
+    font-family: 'EB Garamond', serif;
+    font-size: 52px;
+    font-weight: 700;
+    color: #002B5C;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .final-fv-range {
+    font-size: 11px;
+    color: #888;
+    font-family: 'EB Garamond', serif;
+    margin-bottom: 10px;
+  }
+  .final-fv-gap {
+    font-family: 'EB Garamond', serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .final-fv-gap.good { color: #1B365D; }
+  .final-fv-gap.neutral { color: #4a4a4a; }
+  .final-fv-gap.bear { color: #C0392B; }
+  .final-fv-verdict {
+    display: inline-block;
+    padding: 6px 14px;
+    background: #002B5C;
+    color: #fff;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .fv-breakdown {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 0 8px;
+  }
+  .fv-component {
+    text-align: center;
+    padding: 12px 8px;
+    background: #FAFBFC;
+    border: 1px solid #ddd;
+  }
+  .fv-component.value { border-top: 2px solid #002B5C; }
+  .fv-component.tech { border-top: 2px solid #1B365D; }
+  .fv-component .comp-label {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 10px;
+    color: #555;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .fv-component .comp-price {
+    font-family: 'EB Garamond', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #002B5C;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .fv-component .comp-weight {
+    font-size: 9px;
+    color: #888;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .fv-component .comp-sub {
+    font-size: 9px;
+    color: #555;
+  }
+  .fv-divider {
+    font-family: 'EB Garamond', serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: #B8941F;
+  }
+  @media (max-width: 767px) {
+    .final-fv-number { font-size: 40px; }
+    .fv-breakdown { grid-template-columns: 1fr; gap: 8px; }
+    .fv-divider { display: none; }
+  }
+
   .cfm-section .tv-chart-wrap {
     width: 100%;
     height: 360px;
@@ -280,8 +385,8 @@
 
 <div class="global-header">
   <div class="row">
-    <div class="brand">ANDRE99 <span class="ver">v1.6 (4-Factor + Technical)</span></div>
-    <div class="meta"><span class="live" id="lastUpdate">LIVE</span></div>
+    <div class="brand">ANDRE99 <span class="ver">v1.7 (Final Fair Value)</span></div>
+    <div class="meta"><span id="lastUpdate"></span></div>
   </div>
 </div>
 
@@ -298,7 +403,7 @@
 <div class="content" id="content"></div>
 
 <div class="footer">
-  ANDRE99 <span class="ver">v1.6</span> · 4-FACTOR VALUATION + EMA & FIBONACCI · DAMODARAN · BAKER WURGLER · MURPHY
+  ANDRE99 <span class="ver">v1.7</span> · FINAL FAIR VALUE = VALUATION + TECHNICAL · DAMODARAN · MURPHY · LO
   <div class="small">투자자문 아님 · 교육 콘텐츠 · DYOR · @andre99</div>
 </div>
 
@@ -311,7 +416,7 @@ async function loadData() {
   try {
     const res = await fetch('data.json');
     DATA = await res.json();
-    document.getElementById('lastUpdate').textContent = 'LIVE ' + DATA._meta.last_updated;
+    document.getElementById('lastUpdate').textContent = DATA._meta.last_updated;
     renderTabs();
     renderContent();
   } catch (e) {
@@ -486,40 +591,54 @@ function renderLiveData(tk, d) {
       </div>
     </div>
     
-    <!-- ★★ 종합 결론 (메인) ★★ -->
-    <div class="card full fade-in">
+    <!-- ★★★ 안드레99 최종 적정가 (메인) ★★★ -->
+    <div class="card full fade-in andre99-main-card">
       <div class="card-head">
-        <span class="ttl">★ 안드레99 종합 결론 (가치 + 기술)</span>
-        <span class="meta">v1.6 듀얼 패널</span>
+        <span class="ttl">★★ 안드레99 최종 적정가 (가치 + 기술 통합)</span>
+        <span class="meta">v1.7 · ${d.andre99_final?.signal_verdict || ''}</span>
       </div>
-      <div class="card-body">
-        <div class="rr-card">
-          <div class="cell">
-            <div class="k">종합 적정가 (가치)</div>
-            <div class="v">$${v.fair_value || '-'}</div>
-            <div class="sub">${v.stock_type_kr || '미분류'} 모델</div>
+      <div class="card-body" style="padding: 20px 16px;">
+        <!-- 최종 적정가 (거대 표시) -->
+        <div class="final-fv-display">
+          <div class="final-fv-label">안드레99 최종 적정가</div>
+          <div class="final-fv-number">$${d.andre99_final?.fair_value || '-'}</div>
+          <div class="final-fv-range">
+            범위: $${d.andre99_final?.range_low || '-'} ~ $${d.andre99_final?.range_high || '-'}
           </div>
-          <div class="cell" style="background:#FFFBF0; border-left:1px solid #E8DBA0; border-right:1px solid #E8DBA0;">
-            <div class="k">시장 프리미엄</div>
-            <div class="v ${premiumCls}">${premium > 0 ? '+' : ''}${premium}%</div>
-            <div class="sub">${premiumVerdict}</div>
+          <div class="final-fv-gap ${d.andre99_final?.gap_pct > 10 ? 'good' : d.andre99_final?.gap_pct > -10 ? 'neutral' : 'bear'}">
+            현재가 $${d.price.toFixed(2)} 대비 
+            ${d.andre99_final?.gap_pct > 0 ? '▲ +' : '▼ '}${d.andre99_final?.gap_pct || 0}%
           </div>
-          <div class="cell">
-            <div class="k">장기 목표 (기술)</div>
-            <div class="v good">$${t.long_target?.price || '-'}</div>
-            <div class="sub">+${t.long_target?.distance_pct || 0}% (161.8% 확장)</div>
+          <div class="final-fv-verdict">
+            ${d.andre99_final?.final_verdict || ''}
           </div>
         </div>
         
+        <!-- 가치 vs 기술 분해 -->
+        <div class="fv-breakdown">
+          <div class="fv-component value">
+            <div class="comp-label">가치 적정가 (펀더멘털)</div>
+            <div class="comp-price">$${d.andre99_final?.value_component || '-'}</div>
+            <div class="comp-weight">${Math.round((d.andre99_final?.value_weight || 0) * 100)}% 가중치</div>
+            <div class="comp-sub">${v.stock_type_kr || ''}</div>
+          </div>
+          <div class="fv-divider">+</div>
+          <div class="fv-component tech">
+            <div class="comp-label">기술 목표 (Fibonacci 161.8%)</div>
+            <div class="comp-price">$${d.andre99_final?.tech_component || '-'}</div>
+            <div class="comp-weight">${Math.round((d.andre99_final?.tech_weight || 0) * 100)}% 가중치</div>
+            <div class="comp-sub">${t.trend_kr || ''}</div>
+          </div>
+        </div>
+        
+        <!-- 통합 해석 -->
         <div class="verdict" style="margin-top:14px;">
           <div class="l">▸ 통합 판단</div>
-          <div class="h">
-            가치 <em>$${v.fair_value}</em> + 현재 <em>$${d.price.toFixed(2)}</em> + 목표 <em>$${t.long_target?.price || '-'}</em>
-          </div>
+          <div class="h">${d.andre99_final?.signal_verdict || ''}</div>
           <div class="d">
-            <b>가치 베팅:</b> 시장이 현재 ${premium > 0 ? '+' : ''}${premium}% 프리미엄 부여 = <b>${premiumVerdict}</b><br>
+            <b>가치 베팅:</b> 시장 프리미엄 ${premium > 0 ? '+' : ''}${premium}% = <b>${premiumVerdict}</b><br>
             <b>기술 시점:</b> 다음 저항 <b>$${t.next_resistance?.price || '-'}</b> (+${t.next_resistance?.distance_pct || 0}%) · 지지 <b>$${t.next_support?.price || '-'}</b> (${t.next_support?.distance_pct || 0}%)<br>
-            <b>추세:</b> <span style="color:${trendCls === 'good' ? '#1B365D' : trendCls === 'bear' ? '#C0392B' : '#B8741F'};">${t.trend_kr || '-'}</span>
+            <b>가중치:</b> ${v.stock_type_kr || ''} → 가치 ${Math.round((d.andre99_final?.value_weight || 0)*100)}% : 기술 ${Math.round((d.andre99_final?.tech_weight || 0)*100)}%
           </div>
         </div>
       </div>
