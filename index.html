@@ -415,25 +415,58 @@ function renderLiveData(tk, d) {
   const roeCls = d.roe > 20 ? 'good' : (d.roe > 0 ? 'warn' : 'bear');
   const marginCls = d.operating_margin > 20 ? 'good' : (d.operating_margin > 0 ? 'warn' : 'bear');
   
-  // 자동 적정가
   const v = d.valuation || {};
+  const t = d.technical || {};
   const r = d.recommendation || {};
-  const fvAvgCls = v.gap_avg > 15 ? 'good' : (v.gap_avg > -15 ? 'warn' : 'bear');
-  const recCls = r.bullish_pct > 60 ? 'good' : (r.bullish_pct > 40 ? 'warn' : 'bear');
   
-  // 적정가 모델 표 (값 없는 모델 제외)
-  const valuationRows = [
-    { name: 'Forward PER',  fv: v.fv_per,    gap: v.gap_per,    note: `EPS × 섹터 PER ${v.sector_per}x` },
-    { name: 'PEG',          fv: v.fv_peg,    gap: v.gap_peg,    note: 'EPS × 성장률 (max 40%)' },
-    { name: 'PSR',          fv: v.fv_psr,    gap: v.gap_psr,    note: `섹터 평균 PSR ${v.sector_psr}x` },
-    { name: 'Graham Number',fv: v.fv_graham, gap: v.gap_graham, note: '√(22.5 × EPS × BVPS)' }
-  ].filter(m => m.fv > 0);
+  // 시장 프리미엄 판정
+  const premium = v.market_premium_pct || 0;
+  const premiumCls = premium > 30 ? 'bear' : (premium > 10 ? 'warn' : (premium > -10 ? 'good' : 'warn'));
+  const premiumVerdict = premium > 50 ? '심한 고평가' 
+                      : premium > 20 ? '시장 프리미엄 큼' 
+                      : premium > -10 ? '합리적' 
+                      : premium > -30 ? '저평가' : '심한 저평가';
+  
+  // 추세 색
+  const trendCls = t.trend === 'uptrend' ? 'good' 
+                : t.trend === 'downtrend' ? 'bear'
+                : t.trend === 'mixed-bullish' ? 'good'
+                : 'warn';
+  
+  // F1-F4 가치 행 (값 있는 것만)
+  const factorRows = [
+    { name: 'F1 펀더멘털 가치', sub: '회계 + 섹터 PER (가장 보수)', fv: v.f1, gap: v.f1_gap, w: v.weights?.f1 },
+    { name: 'F2 역사적 정상가', sub: '종목 PER + 성장률 PEG', fv: v.f2, gap: v.f2_gap, w: v.weights?.f2 },
+    { name: 'F3 시장 컨센', sub: '애널리스트 매수 비중', fv: v.f3, gap: v.f3_gap, w: v.weights?.f3 },
+    { name: 'F4 모멘텀 + 베타', sub: '52주 추세 + 변동성', fv: v.f4, gap: v.f4_gap, w: v.weights?.f4 }
+  ].filter(f => f.fv > 0);
+  
+  // 피보나치 되돌림 행
+  const fr = t.fib_retracement;
+  const fibRetRows = fr ? [
+    { name: '0.0% (52주 고점)', v: fr.fib_0, isTarget: false },
+    { name: '23.6%', v: fr.fib_236, isTarget: false },
+    { name: '38.2% ★', v: fr.fib_382, isTarget: true, note: '50 EMA 시너지' },
+    { name: '50.0%', v: fr.fib_500, isTarget: false },
+    { name: '61.8% ★', v: fr.fib_618, isTarget: true, note: '황금비 (핵심)' },
+    { name: '78.6%', v: fr.fib_786, isTarget: false },
+    { name: '100% (52주 저점)', v: fr.fib_100, isTarget: false }
+  ] : [];
+  
+  // 피보나치 확장 행
+  const fe = t.fib_extension;
+  const fibExtRows = fe ? [
+    { name: '127.2%', v: fe.ext_1272 },
+    { name: '161.8% ★', v: fe.ext_1618, isTarget: true, note: '장기 핵심 목표' },
+    { name: '200%', v: fe.ext_2000 },
+    { name: '261.8%', v: fe.ext_2618, note: '극단 강세 시' }
+  ] : [];
   
   c.innerHTML = `
     <!-- 헤더 카드 -->
     <div class="card full fade-in">
       <div class="card-head">
-        <span class="ttl">${tk} · 실시간 자동 분석 (Finnhub)</span>
+        <span class="ttl">${tk} · 실시간 자동 분석 v1.6 (4-Factor + Technical)</span>
         <span class="meta">${new Date(d.timestamp).toLocaleString('ko-KR')}</span>
       </div>
       <div class="card-body">
@@ -453,94 +486,195 @@ function renderLiveData(tk, d) {
       </div>
     </div>
     
-    <!-- ★ 자동 적정가 카드 (메인) -->
+    <!-- ★★ 종합 결론 (메인) ★★ -->
     <div class="card full fade-in">
       <div class="card-head">
-        <span class="ttl">★ 자동 적정가 5개 모델</span>
-        <span class="meta">규칙 기반 자동 계산</span>
+        <span class="ttl">★ 안드레99 종합 결론 (가치 + 기술)</span>
+        <span class="meta">v1.6 듀얼 패널</span>
       </div>
       <div class="card-body">
-        ${valuationRows.length > 0 ? `
-        <table class="dt">
-          <thead><tr><th>모델</th><th>적정가</th><th>현재가 대비</th></tr></thead>
-          <tbody>
-            ${valuationRows.map(m => {
-              const gapCls = m.gap > 15 ? 'good' : (m.gap > -15 ? '' : 'bear');
-              return `
-                <tr>
-                  <td>${m.name}<br><span style="font-size:8px;color:#888;">${m.note}</span></td>
-                  <td>$${m.fv.toFixed(2)}</td>
-                  <td class="${gapCls}">${m.gap > 0 ? '+' : ''}${m.gap}%</td>
-                </tr>
-              `;
-            }).join('')}
-            <tr class="fv-row">
-              <td>가중평균 (4개 모델)</td>
-              <td>$${v.fv_avg ? v.fv_avg.toFixed(2) : '-'}</td>
-              <td class="${fvAvgCls}">${v.gap_avg > 0 ? '+' : ''}${v.gap_avg || 0}%</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <div class="scenario-summary">
-          <div class="l">자동 산출 적정가 (4개 모델 평균)</div>
-          <div class="v">$${v.fv_avg ? v.fv_avg.toFixed(2) : '계산 불가'}</div>
-          <div class="sub">현재가 $${d.price.toFixed(2)} 대비 ${v.gap_avg > 0 ? '+' : ''}${v.gap_avg || 0}%</div>
+        <div class="rr-card">
+          <div class="cell">
+            <div class="k">종합 적정가 (가치)</div>
+            <div class="v">$${v.fair_value || '-'}</div>
+            <div class="sub">${v.stock_type_kr || '미분류'} 모델</div>
+          </div>
+          <div class="cell" style="background:#FFFBF0; border-left:1px solid #E8DBA0; border-right:1px solid #E8DBA0;">
+            <div class="k">시장 프리미엄</div>
+            <div class="v ${premiumCls}">${premium > 0 ? '+' : ''}${premium}%</div>
+            <div class="sub">${premiumVerdict}</div>
+          </div>
+          <div class="cell">
+            <div class="k">장기 목표 (기술)</div>
+            <div class="v good">$${t.long_target?.price || '-'}</div>
+            <div class="sub">+${t.long_target?.distance_pct || 0}% (161.8% 확장)</div>
+          </div>
         </div>
-        ` : `
-        <div style="padding:20px; text-align:center; color:#888; font-size:12px;">
-          EPS, 매출 등 데이터 부족으로 자동 적정가 계산 불가<br>
-          (적자 기업 또는 신규 상장사일 가능성)
-        </div>
-        `}
         
-        <div class="limit-box" style="margin-top:14px;">
-          <div class="l">자동 적정가의 한계</div>
+        <div class="verdict" style="margin-top:14px;">
+          <div class="l">▸ 통합 판단</div>
+          <div class="h">
+            가치 <em>$${v.fair_value}</em> + 현재 <em>$${d.price.toFixed(2)}</em> + 목표 <em>$${t.long_target?.price || '-'}</em>
+          </div>
           <div class="d">
-            <b>1.</b> 섹터 평균 PER/PSR은 5년 중앙값 (개별 회사 특수성 미반영)<br>
-            <b>2.</b> 시나리오 (Bull/Base/Bear), 트리거, VERDICT = 표시 X<br>
-            <b>3.</b> 깊은 분석은 Claude에게: <code style="background:#FFFBF0; padding:2px 6px; border:1px solid #E8DBA0;">안드레99 ${tk} 갱신</code>
+            <b>가치 베팅:</b> 시장이 현재 ${premium > 0 ? '+' : ''}${premium}% 프리미엄 부여 = <b>${premiumVerdict}</b><br>
+            <b>기술 시점:</b> 다음 저항 <b>$${t.next_resistance?.price || '-'}</b> (+${t.next_resistance?.distance_pct || 0}%) · 지지 <b>$${t.next_support?.price || '-'}</b> (${t.next_support?.distance_pct || 0}%)<br>
+            <b>추세:</b> <span style="color:${trendCls === 'good' ? '#1B365D' : trendCls === 'bear' ? '#C0392B' : '#B8741F'};">${t.trend_kr || '-'}</span>
           </div>
         </div>
       </div>
     </div>
     
-    <!-- 애널리스트 추천 (Finnhub Recommendation) -->
-    ${r.total > 0 ? `
-    <div class="card full fade-in">
+    <!-- 좌측 패널: 4-Factor 가치 -->
+    <div class="card fade-in">
       <div class="card-head">
-        <span class="ttl">애널리스트 추천 분포</span>
-        <span class="meta">${r.period}</span>
+        <span class="ttl">[좌] 4-Factor 가치 평가</span>
+        <span class="meta">${v.stock_type_kr || ''}</span>
       </div>
       <div class="card-body">
-        <div class="ind-matrix" style="grid-template-columns: repeat(5, 1fr);">
-          <div class="cell" style="background:#E8F0E8;">
-            <div class="k">Strong Buy</div>
-            <div class="v good">${r.strong_buy}</div>
-            <div class="sub">${r.total > 0 ? Math.round(r.strong_buy/r.total*100) : 0}%</div>
+        ${factorRows.length > 0 ? `
+        <table class="dt">
+          <thead><tr><th>Factor</th><th>가중치</th><th>가치</th><th>현재 대비</th></tr></thead>
+          <tbody>
+            ${factorRows.map(f => {
+              const gapCls = f.gap > 15 ? 'good' : (f.gap > -15 ? '' : 'bear');
+              return `
+                <tr>
+                  <td>${f.name}<br><span style="font-size:8px;color:#888;">${f.sub}</span></td>
+                  <td>${Math.round((f.w || 0) * 100)}%</td>
+                  <td>$${f.fv.toFixed(2)}</td>
+                  <td class="${gapCls}">${f.gap > 0 ? '+' : ''}${f.gap}%</td>
+                </tr>
+              `;
+            }).join('')}
+            <tr class="fv-row">
+              <td>가중평균 (4-Factor)</td>
+              <td>100%</td>
+              <td>$${v.fair_value || '-'}</td>
+              <td class="${v.fair_value_gap > 0 ? 'good' : 'bear'}">${v.fair_value_gap > 0 ? '+' : ''}${v.fair_value_gap}%</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div style="margin-top:10px; padding:8px; background:#FAFBFC; border-left:3px solid #002B5C; font-size:10px; line-height:1.5;">
+          <b style="color:#002B5C;">학술 근거:</b> Damodaran "Narrative + Numbers" · Baker & Wurgler "Investor Sentiment" · Jegadeesh & Titman "Momentum"
+        </div>
+        ` : `
+        <div style="padding:20px; text-align:center; color:#888; font-size:12px;">
+          EPS, 매출 등 데이터 부족<br>(적자/신규 상장사일 수 있음)
+        </div>
+        `}
+      </div>
+    </div>
+    
+    <!-- 우측 패널: 기술적 분석 -->
+    <div class="card fade-in">
+      <div class="card-head">
+        <span class="ttl">[우] EMA + 피보나치</span>
+        <span class="meta">기술 분석</span>
+      </div>
+      <div class="card-body">
+        <!-- EMA 영역 -->
+        <div style="margin-bottom:14px; padding:10px; background:#FAFBFC; border:1px solid #ddd;">
+          <div style="font-family:'Noto Serif KR',serif; font-size:11px; color:#002B5C; font-weight:700; margin-bottom:8px;">
+            ▣ 이동평균선 (EMA/SMA)
           </div>
-          <div class="cell" style="background:#F0F5F0;">
-            <div class="k">Buy</div>
-            <div class="v good">${r.buy}</div>
-            <div class="sub">${r.total > 0 ? Math.round(r.buy/r.total*100) : 0}%</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; font-size:11px;">
+            <div><span style="color:#555;">21 EMA:</span><br><b style="font-family:'EB Garamond',serif; font-size:14px;">$${t.ema21}</b></div>
+            <div><span style="color:#555;">50 SMA:</span><br><b style="font-family:'EB Garamond',serif; font-size:14px;">$${t.sma50}</b></div>
+            <div><span style="color:#555;">200 SMA:</span><br><b style="font-family:'EB Garamond',serif; font-size:14px;">$${t.sma200}</b></div>
           </div>
-          <div class="cell">
-            <div class="k">Hold</div>
-            <div class="v">${r.hold}</div>
-            <div class="sub">${r.total > 0 ? Math.round(r.hold/r.total*100) : 0}%</div>
-          </div>
-          <div class="cell" style="background:#FBF0F0;">
-            <div class="k">Sell</div>
-            <div class="v bear">${r.sell}</div>
-            <div class="sub">${r.total > 0 ? Math.round(r.sell/r.total*100) : 0}%</div>
-          </div>
-          <div class="cell" style="background:#F5E8E8;">
-            <div class="k">Strong Sell</div>
-            <div class="v bear">${r.strong_sell}</div>
-            <div class="sub">${r.total > 0 ? Math.round(r.strong_sell/r.total*100) : 0}%</div>
+          <div style="margin-top:8px; padding-top:6px; border-top:1px dotted #ddd; font-size:10px;">
+            <b>추세:</b> <span style="color:${trendCls === 'good' ? '#1B365D' : trendCls === 'bear' ? '#C0392B' : '#B8741F'};">${t.trend_kr || '-'}</span>
           </div>
         </div>
         
+        <!-- 피보나치 되돌림 -->
+        ${fibRetRows.length > 0 ? `
+        <div style="font-family:'Noto Serif KR',serif; font-size:11px; color:#002B5C; font-weight:700; margin-bottom:6px;">
+          ▣ 피보나치 되돌림 (52주 고점→저점)
+        </div>
+        <table class="dt" style="margin-bottom:14px;">
+          <tbody>
+            ${fibRetRows.map(f => {
+              const isAbove = f.v > d.price;
+              const isBelow = f.v < d.price;
+              const isCurrent = Math.abs(f.v - d.price) / d.price < 0.02;
+              return `
+                <tr style="${f.isTarget ? 'background:#FFFBF0;' : ''}${isCurrent ? 'background:#E8F0E8;' : ''}">
+                  <td style="font-size:10px;">${f.name}${f.note ? `<br><span style="font-size:8px;color:#888;">${f.note}</span>` : ''}</td>
+                  <td class="${isAbove ? 'bear' : isBelow ? 'good' : ''}" style="font-size:11px;">
+                    $${f.v}
+                    ${isCurrent ? ' ◄' : ''}
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+        ` : ''}
+        
+        <!-- 피보나치 확장 -->
+        ${fibExtRows.length > 0 ? `
+        <div style="font-family:'Noto Serif KR',serif; font-size:11px; color:#002B5C; font-weight:700; margin-bottom:6px;">
+          ▣ 피보나치 확장 (장기 목표)
+        </div>
+        <table class="dt" style="margin-bottom:10px;">
+          <tbody>
+            ${fibExtRows.map(f => {
+              return `
+                <tr style="${f.isTarget ? 'background:#FFFBF0;' : ''}">
+                  <td style="font-size:10px;">${f.name}${f.note ? `<br><span style="font-size:8px;color:#888;">${f.note}</span>` : ''}</td>
+                  <td class="good" style="font-size:11px;">$${f.v}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+        ` : ''}
+        
+        <div style="margin-top:10px; padding:8px; background:#FAFBFC; border-left:3px solid #002B5C; font-size:10px; line-height:1.5;">
+          <b style="color:#002B5C;">학술 근거:</b> John Murphy "Technical Analysis" · 황금비 61.8% + 161.8% confluence
+        </div>
+      </div>
+    </div>
+    
+    <!-- 12개 핵심 지표 -->
+    <div class="card fade-in">
+      <div class="card-head">
+        <span class="ttl">핵심 지표 12개 (실시간)</span>
+        <span class="meta">Finnhub</span>
+      </div>
+      <div class="card-body">
+        <div class="ind-matrix">
+          <div class="cell"><div class="k">PER (TTM)</div><div class="v ${perCls}">${d.per.toFixed(1)}x</div><div class="sub">${d.per > 50 ? '고평가' : d.per > 25 ? '주의' : '합리'}</div></div>
+          <div class="cell"><div class="k">매출 성장 YoY</div><div class="v ${growthCls}">${d.revenue_growth_yoy > 0 ? '+' : ''}${d.revenue_growth_yoy.toFixed(1)}%</div><div class="sub">TTM 기준</div></div>
+          <div class="cell"><div class="k">52주 수익</div><div class="v ${chg52wCls}">${d.chg_52w > 0 ? '+' : ''}${d.chg_52w.toFixed(1)}%</div><div class="sub">연간 변동</div></div>
+          <div class="cell"><div class="k">시가총액</div><div class="v">${d.market_cap}</div><div class="sub">${d.market_cap_raw > 1e11 ? '메가캡' : d.market_cap_raw > 1e10 ? '대형주' : '중·소형'}</div></div>
+          <div class="cell"><div class="k">EPS (TTM)</div><div class="v">${d.eps > 0 ? '$' + d.eps.toFixed(2) : '적자'}</div><div class="sub">주당순이익</div></div>
+          <div class="cell"><div class="k">베타</div><div class="v">${d.beta.toFixed(2)}</div><div class="sub">${d.beta > 1.5 ? '고변동' : d.beta > 1 ? '시장+' : '안정'}</div></div>
+          <div class="cell"><div class="k">영업이익률</div><div class="v ${marginCls}">${d.operating_margin.toFixed(1)}%</div><div class="sub">TTM</div></div>
+          <div class="cell"><div class="k">ROE</div><div class="v ${roeCls}">${d.roe.toFixed(1)}%</div><div class="sub">자기자본수익률</div></div>
+          <div class="cell"><div class="k">배당률</div><div class="v">${d.dividend_yield.toFixed(2)}%</div><div class="sub">${d.dividend_yield > 2 ? '배당주' : d.dividend_yield > 0 ? '소액배당' : '무배당'}</div></div>
+          <div class="cell"><div class="k">PSR</div><div class="v">${d.psr.toFixed(1)}x</div><div class="sub">매출 배수</div></div>
+          <div class="cell"><div class="k">52주 고점</div><div class="v">$${d.week52_high.toFixed(0)}</div><div class="sub">현재 ${((d.price/d.week52_high - 1)*100).toFixed(0)}%</div></div>
+          <div class="cell"><div class="k">52주 저점</div><div class="v">$${d.week52_low.toFixed(0)}</div><div class="sub">현재 +${((d.price/d.week52_low - 1)*100).toFixed(0)}%</div></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 애널리스트 추천 -->
+    ${r.total > 0 ? `
+    <div class="card fade-in">
+      <div class="card-head"><span class="ttl">애널리스트 추천</span><span class="meta">${r.period}</span></div>
+      <div class="card-body">
+        <div class="ind-matrix" style="grid-template-columns: repeat(5, 1fr);">
+          <div class="cell" style="background:#E8F0E8;"><div class="k">Strong Buy</div><div class="v good">${r.strong_buy}</div><div class="sub">${Math.round(r.strong_buy/r.total*100)}%</div></div>
+          <div class="cell" style="background:#F0F5F0;"><div class="k">Buy</div><div class="v good">${r.buy}</div><div class="sub">${Math.round(r.buy/r.total*100)}%</div></div>
+          <div class="cell"><div class="k">Hold</div><div class="v">${r.hold}</div><div class="sub">${Math.round(r.hold/r.total*100)}%</div></div>
+          <div class="cell" style="background:#FBF0F0;"><div class="k">Sell</div><div class="v bear">${r.sell}</div><div class="sub">${Math.round(r.sell/r.total*100)}%</div></div>
+          <div class="cell" style="background:#F5E8E8;"><div class="k">Strong Sell</div><div class="v bear">${r.strong_sell}</div><div class="sub">${Math.round(r.strong_sell/r.total*100)}%</div></div>
+        </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;">
           <div style="background:#F0F5F0; padding:12px; text-align:center; border:1px solid #1B365D;">
             <div style="font-size:9px; color:#555;">매수 비중</div>
@@ -557,122 +691,17 @@ function renderLiveData(tk, d) {
     </div>
     ` : ''}
     
-    <!-- 6 핵심 지표 -->
-    <div class="card fade-in">
-      <div class="card-head">
-        <span class="ttl">핵심 지표 12개 (실시간)</span>
-        <span class="meta">Finnhub</span>
-      </div>
-      <div class="card-body">
-        <div class="ind-matrix">
-          <div class="cell">
-            <div class="k">PER (TTM)</div>
-            <div class="v ${perCls}">${d.per.toFixed(1)}x</div>
-            <div class="sub">${d.per > 50 ? '고평가' : d.per > 25 ? '주의' : '합리'}</div>
-          </div>
-          <div class="cell">
-            <div class="k">매출 성장 YoY</div>
-            <div class="v ${growthCls}">${d.revenue_growth_yoy > 0 ? '+' : ''}${d.revenue_growth_yoy.toFixed(1)}%</div>
-            <div class="sub">TTM 기준</div>
-          </div>
-          <div class="cell">
-            <div class="k">52주 수익</div>
-            <div class="v ${chg52wCls}">${d.chg_52w > 0 ? '+' : ''}${d.chg_52w.toFixed(1)}%</div>
-            <div class="sub">연간 변동</div>
-          </div>
-          <div class="cell">
-            <div class="k">시가총액</div>
-            <div class="v">${d.market_cap}</div>
-            <div class="sub">${d.market_cap_raw > 1e11 ? '메가캡' : d.market_cap_raw > 1e10 ? '대형주' : '중·소형'}</div>
-          </div>
-          <div class="cell">
-            <div class="k">EPS (TTM)</div>
-            <div class="v">${d.eps > 0 ? '$' + d.eps.toFixed(2) : '적자'}</div>
-            <div class="sub">주당순이익</div>
-          </div>
-          <div class="cell">
-            <div class="k">베타</div>
-            <div class="v">${d.beta.toFixed(2)}</div>
-            <div class="sub">${d.beta > 1.5 ? '고변동' : d.beta > 1 ? '시장+' : '안정'}</div>
-          </div>
-          <div class="cell">
-            <div class="k">영업이익률</div>
-            <div class="v ${marginCls}">${d.operating_margin.toFixed(1)}%</div>
-            <div class="sub">TTM</div>
-          </div>
-          <div class="cell">
-            <div class="k">ROE</div>
-            <div class="v ${roeCls}">${d.roe.toFixed(1)}%</div>
-            <div class="sub">자기자본수익률</div>
-          </div>
-          <div class="cell">
-            <div class="k">배당률</div>
-            <div class="v">${d.dividend_yield.toFixed(2)}%</div>
-            <div class="sub">${d.dividend_yield > 2 ? '배당주' : d.dividend_yield > 0 ? '소액배당' : '무배당'}</div>
-          </div>
-          <div class="cell">
-            <div class="k">PSR</div>
-            <div class="v">${d.psr.toFixed(1)}x</div>
-            <div class="sub">매출 배수</div>
-          </div>
-          <div class="cell">
-            <div class="k">52주 고점</div>
-            <div class="v">$${d.week52_high.toFixed(0)}</div>
-            <div class="sub">현재 ${((d.price/d.week52_high - 1)*100).toFixed(0)}%</div>
-          </div>
-          <div class="cell">
-            <div class="k">52주 저점</div>
-            <div class="v">$${d.week52_low.toFixed(0)}</div>
-            <div class="sub">현재 +${((d.price/d.week52_low - 1)*100).toFixed(0)}%</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 종합 정보 -->
-    <div class="card fade-in">
-      <div class="card-head">
-        <span class="ttl">기업 정보</span>
-        <span class="meta">Profile</span>
-      </div>
-      <div class="card-body">
-        <table class="dt">
-          <tbody>
-            <tr><td>회사명</td><td style="text-align:left; font-family: 'Noto Sans KR', sans-serif;">${d.name}</td></tr>
-            <tr><td>섹터</td><td style="text-align:left; font-family: 'Noto Sans KR', sans-serif;">${d.sector}</td></tr>
-            <tr><td>거래소</td><td style="text-align:left; font-family: 'Noto Sans KR', sans-serif; font-size:10px;">${d.exchange}</td></tr>
-            <tr><td>국가</td><td>${d.country}</td></tr>
-            <tr><td>IPO</td><td>${d.ipo}</td></tr>
-            <tr><td>주식수</td><td>${d.shares}</td></tr>
-            <tr><td>현재가</td><td>$${d.price.toFixed(2)}</td></tr>
-            <tr><td>당일 고가</td><td>$${d.high_day.toFixed(2)}</td></tr>
-            <tr><td>당일 저가</td><td>$${d.low_day.toFixed(2)}</td></tr>
-            <tr><td>전일 종가</td><td>$${d.prev_close.toFixed(2)}</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    
     <!-- TradingView 차트 -->
     <div class="card full fade-in">
-      <div class="card-head">
-        <span class="ttl">실시간 차트 (TradingView)</span>
-        <span class="meta">일봉</span>
-      </div>
+      <div class="card-head"><span class="ttl">실시간 차트 (TradingView)</span><span class="meta">일봉</span></div>
       <div class="card-body cfm-section">
         <div class="tv-chart-wrap">
           <iframe
             src="https://s.tradingview.com/widgetembed/?symbol=${tk}&interval=D&hidesidetoolbar=1&hidetoptoolbar=0&symboledit=1&saveimage=0&toolbarbg=F1F3F6&studies=%5B%22MASimple%40tv-basicstudies%22%5D&theme=light&style=2&timezone=Asia%2FSeoul&locale=kr"
-            class="tv-iframe"
-            frameborder="0"
-            allowfullscreen
-            allowtransparency="true"
-            scrolling="no">
+            class="tv-iframe" frameborder="0" allowfullscreen allowtransparency="true" scrolling="no">
           </iframe>
         </div>
-        <div class="tv-caption">
-          ▸ <b>${tk}</b> 실시간 차트 · 일봉 + 이동평균선
-        </div>
+        <div class="tv-caption">▸ <b>${tk}</b> 실시간 차트 · 일봉 + 이동평균선</div>
       </div>
     </div>
   `;
