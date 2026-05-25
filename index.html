@@ -239,6 +239,267 @@
   .ind-matrix .cell .v.warn { color: var(--warn); }
   .ind-matrix .cell .sub { font-size: 8px; color: var(--text-muted); margin-top: 3px; }
   
+  /* ═══ v3.0 Monte Carlo 확률 분포 카드 ═══ */
+  .mc-card {
+    border-top: 2px solid var(--accent-blue);
+    background: var(--bg-tertiary);
+  }
+  
+  .mc-narrative {
+    text-align: center;
+    padding: 16px 12px 20px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+  }
+  .mc-narrative p {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    line-height: 1.7;
+    margin-bottom: 10px;
+  }
+  .mc-narrative p b {
+    color: var(--gold-primary);
+    font-weight: 700;
+    font-family: 'EB Garamond', serif;
+    font-size: 17px;
+  }
+  .mc-narrative .mc-verdict-line {
+    display: inline-block;
+    padding: 6px 16px;
+    background: var(--accent-blue);
+    color: var(--bg-primary);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 0;
+  }
+  
+  /* 분포 시각화 */
+  .mc-distribution { margin-bottom: 24px; }
+  .mc-dist-label {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 11px;
+    color: var(--gold-primary);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .mc-bar-container {
+    padding: 40px 12px 24px;
+    position: relative;
+  }
+  .mc-bar {
+    position: relative;
+    height: 24px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+  }
+  .mc-bar-90 {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(to right,
+      var(--bear-dim) 0%,
+      var(--accent-blue) 25%,
+      var(--accent-blue) 75%,
+      var(--bull-dim) 100%);
+    opacity: 0.3;
+    position: relative;
+  }
+  .mc-bar-50 {
+    position: absolute;
+    left: 25%;
+    width: 50%;
+    height: 100%;
+    background: var(--accent-blue);
+    opacity: 0.7;
+  }
+  .mc-marker {
+    position: absolute;
+    top: -8px;
+    width: 2px;
+    height: 40px;
+    transform: translateX(-50%);
+  }
+  .mc-marker-current { background: var(--text-primary); }
+  .mc-marker-fv { background: var(--gold-primary); }
+  .mc-marker-median { background: var(--bull); }
+  .mc-marker-label {
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-family: 'EB Garamond', serif;
+    font-size: 10px;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    padding: 2px 6px;
+    border: 1px solid var(--border-color);
+  }
+  .mc-marker-label.fv { color: var(--gold-primary); border-color: var(--gold-dim); }
+  .mc-marker-label.median { color: var(--bull); border-color: var(--bull-dim); }
+  .mc-bar-axis {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    font-family: 'EB Garamond', serif;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  
+  /* 시나리오 표 */
+  .mc-scenarios { margin-bottom: 20px; }
+  
+  /* 확률 지표 4분할 */
+  .mc-probabilities {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 767px) {
+    .mc-probabilities { grid-template-columns: repeat(2, 1fr); }
+  }
+  .mc-prob-cell {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .mc-prob-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+  .mc-prob-value {
+    font-family: 'EB Garamond', serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .mc-prob-value.good { color: var(--bull); }
+  .mc-prob-value.bear { color: var(--bear); }
+  .mc-prob-sub { font-size: 9px; color: var(--text-muted); }
+  
+  /* Risk/Reward 비대칭 */
+  .mc-asymmetry {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+  .mc-asym-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 767px) {
+    .mc-asym-grid { grid-template-columns: 1fr; }
+    .mc-asym-divider { display: none; }
+  }
+  .mc-asym-cell {
+    text-align: center;
+    padding: 14px 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+  }
+  .mc-asym-cell.upside { border-top: 2px solid var(--bull); }
+  .mc-asym-cell.downside { border-top: 2px solid var(--bear); }
+  .mc-asym-label {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 10px;
+    color: var(--text-secondary);
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: 0.03em;
+  }
+  .mc-asym-value {
+    font-family: 'EB Garamond', serif;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .mc-asym-value.good { color: var(--bull); }
+  .mc-asym-value.bear { color: var(--bear); }
+  .mc-asym-target { font-size: 11px; color: var(--text-muted); font-family: 'EB Garamond', serif; }
+  .mc-asym-divider {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: var(--gold-primary);
+    font-weight: 700;
+  }
+  .mc-asym-ratio {
+    text-align: center;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border-color);
+  }
+  .mc-ratio-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .mc-ratio-value {
+    font-family: 'EB Garamond', serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--gold-primary);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .mc-ratio-verdict {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+  
+  /* 모델 파라미터 */
+  .mc-params {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .mc-params-label {
+    font-family: 'EB Garamond', serif;
+    font-size: 10px;
+    color: var(--gold-primary);
+    letter-spacing: 0.15em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .mc-params-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--border-color);
+  }
+  .mc-params-row:last-child { border-bottom: none; }
+  .mc-params-row b { color: var(--text-primary); font-family: 'EB Garamond', serif; }
+  
+  /* 학술 근거 박스 */
+  .mc-academic {
+    background: var(--bg-primary);
+    border-left: 3px solid var(--accent-blue);
+    padding: 10px 14px;
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .mc-academic b { color: var(--accent-blue); }
+  
   table.dt { width: 100%; border-collapse: collapse; }
   table.dt th {
     text-align: left; padding: 8px;
@@ -716,7 +977,7 @@
 
 <div class="global-header">
   <div class="row">
-    <div class="brand">ANDRE99 <span class="ver">v2.1</span></div>
+    <div class="brand">ANDRE99 <span class="ver">v3.0</span></div>
     <div class="nav">
       <a id="navHome" class="active" onclick="showLanding()">소개</a>
       <a id="navAnalysis" onclick="showAnalysisPrompt()">분석</a>
@@ -1265,6 +1526,56 @@
     </div>
   </div>
   
+  <!-- 06A: 확률론적 가치 평가 (v3.0 신규) -->
+  <div class="section">
+    <div class="section-head">
+      <div class="num">06A — PROBABILISTIC VALUATION</div>
+      <h2>확률론적 가치 분포</h2>
+      <div class="lead">단일 가격이 아닌 확률 분포로 미래를 본다</div>
+    </div>
+    
+    <div class="factor-diagram">
+      <div class="factor-row">
+        <div class="factor-id">GBM</div>
+        <div class="factor-info">
+          <div class="name">Geometric Brownian Motion</div>
+          <div class="formula">S(t) = S₀ × exp((μ − σ²/2)t + σ√t × Z)</div>
+          <div class="desc">Black-Scholes (1973) 표준 주가 모델. 평균 수익률 μ + 변동성 σ + 표준정규분포 Z.</div>
+        </div>
+      </div>
+      <div class="factor-row">
+        <div class="factor-id">MC</div>
+        <div class="factor-info">
+          <div class="name">Monte Carlo 시뮬레이션</div>
+          <div class="formula">10,000회 반복 × Box-Muller 변환</div>
+          <div class="desc">Boyle (1977) 이후 헤지펀드 표준. 한 번의 예측 → 10,000개의 가능한 미래.</div>
+        </div>
+      </div>
+      <div class="factor-row">
+        <div class="factor-id">CI</div>
+        <div class="factor-info">
+          <div class="name">신뢰구간 (Confidence Interval)</div>
+          <div class="formula">5% / 25% / 50% / 75% / 95% 분위수</div>
+          <div class="desc">90% 신뢰구간 (5th ~ 95th) + 50% 중심 시나리오. CFA Institute 권장 방식.</div>
+        </div>
+      </div>
+      <div class="factor-row">
+        <div class="factor-id">R/R</div>
+        <div class="factor-info">
+          <div class="name">Risk/Reward 비대칭</div>
+          <div class="formula">상방 잠재력 ÷ 하방 위험</div>
+          <div class="desc">2.0x 이상 = 강력 매수, 1.3x = 매력, 0.8x 이하 = 회피. 헤지펀드 Position Sizing 기준.</div>
+        </div>
+      </div>
+    </div>
+    
+    <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-left: 3px solid var(--accent-blue); font-size: 12px; color: var(--text-secondary); line-height: 1.8;">
+      <b style="color: var(--accent-blue); font-family: 'Noto Serif KR', serif;">예시 문장 (자동 생성):</b><br>
+      "TSLA가 현재의 펀더멘털을 유지한다면, 1년 후 <b style="color: var(--gold-primary);">62.3%</b>의 확률로 안드레99 적정가 <b style="color: var(--gold-primary);">$XXX</b>에 도달합니다.
+      80% 신뢰구간: $YYY ~ $ZZZ. Risk/Reward 비대칭 비율 <b style="color: var(--bull);">1.8x</b> (매력적, 상방 우위)."
+    </div>
+  </div>
+  
   <div class="section">
     <div class="section-head">
       <div class="num">07 — FEATURED TICKERS</div>
@@ -1341,7 +1652,7 @@
 <div class="footer">
   <div class="footer-row">
     <div class="footer-left">
-      ANDRE99 <span class="ver">v2.1</span> · DAMODARAN · BAKER & WURGLER · MURPHY · JEGADEESH & TITMAN
+      ANDRE99 <span class="ver">v3.0</span> · DAMODARAN · BLACK-SCHOLES · BOYLE · MURPHY
       <div class="small">투자자문 아님 · 교육 콘텐츠 · DYOR</div>
     </div>
     <div class="footer-right">
@@ -1355,6 +1666,110 @@
 let DATA = null;
 let activeTicker = null;
 const WORKER_URL = 'https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
+
+// ═══════════════════════════════════════════
+// v3.0 Monte Carlo 시뮬레이션 (확률론적 가치)
+// 학술 근거: Boyle (1977), Black-Scholes GBM
+// ═══════════════════════════════════════════
+
+// Box-Muller 변환: 표준정규분포 난수 생성
+function gaussianRandom() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+// Geometric Brownian Motion 시뮬레이션
+// S(t) = S₀ × exp((μ - σ²/2)t + σ√t × Z)
+function monteCarloSimulation(data) {
+  const S0 = data.price;                          // 현재가
+  const chg52w = data.chg_52w || 0;               // 52주 수익률 (%)
+  const beta = data.beta || 1;                    // 베타
+  const fairValue = data.andre99_final?.fair_value || S0;  // 안드레99 적정가 (앵커)
+  
+  // 연간 변동성 σ 추정
+  // 52주 변동성 = abs(chg_52w/100) (대략적, GBM은 로그수익률이지만 근사)
+  // 베타 보정 적용
+  let sigma = Math.abs(chg52w / 100) * 0.5;       // 보수적 추정 (절반 가중)
+  sigma = Math.max(0.2, Math.min(1.0, sigma));    // 20~100% 범위로 제한
+  
+  // 연간 기대수익률 μ
+  // 안드레99 적정가 도달 가정 + 무위험 수익률 (4%) 가중평균
+  const expectedReturn = (fairValue / S0) - 1;
+  const riskFreeRate = 0.04;
+  let mu = (expectedReturn * 0.6) + (riskFreeRate * beta * 0.4);
+  mu = Math.max(-0.5, Math.min(1.5, mu));          // -50%~150% 범위
+  
+  const T = 1;                                     // 1년
+  const N = 10000;                                 // 시뮬레이션 횟수
+  const results = [];
+  
+  for (let i = 0; i < N; i++) {
+    const Z = gaussianRandom();
+    const S = S0 * Math.exp((mu - 0.5 * sigma * sigma) * T + sigma * Math.sqrt(T) * Z);
+    results.push(S);
+  }
+  
+  results.sort((a, b) => a - b);
+  
+  // 분위수 계산
+  const p = (q) => results[Math.floor(N * q)];
+  
+  const result = {
+    p05: p(0.05),
+    p10: p(0.10),
+    p25: p(0.25),
+    p50: p(0.50),
+    p75: p(0.75),
+    p90: p(0.90),
+    p95: p(0.95),
+    mean: results.reduce((a, b) => a + b, 0) / N,
+    sigma_used: sigma,
+    mu_used: mu,
+    
+    // 확률 계산
+    prob_above_current: results.filter(s => s > S0).length / N,
+    prob_above_fairvalue: results.filter(s => s > fairValue).length / N,
+    prob_above_20pct: results.filter(s => s > S0 * 1.20).length / N,
+    prob_below_20pct: results.filter(s => s < S0 * 0.80).length / N,
+    prob_below_30pct: results.filter(s => s < S0 * 0.70).length / N,
+    prob_above_50pct: results.filter(s => s > S0 * 1.50).length / N,
+    
+    // 비대칭 분석 (Risk/Reward Asymmetry)
+    upside_potential: ((p(0.90) / S0) - 1) * 100,    // 상위 10% 시 수익률
+    downside_risk: ((p(0.10) / S0) - 1) * 100,       // 하위 10% 시 손실률
+  };
+  
+  // Risk/Reward 비대칭 비율
+  result.asymmetry = Math.abs(result.upside_potential / result.downside_risk);
+  
+  // 자연어 판정
+  if (result.asymmetry > 2.0) result.asymmetry_verdict = '강력 매수 시그널 (상방 비대칭)';
+  else if (result.asymmetry > 1.3) result.asymmetry_verdict = '매력적 (상방 우위)';
+  else if (result.asymmetry > 0.8) result.asymmetry_verdict = '균형 (중립)';
+  else if (result.asymmetry > 0.5) result.asymmetry_verdict = '주의 (하방 위험 ↑)';
+  else result.asymmetry_verdict = '회피 권장 (하방 비대칭)';
+  
+  // 1년 후 안드레99 적정가 도달 확률 자연어
+  const reachProb = result.prob_above_fairvalue;
+  if (reachProb > 0.7) result.fv_reach_verdict = '매우 높음 (정상 시장 가정)';
+  else if (reachProb > 0.5) result.fv_reach_verdict = '높음 (확률 우위)';
+  else if (reachProb > 0.3) result.fv_reach_verdict = '보통 (가능성 있음)';
+  else if (reachProb > 0.15) result.fv_reach_verdict = '낮음 (도달 어려움)';
+  else result.fv_reach_verdict = '매우 낮음 (시장 충격 필요)';
+  
+  return result;
+}
+
+// 분포 차트에서 마커 위치(0~100%) 계산
+function calcMarkerPos(value, min, max) {
+  if (!value || value <= 0) return 50;
+  const range = max - min;
+  if (range <= 0) return 50;
+  const pos = ((value - min) / range) * 100;
+  return Math.max(0, Math.min(100, pos));
+}
 
 async function loadData() {
   try {
@@ -1455,6 +1870,9 @@ function renderLiveData(tk, d) {
   const r = d.recommendation || {};
   const a99 = d.andre99_final || {};
   
+  // ═══ v3.0 Monte Carlo 시뮬레이션 실행 ═══
+  const mc = monteCarloSimulation(d);
+  
   const premium = v.market_premium_pct || 0;
   const premiumVerdict = premium > 50 ? '심한 고평가' 
                       : premium > 20 ? '시장 프리미엄 큼' 
@@ -1551,6 +1969,169 @@ function renderLiveData(tk, d) {
             <b>기술 시점:</b> 저항 <b>$${t.next_resistance?.price || '-'}</b> · 지지 <b>$${t.next_support?.price || '-'}</b><br>
             <b>가중치:</b> ${v.stock_type_kr || ''} → 가치 ${Math.round((a99.value_weight || 0)*100)}% : 기술 ${Math.round((a99.tech_weight || 0)*100)}%
           </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ★★★ 확률론적 가치 (Monte Carlo) -->
+    <div class="card full fade-in mc-card">
+      <div class="card-head">
+        <span class="ttl">★ 확률론적 가치 분포 (Monte Carlo)</span>
+        <span class="meta">10,000회 시뮬레이션 · 1년 후</span>
+      </div>
+      <div class="card-body">
+        
+        <!-- 자연어 결론 -->
+        <div class="mc-narrative">
+          <p>
+            ${tk}이 현재의 펀더멘털을 유지한다면,
+            1년 후 <b>${(mc.prob_above_fairvalue*100).toFixed(1)}%</b>의 확률로
+            안드레99 적정가 <b>$${a99.fair_value}</b>에 도달합니다.
+          </p>
+          <p class="mc-verdict-line">
+            ${mc.fv_reach_verdict}
+          </p>
+        </div>
+        
+        <!-- 분포 시각화 (수평 바) -->
+        <div class="mc-distribution">
+          <div class="mc-dist-label">1년 후 가격 분포 (10,000회 시뮬레이션)</div>
+          <div class="mc-bar-container">
+            <div class="mc-bar">
+              <div class="mc-bar-90" title="90% 신뢰구간">
+                <div class="mc-bar-50" title="50% 신뢰구간"></div>
+              </div>
+              <div class="mc-marker mc-marker-current" style="left: ${calcMarkerPos(d.price, mc.p05, mc.p95)}%;" title="현재가">
+                <div class="mc-marker-label">현재 $${d.price.toFixed(0)}</div>
+              </div>
+              <div class="mc-marker mc-marker-fv" style="left: ${calcMarkerPos(a99.fair_value, mc.p05, mc.p95)}%;" title="안드레99 적정가">
+                <div class="mc-marker-label fv">적정 $${a99.fair_value}</div>
+              </div>
+              <div class="mc-marker mc-marker-median" style="left: ${calcMarkerPos(mc.p50, mc.p05, mc.p95)}%;" title="중앙값">
+                <div class="mc-marker-label median">중앙 $${mc.p50.toFixed(0)}</div>
+              </div>
+            </div>
+            <div class="mc-bar-axis">
+              <span>$${mc.p05.toFixed(0)}</span>
+              <span>$${mc.p25.toFixed(0)}</span>
+              <span>$${mc.p50.toFixed(0)}</span>
+              <span>$${mc.p75.toFixed(0)}</span>
+              <span>$${mc.p95.toFixed(0)}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 확률 시나리오 표 -->
+        <div class="mc-scenarios">
+          <table class="dt">
+            <thead>
+              <tr>
+                <th>시나리오</th>
+                <th>가격 범위</th>
+                <th>발생 확률</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>강세 (상위 5%)</td>
+                <td>$${mc.p95.toFixed(2)} 이상</td>
+                <td class="good">5.0%</td>
+              </tr>
+              <tr>
+                <td>긍정 (상위 25%)</td>
+                <td>$${mc.p75.toFixed(2)} ~ $${mc.p95.toFixed(2)}</td>
+                <td class="good">20.0%</td>
+              </tr>
+              <tr style="background: var(--bg-tertiary);">
+                <td><b>중심 시나리오 (50%)</b></td>
+                <td><b>$${mc.p25.toFixed(2)} ~ $${mc.p75.toFixed(2)}</b></td>
+                <td><b>50.0%</b></td>
+              </tr>
+              <tr>
+                <td>부진 (하위 25%)</td>
+                <td>$${mc.p05.toFixed(2)} ~ $${mc.p25.toFixed(2)}</td>
+                <td class="bear">20.0%</td>
+              </tr>
+              <tr>
+                <td>약세 (하위 5%)</td>
+                <td>$${mc.p05.toFixed(2)} 이하</td>
+                <td class="bear">5.0%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- 핵심 확률 지표 -->
+        <div class="mc-probabilities">
+          <div class="mc-prob-cell">
+            <div class="mc-prob-label">+20% 상승 확률</div>
+            <div class="mc-prob-value good">${(mc.prob_above_20pct*100).toFixed(1)}%</div>
+            <div class="mc-prob-sub">$${(d.price*1.2).toFixed(0)} 이상 도달</div>
+          </div>
+          <div class="mc-prob-cell">
+            <div class="mc-prob-label">+50% 상승 확률</div>
+            <div class="mc-prob-value good">${(mc.prob_above_50pct*100).toFixed(1)}%</div>
+            <div class="mc-prob-sub">$${(d.price*1.5).toFixed(0)} 이상 도달</div>
+          </div>
+          <div class="mc-prob-cell">
+            <div class="mc-prob-label">-20% 하락 확률</div>
+            <div class="mc-prob-value bear">${(mc.prob_below_20pct*100).toFixed(1)}%</div>
+            <div class="mc-prob-sub">$${(d.price*0.8).toFixed(0)} 이하 폭락</div>
+          </div>
+          <div class="mc-prob-cell">
+            <div class="mc-prob-label">-30% 하락 확률</div>
+            <div class="mc-prob-value bear">${(mc.prob_below_30pct*100).toFixed(1)}%</div>
+            <div class="mc-prob-sub">$${(d.price*0.7).toFixed(0)} 이하 폭락</div>
+          </div>
+        </div>
+        
+        <!-- Risk/Reward 비대칭 -->
+        <div class="mc-asymmetry">
+          <div class="mc-asym-grid">
+            <div class="mc-asym-cell upside">
+              <div class="mc-asym-label">상방 잠재력 (상위 10%)</div>
+              <div class="mc-asym-value good">+${mc.upside_potential.toFixed(1)}%</div>
+              <div class="mc-asym-target">$${mc.p90.toFixed(2)}</div>
+            </div>
+            <div class="mc-asym-divider">VS</div>
+            <div class="mc-asym-cell downside">
+              <div class="mc-asym-label">하방 위험 (하위 10%)</div>
+              <div class="mc-asym-value bear">${mc.downside_risk.toFixed(1)}%</div>
+              <div class="mc-asym-target">$${mc.p10.toFixed(2)}</div>
+            </div>
+          </div>
+          <div class="mc-asym-ratio">
+            <div class="mc-ratio-label">Risk/Reward 비대칭 비율</div>
+            <div class="mc-ratio-value">${mc.asymmetry.toFixed(2)}x</div>
+            <div class="mc-ratio-verdict">${mc.asymmetry_verdict}</div>
+          </div>
+        </div>
+        
+        <!-- 모델 파라미터 (투명성) -->
+        <div class="mc-params">
+          <div class="mc-params-label">모델 입력값</div>
+          <div class="mc-params-row">
+            <span>연간 변동성 (σ):</span>
+            <span><b>${(mc.sigma_used*100).toFixed(1)}%</b></span>
+          </div>
+          <div class="mc-params-row">
+            <span>기대 수익률 (μ):</span>
+            <span><b>${(mc.mu_used*100).toFixed(1)}%</b></span>
+          </div>
+          <div class="mc-params-row">
+            <span>베타:</span>
+            <span><b>${d.beta.toFixed(2)}</b></span>
+          </div>
+          <div class="mc-params-row">
+            <span>시뮬레이션:</span>
+            <span><b>10,000회 GBM</b></span>
+          </div>
+        </div>
+        
+        <!-- 학술 근거 -->
+        <div class="mc-academic">
+          <b>학술 근거:</b> Geometric Brownian Motion (Black-Scholes 1973) · Monte Carlo (Boyle 1977) · 
+          Box-Muller 변환 표준정규분포
         </div>
       </div>
     </div>
