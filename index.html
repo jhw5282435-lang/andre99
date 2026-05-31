@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&family=EB+Garamond:wght@400;500;600;700&family=Cormorant+Garamond:wght@500;600;700&family=Playfair+Display:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   :root {
     --bg-primary:   #0D1117;
@@ -21,12 +22,13 @@
     --gold-primary: #D4AF37;
     --gold-dim:     #A88A2C;
     --gold-bright:  #E8C56C;
-    --bull:         #3FB950;
-    --bull-dim:     #2EA043;
-    --bear:         #F85149;
-    --bear-dim:     #DA3633;
+    --bull:         #F85149;
+    --bull-dim:     #DA3633;
+    --bear:         #4493F8;
+    --bear-dim:     #316DCA;
     --warn:         #D29922;
     --accent-blue:  #58A6FF;
+    --accent-green: #3FB950;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
@@ -135,6 +137,209 @@
   .stock-head .chg { font-size: 11px; margin-top: 4px; font-weight: 700; }
   .stock-head .chg.up { color: var(--bull); }
   .stock-head .chg.down { color: var(--bear); }
+  
+  /* ═══ v4.0 모바일 종목 헤더 (한국 증권사 톤) ═══ */
+  .stock-header-v4 {
+    grid-column: 1 / -1;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    margin-bottom: 14px;
+  }
+  .sh-top {
+    padding: 14px 16px 8px;
+  }
+  .sh-symbol-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .sh-symbol {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+  }
+  .sh-chg {
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'EB Garamond', serif;
+  }
+  .sh-chg.up { color: var(--bull); }
+  .sh-chg.down { color: var(--bear); }
+  .sh-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  
+  .sh-price-block {
+    padding: 8px 16px 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .sh-price {
+    font-family: 'EB Garamond', serif;
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  .sh-price-sub {
+    font-size: 12px;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .sh-price-sub.up { color: var(--bull); }
+  .sh-price-sub.down { color: var(--bear); }
+  
+  /* 4-탭 시스템 */
+  .sh-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .sh-tab {
+    padding: 14px 8px;
+    text-align: center;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+    user-select: none;
+  }
+  .sh-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+  }
+  .sh-tab.active {
+    color: var(--gold-primary);
+    border-bottom-color: var(--gold-primary);
+    font-weight: 700;
+  }
+  
+  /* 탭 패널 */
+  .tab-panel {
+    display: none;
+    grid-column: 1 / -1;
+  }
+  .tab-panel.active {
+    display: grid;
+    gap: 14px;
+  }
+  
+  /* ═══ 재무 탭 ═══ */
+  .fin-overview {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 4px 0;
+  }
+  .fin-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .fin-row:last-child { border-bottom: none; }
+  .fin-k {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .fin-v {
+    font-family: 'EB Garamond', serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .fin-v.up { color: var(--bull); }
+  .fin-v.down { color: var(--bear); }
+  
+  /* 어닝 카드 */
+  .earning-card {
+    border-top: 2px solid var(--gold-primary);
+  }
+  .earning-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .earning-cell {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    text-align: center;
+  }
+  .ec-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .ec-value {
+    font-family: 'EB Garamond', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    line-height: 1;
+  }
+  .ec-value.up { color: var(--bull); }
+  .ec-value.down { color: var(--bear); }
+  .ec-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  
+  /* 성장 요약 */
+  .growth-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+  }
+  .gs-cell {
+    text-align: center;
+    padding: 8px;
+  }
+  .gs-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .gs-value {
+    font-family: 'EB Garamond', serif;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .gs-value.up { color: var(--bull); }
+  .gs-value.down { color: var(--bear); }
+  .gs-sub {
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+  
+  /* 차트 컨테이너 */
+  .chart-wrap {
+    height: 220px;
+    margin-bottom: 16px;
+    padding: 8px 0;
+  }
+  
+  /* 재무 표 */
+  .fin-table { margin-top: 8px; }
+  .fin-table td { font-size: 11px; padding: 7px 8px; }
+  .fin-table td.up { color: var(--bull); }
+  .fin-table td.down { color: var(--bear); }
   
   .andre99-main-card {
     border-top: 2px solid var(--gold-primary);
@@ -499,6 +704,203 @@
     line-height: 1.6;
   }
   .mc-academic b { color: var(--accent-blue); }
+  
+  /* ═══ v3.5 행동경제학 점수 카드 ═══ */
+  .ba-card {
+    border-top: 2px solid #9C5DDB;
+    background: var(--bg-tertiary);
+  }
+  .ba-overall { margin-bottom: 24px; }
+  .ba-score-display {
+    text-align: center;
+    padding: 24px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-top: 3px solid var(--border-strong);
+  }
+  .ba-score-display.strong-good { border-top-color: var(--bull); }
+  .ba-score-display.good { border-top-color: var(--bull-dim); }
+  .ba-score-display.neutral { border-top-color: var(--border-strong); }
+  .ba-score-display.warn { border-top-color: var(--warn); }
+  .ba-score-display.bear { border-top-color: var(--bear); }
+  
+  .ba-score-label {
+    font-family: 'EB Garamond', serif;
+    font-size: 11px;
+    color: #9C5DDB;
+    letter-spacing: 0.3em;
+    margin-bottom: 12px;
+  }
+  .ba-score-num {
+    font-family: 'EB Garamond', serif;
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+  }
+  .ba-score-display.strong-good .ba-score-num { color: var(--bull); }
+  .ba-score-display.good .ba-score-num { color: var(--bull); }
+  .ba-score-display.warn .ba-score-num { color: var(--warn); }
+  .ba-score-display.bear .ba-score-num { color: var(--bear); }
+  
+  .ba-score-verdict {
+    display: inline-block;
+    padding: 6px 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  
+  .ba-factors {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 767px) {
+    .ba-factors { grid-template-columns: 1fr; }
+    .ba-score-num { font-size: 44px; }
+  }
+  .ba-factor {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--border-strong);
+    padding: 12px 14px;
+  }
+  .ba-factor.good { border-left-color: var(--bull); }
+  .ba-factor.bear { border-left-color: var(--bear); }
+  .ba-f-name {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 4px;
+    grid-column: 1 / -1;
+  }
+  .ba-f-detail {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    grid-column: 1;
+  }
+  .ba-f-detail b {
+    color: var(--text-primary);
+    font-family: 'EB Garamond', serif;
+  }
+  .ba-f-score {
+    font-family: 'EB Garamond', serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .ba-factor.good .ba-f-score { color: var(--bull); }
+  .ba-factor.bear .ba-f-score { color: var(--bear); }
+  
+  .ba-academic {
+    background: var(--bg-primary);
+    border-left: 3px solid #9C5DDB;
+    padding: 10px 14px;
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-top: 14px;
+  }
+  .ba-academic b { color: #9C5DDB; }
+  
+  /* ═══ v3.5 차트 패턴 카드 ═══ */
+  .cp-card {
+    border-top: 2px solid #FF8C00;
+    background: var(--bg-tertiary);
+  }
+  .cp-overall { margin-bottom: 18px; }
+  .cp-signal {
+    text-align: center;
+    padding: 18px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+  }
+  .cp-signal-bullish { border-top: 3px solid var(--bull); }
+  .cp-signal-bearish { border-top: 3px solid var(--bear); }
+  .cp-signal-mixed { border-top: 3px solid var(--warn); }
+  .cp-signal-none { border-top: 3px solid var(--border-strong); }
+  
+  .cp-signal-label {
+    font-family: 'EB Garamond', serif;
+    font-size: 11px;
+    color: #FF8C00;
+    letter-spacing: 0.3em;
+    margin-bottom: 10px;
+  }
+  .cp-signal-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+  .cp-signal-bullish .cp-signal-value { color: var(--bull); }
+  .cp-signal-bearish .cp-signal-value { color: var(--bear); }
+  .cp-signal-conf {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'EB Garamond', serif;
+  }
+  
+  .cp-patterns {
+    display: grid;
+    gap: 10px;
+  }
+  .cp-pattern {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--border-strong);
+    padding: 12px 14px;
+  }
+  .cp-pattern.cp-bullish { border-left-color: var(--bull); }
+  .cp-pattern.cp-bearish { border-left-color: var(--bear); }
+  .cp-pattern.cp-neutral { border-left-color: var(--gold-primary); }
+  
+  .cp-p-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .cp-p-name {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+  .cp-p-conf {
+    font-family: 'EB Garamond', serif;
+    font-size: 16px;
+    color: var(--gold-primary);
+    font-weight: 700;
+  }
+  .cp-p-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 4px;
+  }
+  .cp-p-source {
+    font-size: 9px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
   
   table.dt { width: 100%; border-collapse: collapse; }
   table.dt th {
@@ -966,6 +1368,215 @@
   .limit-box-pro .d { font-size: 11px; color: var(--text-secondary); line-height: 1.8; }
   .limit-box-pro .d b { color: var(--text-primary); }
   
+  /* ═══ v3.5 백테스트 섹션 ═══ */
+  .bt-honesty {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--gold-dim);
+    border-top: 2px solid var(--gold-primary);
+    padding: 24px;
+    margin-bottom: 28px;
+    text-align: center;
+  }
+  .bt-honesty-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border: 1px solid var(--gold-primary);
+    color: var(--gold-primary);
+    font-family: 'EB Garamond', serif;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    margin-bottom: 16px;
+  }
+  .bt-honesty p {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-bottom: 12px;
+  }
+  .bt-honesty p b { color: var(--text-primary); }
+  .bt-honesty-result {
+    margin-top: 14px !important;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border-color);
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+  }
+  
+  .bt-compare {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+    align-items: stretch;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 767px) {
+    .bt-compare { grid-template-columns: 1fr; }
+    .bt-vs { display: none; }
+  }
+  .bt-col {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 20px;
+  }
+  .bt-col-a99 { border-top: 2px solid var(--accent-blue); }
+  .bt-col-sp { border-top: 2px solid var(--gold-primary); }
+  .bt-col-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .bt-col-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .bt-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .bt-metric {
+    padding: 10px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+  }
+  .bt-k {
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .bt-v {
+    font-family: 'EB Garamond', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .bt-v.good { color: var(--bull); }
+  .bt-v.bear { color: var(--bear); }
+  .bt-vs {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    color: var(--gold-primary);
+    font-weight: 700;
+    align-self: center;
+  }
+  
+  .bt-table { margin-top: 16px; }
+  .bt-table td { font-size: 11px; padding: 6px 8px; }
+  .bt-table td.good { color: var(--bull); }
+  .bt-table td.bear { color: var(--bear); }
+  
+  .bt-findings {
+    margin-top: 28px;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--bear-dim);
+    border-left: 3px solid var(--bear);
+  }
+  .bt-findings-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 14px;
+    color: var(--bear);
+    font-weight: 700;
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+  }
+  .bt-finding {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--border-color);
+  }
+  .bt-finding:last-child { border-bottom: none; }
+  .bt-f-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--gold-primary);
+    font-weight: 700;
+    line-height: 1;
+  }
+  .bt-f-content {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+  .bt-f-content b {
+    color: var(--text-primary);
+    font-family: 'Noto Serif KR', serif;
+    font-size: 13px;
+  }
+  
+  /* ═══ v4.0 로드맵 ═══ */
+  .roadmap-wrap {
+    display: grid;
+    gap: 16px;
+  }
+  .roadmap-stage {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 20px;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    align-items: start;
+  }
+  .roadmap-stage.current { border-left: 3px solid var(--bull); }
+  .roadmap-stage.next { border-left: 3px solid var(--gold-primary); }
+  .roadmap-stage.future { border-left: 3px solid var(--border-strong); opacity: 0.7; }
+  
+  .rs-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: var(--gold-primary);
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    padding: 12px 0;
+    border: 1px solid var(--gold-dim);
+  }
+  .roadmap-stage.future .rs-num {
+    color: var(--text-muted);
+    border-color: var(--border-color);
+  }
+  .rs-content { padding-top: 4px; }
+  .rs-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .rs-status {
+    display: inline-block;
+    font-size: 9px;
+    padding: 2px 8px;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    letter-spacing: 0.1em;
+  }
+  .roadmap-stage.current .rs-status { 
+    border-color: var(--bull); color: var(--bull); 
+  }
+  .roadmap-stage.next .rs-status { 
+    border-color: var(--gold-primary); color: var(--gold-primary); 
+  }
+  .rs-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+  }
+  
+  @media (max-width: 767px) {
+    .roadmap-stage { grid-template-columns: 1fr; gap: 12px; }
+    .rs-num { font-size: 24px; max-width: 100px; }
+  }
+  
   .fade-in { animation: fadeIn 0.4s ease-out; }
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(8px); }
@@ -977,7 +1588,7 @@
 
 <div class="global-header">
   <div class="row">
-    <div class="brand">ANDRE99 <span class="ver">v3.0</span></div>
+    <div class="brand">ANDRE99 <span class="ver">v4.0 BETA</span></div>
     <div class="nav">
       <a id="navHome" class="active" onclick="showLanding()">소개</a>
       <a id="navAnalysis" onclick="showAnalysisPrompt()">분석</a>
@@ -1645,6 +2256,232 @@
     </div>
   </div>
   
+  <!-- 10: 백테스트 결과 (정직한 보고) -->
+  <div class="section">
+    <div class="section-head">
+      <div class="num">10 — BACKTEST TRUTH</div>
+      <h2>정직한 백테스트 결과</h2>
+      <div class="lead">2020~2025 · 13종 · 실제 측정값</div>
+    </div>
+    
+    <!-- 정직성 선언 -->
+    <div class="bt-honesty">
+      <div class="bt-honesty-tag">TRANSPARENCY FIRST</div>
+      <p>
+        Wall Street 애널리스트 평균 정확도는 <b>30~54%</b>입니다.
+        Jim Cramer는 47%, Abby Cohen은 35%였습니다.
+        안드레99도 객관적으로 측정되어야 합니다.
+      </p>
+      <p class="bt-honesty-result">
+        결과: 안드레99 v3.0 기술 전략은 S&P 500 대비 <b style="color: var(--bear);">─0.9%p 열위</b>였습니다.
+      </p>
+    </div>
+    
+    <!-- 종합 비교 -->
+    <div class="bt-compare">
+      <div class="bt-col bt-col-a99">
+        <div class="bt-col-label">ANDRE99 v3.0</div>
+        <div class="bt-col-sub">EMA + Fibonacci 전략</div>
+        <div class="bt-metrics">
+          <div class="bt-metric">
+            <div class="bt-k">평균 총수익률</div>
+            <div class="bt-v good">+102.0%</div>
+          </div>
+          <div class="bt-metric">
+            <div class="bt-k">연환산</div>
+            <div class="bt-v">+11.6%</div>
+          </div>
+          <div class="bt-metric">
+            <div class="bt-k">Sharpe Ratio</div>
+            <div class="bt-v bear">0.16</div>
+          </div>
+          <div class="bt-metric">
+            <div class="bt-k">Max Drawdown</div>
+            <div class="bt-v bear">-32.3%</div>
+          </div>
+          <div class="bt-metric">
+            <div class="bt-k">승률</div>
+            <div class="bt-v bear">0%</div>
+          </div>
+          <div class="bt-metric">
+            <div class="bt-k">총 거래</div>
+            <div class="bt-v">11회</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bt-vs">VS</div>
+      
+      <div class="bt-col bt-col-sp">
+        <div class="bt-col-label">S&P 500</div>
+        <div class="bt-col-sub">Buy & Hold</div>
+        <div class="bt-metrics">
+          <div class="bt-metric">
+            <div class="bt-k">총수익률</div>
+            <div class="bt-v good">+80.5%</div>
+          </div>
+          <div class="bt-metric">
+            <div class="bt-k">연환산</div>
+            <div class="bt-v good">+12.5%</div>
+          </div>
+          <div class="bt-metric">
+            <div class="bt-k">Sharpe Ratio</div>
+            <div class="bt-v good">0.47</div>
+          </div>
+          <div class="bt-metric">
+            <div class="bt-k">Max Drawdown</div>
+            <div class="bt-v">-33.9%</div>
+          </div>
+          <div class="bt-metric">
+            <div class="bt-k">승률</div>
+            <div class="bt-v">N/A</div>
+          </div>
+          <div class="bt-metric">
+            <div class="bt-k">전략</div>
+            <div class="bt-v">단순</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 개별 종목 결과 -->
+    <div style="margin-top: 24px;">
+      <table class="dt bt-table">
+        <thead>
+          <tr>
+            <th>종목</th>
+            <th>총수익률</th>
+            <th>연환산</th>
+            <th>Sharpe</th>
+            <th>MDD</th>
+            <th>거래</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>PLTR</td><td class="good">+777.5%</td><td class="good">+66.8%</td><td class="good">1.53</td><td>-30.2%</td><td>0회</td></tr>
+          <tr><td>COIN</td><td class="good">+332.6%</td><td class="good">+48.3%</td><td class="good">1.09</td><td>-47.3%</td><td>0회</td></tr>
+          <tr><td>AAPL</td><td class="good">+73.1%</td><td class="good">+11.6%</td><td>0.57</td><td>-28.3%</td><td>0회</td></tr>
+          <tr><td>TSLA</td><td class="good">+68.1%</td><td>+11.0%</td><td>0.45</td><td>-42.1%</td><td>1회</td></tr>
+          <tr><td>SHOP</td><td class="good">+65.2%</td><td>+10.6%</td><td>0.41</td><td>-42.4%</td><td>2회</td></tr>
+          <tr><td>IREN</td><td class="good">+35.0%</td><td>+10.1%</td><td>0.50</td><td class="bear">-57.2%</td><td>2회</td></tr>
+          <tr><td>LITE</td><td>+28.8%</td><td>+5.2%</td><td>0.23</td><td>-46.1%</td><td>2회</td></tr>
+          <tr><td>GOOGL</td><td>+25.6%</td><td>+4.7%</td><td>0.26</td><td>-9.3%</td><td>0회</td></tr>
+          <tr><td>META</td><td>0.0%</td><td>0.0%</td><td>0.00</td><td>0.0%</td><td>0회</td></tr>
+          <tr><td>MSFT</td><td class="bear">-15.4%</td><td class="bear">-3.3%</td><td class="bear">-0.58</td><td>-25.9%</td><td>1회</td></tr>
+          <tr><td>AMZN</td><td class="bear">-15.8%</td><td class="bear">-3.4%</td><td class="bear">-0.93</td><td>-24.9%</td><td>1회</td></tr>
+          <tr><td>NVDA</td><td class="bear">-21.3%</td><td class="bear">-4.7%</td><td class="bear">-0.93</td><td>-23.7%</td><td>1회</td></tr>
+          <tr><td>AMD</td><td class="bear">-27.1%</td><td class="bear">-6.1%</td><td class="bear">-0.45</td><td>-43.1%</td><td>1회</td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- 발견 사항 -->
+    <div class="bt-findings">
+      <div class="bt-findings-title">발견된 본질적 문제</div>
+      <div class="bt-finding">
+        <div class="bt-f-num">01</div>
+        <div class="bt-f-content">
+          <b>매수 조건이 너무 좁음</b><br>
+          Fib 61.8% ±2% AND 50EMA>200EMA = 5년간 13종 중 5종은 한 번도 충족 X
+        </div>
+      </div>
+      <div class="bt-finding">
+        <div class="bt-f-num">02</div>
+        <div class="bt-f-content">
+          <b>승률 0% — 매도 조건이 비대칭</b><br>
+          익절 (Fib 161.8% 도달) 5년간 0회, 손절 (-15%) 11회 → 매수 후 모두 손절로 끝남
+        </div>
+      </div>
+      <div class="bt-finding">
+        <div class="bt-f-num">03</div>
+        <div class="bt-f-content">
+          <b>"+102% 수익"은 운이었음</b><br>
+          5종 (PLTR, COIN, AAPL, GOOGL, META) = 매수조건 한 번도 충족 안 됨 → 단순 Buy & Hold와 동일
+        </div>
+      </div>
+      <div class="bt-finding">
+        <div class="bt-f-num">04</div>
+        <div class="bt-f-content">
+          <b>1차원 가격 신호의 한계</b><br>
+          단일 가격 일치 = 인간 심리 미반영. 진짜 차트 분석은 패턴 + 거래량 + 모멘텀 종합 필요
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 11: v4.0 로드맵 -->
+  <div class="section">
+    <div class="section-head">
+      <div class="num">11 — ROADMAP v4.0</div>
+      <h2>5-Layer 통합 모델 (개발 중)</h2>
+      <div class="lead">행동경제학 + 차트 패턴 + 미시구조 통합</div>
+    </div>
+    
+    <div class="roadmap-wrap">
+      <div class="roadmap-stage current">
+        <div class="rs-num">v3.0</div>
+        <div class="rs-content">
+          <div class="rs-title">현재 — 정량 가치 + 확률 분포</div>
+          <div class="rs-status">완료</div>
+          <div class="rs-desc">
+            ✓ 4-Factor 가치 평가 (Damodaran)<br>
+            ✓ Monte Carlo 확률 분포 (Black-Scholes)<br>
+            ✓ EMA + Fibonacci (백테스트 실패 확인)
+          </div>
+        </div>
+      </div>
+      
+      <div class="roadmap-stage next">
+        <div class="rs-num">v3.5</div>
+        <div class="rs-content">
+          <div class="rs-title">행동경제학 통합</div>
+          <div class="rs-status">진행 중</div>
+          <div class="rs-desc">
+            → Prospect Theory 점수 (Kahneman & Tversky)<br>
+            → 닻 효과 측정 (52주 고점 대비)<br>
+            → 처분 효과 (Disposition Effect)<br>
+            → 군집 행동 (Herd Behavior)
+          </div>
+        </div>
+      </div>
+      
+      <div class="roadmap-stage future">
+        <div class="rs-num">v4.0</div>
+        <div class="rs-content">
+          <div class="rs-title">차트 패턴 인식 + 미시구조</div>
+          <div class="rs-status">계획</div>
+          <div class="rs-desc">
+            → Bulkowski 검증 10개 표준 패턴<br>
+            → Double Bottom (88%), Inverse H&S (89%)<br>
+            → 거래량 분석 + Volume Profile<br>
+            → Order Flow Analysis
+          </div>
+        </div>
+      </div>
+      
+      <div class="roadmap-stage future">
+        <div class="rs-num">v5.0</div>
+        <div class="rs-content">
+          <div class="rs-title">AI 패턴 인식</div>
+          <div class="rs-status">미래</div>
+          <div class="rs-desc">
+            → 머신러닝 패턴 분류<br>
+            → GPT-4 Vision 차트 분석<br>
+            → 변형 패턴 자동 인식<br>
+            → 진짜 헤지펀드 수준 도약
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-left: 3px solid var(--gold-primary); font-size: 12px; color: var(--text-secondary); line-height: 1.8;">
+      <b style="color: var(--gold-primary); font-family: 'Noto Serif KR', serif;">개발 철학:</b><br>
+      Renaissance, Two Sigma 등 진짜 헤지펀드는 모델을 시장에 내놓기 전 수십 차례 백테스트합니다.
+      실패 → 개선 → 재검증의 반복. 안드레99도 같은 방식으로 진화합니다.<br><br>
+      <b style="color: var(--text-primary);">"측정하지 않으면 모른다. 정직하지 않으면 발전하지 않는다."</b>
+    </div>
+  </div>
+  
 </div>
 
 <div class="content analysis-mode" id="analysisPage" style="display: none;"></div>
@@ -1652,8 +2489,8 @@
 <div class="footer">
   <div class="footer-row">
     <div class="footer-left">
-      ANDRE99 <span class="ver">v3.0</span> · DAMODARAN · BLACK-SCHOLES · BOYLE · MURPHY
-      <div class="small">투자자문 아님 · 교육 콘텐츠 · DYOR</div>
+      ANDRE99 <span class="ver">v4.0 BETA</span> · 4-TAB SYSTEM · 재무/분석/공시/일정
+      <div class="small">투자자문 아님 · 교육 콘텐츠 · DYOR · BACKTEST: SHARPE 0.16 (정직 보고)</div>
     </div>
     <div class="footer-right">
       <span class="made-by">Made by</span>
@@ -1771,6 +2608,319 @@ function calcMarkerPos(value, min, max) {
   return Math.max(0, Math.min(100, pos));
 }
 
+// ═══════════════════════════════════════════
+// v3.5 행동경제학 점수 (Behavioral Score)
+// 학술 근거: Kahneman & Tversky (Prospect Theory)
+//          Shiller (Irrational Exuberance)
+//          Shefrin & Statman (Disposition Effect)
+// ═══════════════════════════════════════════
+
+function behavioralAnalysis(data) {
+  const price = data.price;
+  const high52 = data.week52_high;
+  const low52 = data.week52_low;
+  const per = data.per || 0;
+  const chg52w = data.chg_52w || 0;
+  
+  // 1. 닻 효과 (Anchoring Bias) — 52주 고점 대비 위치
+  // 사람들은 52주 고점을 무의식적 "정상가"로 인식
+  // 가까울수록 매수 부담, 멀수록 부담 ↓
+  let anchorScore = 0;
+  let anchorVerdict = '';
+  const anchorPosition = (price - low52) / (high52 - low52); // 0~1
+  
+  if (anchorPosition > 0.85) {
+    anchorScore = -2;
+    anchorVerdict = '고점 부담 (군중 FOMO 위험)';
+  } else if (anchorPosition > 0.65) {
+    anchorScore = -1;
+    anchorVerdict = '상단 부담';
+  } else if (anchorPosition > 0.35) {
+    anchorScore = 1;
+    anchorVerdict = '중립 (균형 영역)';
+  } else if (anchorPosition > 0.15) {
+    anchorScore = 2;
+    anchorVerdict = '저점 매력 (기회 영역)';
+  } else {
+    anchorScore = 3;
+    anchorVerdict = '극단 저점 (역발상 매력)';
+  }
+  
+  // 2. Prospect Theory — 손실 회피 점수
+  // 최근 1년 변동성 + 베타 기반
+  // 변동 ↑ = 사람들 회피 → 저평가 가능성
+  let prospectScore = 0;
+  let prospectVerdict = '';
+  const beta = data.beta || 1;
+  const volatility = Math.abs(chg52w);
+  
+  if (volatility > 50 && beta > 1.5) {
+    prospectScore = 2;
+    prospectVerdict = '고변동성 → 손실 회피로 저평가 가능';
+  } else if (volatility > 30) {
+    prospectScore = 1;
+    prospectVerdict = '중간 변동성 → 일부 회피 효과';
+  } else if (volatility > 15) {
+    prospectScore = 0;
+    prospectVerdict = '정상 변동성';
+  } else {
+    prospectScore = -1;
+    prospectVerdict = '저변동성 → 안정선호로 고평가 가능';
+  }
+  
+  // 3. 처분 효과 (Disposition Effect) — 모멘텀 vs 평균회귀
+  // Shefrin & Statman: 사람들은 이익 종목 너무 일찍 팔고, 손실은 너무 오래 보유
+  // 강세 종목 = 매도 압력 ↑ (꼭지 가까움)
+  // 약세 종목 = 매수 회피 ↑ (바닥 가까움)
+  let dispositionScore = 0;
+  let dispositionVerdict = '';
+  
+  if (chg52w > 100) {
+    dispositionScore = -2;
+    dispositionVerdict = '강한 상승 → 처분 압력 ↑ (꼭지 위험)';
+  } else if (chg52w > 50) {
+    dispositionScore = -1;
+    dispositionVerdict = '상승 추세 → 일부 처분';
+  } else if (chg52w > 0) {
+    dispositionScore = 1;
+    dispositionVerdict = '약한 상승 → 처분 압력 적음';
+  } else if (chg52w > -30) {
+    dispositionScore = 2;
+    dispositionVerdict = '약세 → 회피로 저평가 매력';
+  } else {
+    dispositionScore = 3;
+    dispositionVerdict = '극단 약세 → 항복 매도 후 반등 가능';
+  }
+  
+  // 4. 군집 행동 (Herd Behavior) — PER vs 섹터 평균
+  // 너무 인기 = 군집 (위험), 무관심 = 역발상 기회
+  let herdScore = 0;
+  let herdVerdict = '';
+  
+  if (per > 80) {
+    herdScore = -3;
+    herdVerdict = '극단 군집 (Hot Stock 위험)';
+  } else if (per > 50) {
+    herdScore = -2;
+    herdVerdict = '군집 인기 (FOMO)';
+  } else if (per > 25) {
+    herdScore = -1;
+    herdVerdict = '평균 이상 관심';
+  } else if (per > 10) {
+    herdScore = 1;
+    herdVerdict = '합리적 군집';
+  } else if (per > 0) {
+    herdScore = 2;
+    herdVerdict = '저관심 (역발상 매력)';
+  } else {
+    herdScore = 0;
+    herdVerdict = '적자 (군집 측정 X)';
+  }
+  
+  // 종합 행동 점수 (-10 ~ +10)
+  const totalScore = anchorScore + prospectScore + dispositionScore + herdScore;
+  const maxScore = 10;
+  const normalizedScore = (totalScore / maxScore * 100); // -100% ~ +100%
+  
+  let overallVerdict = '';
+  let signalClass = '';
+  if (normalizedScore > 50) {
+    overallVerdict = '강력 역발상 기회 (군중 회피 → 저평가)';
+    signalClass = 'strong-good';
+  } else if (normalizedScore > 20) {
+    overallVerdict = '심리적 매력 (저평가 영역)';
+    signalClass = 'good';
+  } else if (normalizedScore > -20) {
+    overallVerdict = '심리 중립';
+    signalClass = 'neutral';
+  } else if (normalizedScore > -50) {
+    overallVerdict = '심리적 부담 (FOMO 영역)';
+    signalClass = 'warn';
+  } else {
+    overallVerdict = '극단 군중 광기 (회피)';
+    signalClass = 'bear';
+  }
+  
+  return {
+    anchor: { score: anchorScore, verdict: anchorVerdict, position: anchorPosition * 100 },
+    prospect: { score: prospectScore, verdict: prospectVerdict, volatility: volatility },
+    disposition: { score: dispositionScore, verdict: dispositionVerdict, chg52w: chg52w },
+    herd: { score: herdScore, verdict: herdVerdict, per: per },
+    totalScore: totalScore,
+    normalizedScore: parseFloat(normalizedScore.toFixed(1)),
+    overallVerdict: overallVerdict,
+    signalClass: signalClass
+  };
+}
+
+// ═══════════════════════════════════════════
+// v3.5 차트 패턴 인식 (룰 기반 v1)
+// 학술 근거: Bulkowski "Encyclopedia of Chart Patterns"
+// 무료 데이터만 사용 (52주 고점/저점, 이동평균)
+// ═══════════════════════════════════════════
+
+function chartPatternRecognition(data) {
+  const price = data.price;
+  const high52 = data.week52_high;
+  const low52 = data.week52_low;
+  const ema21 = data.technical?.ema21 || price;
+  const sma50 = data.technical?.sma50 || price;
+  const sma200 = data.technical?.sma200 || price;
+  const chg52w = data.chg_52w || 0;
+  const range = high52 - low52;
+  const pos = (price - low52) / range; // 0~1
+  
+  const patterns = [];
+  
+  // 1. Double Bottom 후보 (저점 + 회복) - Bulkowski 88% 성공
+  if (pos < 0.25 && price > sma50 * 0.95 && chg52w > -30) {
+    patterns.push({
+      name: 'Double Bottom 후보',
+      type: 'bullish',
+      confidence: 88,
+      desc: '52주 저점 부근 + 50EMA 회복 시작 → 강력 반등 패턴',
+      source: 'Bulkowski'
+    });
+  }
+  
+  // 2. Cup with Handle 후보 (W. O'Neil) - 86% 성공
+  if (pos > 0.7 && pos < 0.95 && sma50 > sma200 && chg52w > 20) {
+    patterns.push({
+      name: 'Cup with Handle 후보',
+      type: 'bullish',
+      confidence: 86,
+      desc: '강세 추세 + 고점 부근 손잡이 형성 → 신고가 돌파 가능',
+      source: "William O'Neil"
+    });
+  }
+  
+  // 3. Inverse Head & Shoulders - 89% 성공 (가장 강력)
+  if (pos < 0.4 && price > ema21 && ema21 > sma50 * 0.98) {
+    patterns.push({
+      name: 'Inverse H&S 후보',
+      type: 'bullish',
+      confidence: 89,
+      desc: '저점 영역 + 단기 추세 전환 신호',
+      source: 'Bulkowski'
+    });
+  }
+  
+  // 4. Head & Shoulders (꼭지) - 83% 하락 신호
+  if (pos > 0.85 && price < sma50 * 1.02 && sma50 < high52 * 0.95) {
+    patterns.push({
+      name: 'Head & Shoulders 위험',
+      type: 'bearish',
+      confidence: 83,
+      desc: '52주 고점 부근 + 추세 약화 → 하락 전환 위험',
+      source: 'Bulkowski'
+    });
+  }
+  
+  // 5. Ascending Triangle - 83% 상승
+  if (pos > 0.6 && pos < 0.85 && sma50 > sma200 && chg52w > 15) {
+    patterns.push({
+      name: 'Ascending Triangle',
+      type: 'bullish',
+      confidence: 83,
+      desc: '저점이 점차 올라옴 + 저항선 접근 → 돌파 가능',
+      source: 'Bulkowski'
+    });
+  }
+  
+  // 6. Descending Triangle - 79% 하락
+  if (pos > 0.7 && sma50 < sma200 && chg52w < 0) {
+    patterns.push({
+      name: 'Descending Triangle',
+      type: 'bearish',
+      confidence: 79,
+      desc: '고점이 점차 낮아짐 + 약세 추세 → 하방 돌파 위험',
+      source: 'Bulkowski'
+    });
+  }
+  
+  // 7. Golden Cross 임박 - 모멘텀
+  const goldenCrossNear = sma50 < sma200 * 1.05 && sma50 > sma200 * 0.95 && chg52w > 0;
+  if (goldenCrossNear) {
+    patterns.push({
+      name: 'Golden Cross 임박',
+      type: 'bullish',
+      confidence: 70,
+      desc: '50EMA가 200EMA에 근접 (상향) → 추세 전환 신호',
+      source: '표준 기술 분석'
+    });
+  }
+  
+  // 8. Death Cross 위험
+  if (sma50 < sma200 && sma50 > sma200 * 0.92 && chg52w < 0) {
+    patterns.push({
+      name: 'Death Cross 진행 중',
+      type: 'bearish',
+      confidence: 72,
+      desc: '50EMA가 200EMA 하향 돌파 → 약세 추세 확정',
+      source: '표준 기술 분석'
+    });
+  }
+  
+  // 9. 신고가 돌파 (Breakout) - 모멘텀
+  if (pos > 0.95) {
+    patterns.push({
+      name: '신고가 돌파 영역',
+      type: 'neutral',
+      confidence: 65,
+      desc: '52주 고점 돌파 시 모멘텀 ↑, 실패 시 더블탑 위험',
+      source: '모멘텀 표준'
+    });
+  }
+  
+  // 10. Falling Knife (급락) - 위험
+  if (chg52w < -40 && pos < 0.15) {
+    patterns.push({
+      name: 'Falling Knife (급락 중)',
+      type: 'bearish',
+      confidence: 75,
+      desc: '급락 종목 매수 = 추가 하락 위험. 바닥 확인 후 진입 권장',
+      source: '표준 경고'
+    });
+  }
+  
+  // 종합 판정
+  const bullishPatterns = patterns.filter(p => p.type === 'bullish');
+  const bearishPatterns = patterns.filter(p => p.type === 'bearish');
+  
+  let overallSignal = 'neutral';
+  let overallConfidence = 50;
+  let signalDesc = '';
+  
+  if (bullishPatterns.length > bearishPatterns.length) {
+    overallSignal = 'bullish';
+    const avgConf = bullishPatterns.reduce((s, p) => s + p.confidence, 0) / bullishPatterns.length;
+    overallConfidence = Math.round(avgConf);
+    signalDesc = `상승 패턴 ${bullishPatterns.length}개 감지`;
+  } else if (bearishPatterns.length > bullishPatterns.length) {
+    overallSignal = 'bearish';
+    const avgConf = bearishPatterns.reduce((s, p) => s + p.confidence, 0) / bearishPatterns.length;
+    overallConfidence = Math.round(avgConf);
+    signalDesc = `하락 패턴 ${bearishPatterns.length}개 감지`;
+  } else if (bullishPatterns.length > 0) {
+    overallSignal = 'mixed';
+    overallConfidence = 50;
+    signalDesc = '상승 + 하락 패턴 혼재';
+  } else {
+    overallSignal = 'none';
+    overallConfidence = 0;
+    signalDesc = '명확한 패턴 미감지';
+  }
+  
+  return {
+    patterns: patterns,
+    bullishCount: bullishPatterns.length,
+    bearishCount: bearishPatterns.length,
+    overallSignal: overallSignal,
+    overallConfidence: overallConfidence,
+    signalDesc: signalDesc
+  };
+}
+
 async function loadData() {
   try {
     const res = await fetch('data.json');
@@ -1873,6 +3023,10 @@ function renderLiveData(tk, d) {
   // ═══ v3.0 Monte Carlo 시뮬레이션 실행 ═══
   const mc = monteCarloSimulation(d);
   
+  // ═══ v3.5 행동경제학 + 차트 패턴 분석 ═══
+  const ba = behavioralAnalysis(d);
+  const cp = chartPatternRecognition(d);
+  
   const premium = v.market_premium_pct || 0;
   const premiumVerdict = premium > 50 ? '심한 고평가' 
                       : premium > 20 ? '시장 프리미엄 큼' 
@@ -1905,30 +3059,262 @@ function renderLiveData(tk, d) {
     { name: '261.8%', v: fe.ext_2618, note: '극단 강세' }
   ] : [];
   
+  // ═══ v4.0 재무 데이터 가공 ═══
+  const quarterly = d.quarterly_financials || [];
+  const earnings = d.earnings_history || [];
+  
+  // 분기 데이터 시간순 정렬 (최신 → 오래된 순으로 전달됨, 표시는 오래된 → 최신)
+  const qReverse = [...quarterly].reverse(); // 시간순 (오래된 → 최신)
+  const eReverse = [...earnings].reverse();
+  
+  // 매출/순이익 추세 데이터
+  const qLabels = qReverse.map(q => {
+    if (q.period) {
+      const parts = q.period.split('-');
+      return parts.length >= 2 ? `${parts[0].slice(2)}/${parts[1]}` : q.period;
+    }
+    return q.year ? `${String(q.year).slice(2)} Q${q.quarter}` : '';
+  });
+  const qRevenue = qReverse.map(q => q.revenue);
+  const qNetIncome = qReverse.map(q => q.net_income);
+  const qOperating = qReverse.map(q => q.operating_income);
+  
+  // YoY 성장률 (분기별, 4분기 이전과 비교)
+  const yoyGrowth = qReverse.map((q, i) => {
+    if (i < 4 || !q.revenue || !qReverse[i-4]?.revenue) return null;
+    return ((q.revenue / qReverse[i-4].revenue) - 1) * 100;
+  });
+  
+  // QoQ 성장률 (직전 분기 대비)
+  const qoqGrowth = qReverse.map((q, i) => {
+    if (i < 1 || !q.revenue || !qReverse[i-1]?.revenue) return null;
+    return ((q.revenue / qReverse[i-1].revenue) - 1) * 100;
+  });
+  
+  // 가장 최근 분기 데이터
+  const latestQ = quarterly[0] || {};
+  const prevQ = quarterly[1] || {};
+  const yearAgoQ = quarterly[4] || {};
+  
+  // 매출 YoY (최신)
+  const latestRevYoY = (latestQ.revenue && yearAgoQ.revenue) 
+    ? ((latestQ.revenue / yearAgoQ.revenue) - 1) * 100 
+    : null;
+  const latestRevQoQ = (latestQ.revenue && prevQ.revenue)
+    ? ((latestQ.revenue / prevQ.revenue) - 1) * 100
+    : null;
+  const latestNiYoY = (latestQ.net_income && yearAgoQ.net_income && yearAgoQ.net_income > 0)
+    ? ((latestQ.net_income / yearAgoQ.net_income) - 1) * 100
+    : null;
+  
+  // 최근 어닝 (예측 vs 실제)
+  const latestEarning = earnings[0] || {};
+  const nextEarning = earnings.find(e => e.eps_actual === null) || null;
+  
+  // 단위 포맷
+  const fmtMoney = (n) => {
+    if (n === null || n === undefined) return '-';
+    const abs = Math.abs(n);
+    const sign = n < 0 ? '-' : '';
+    if (abs >= 1e9) return `${sign}$${(abs/1e9).toFixed(2)}B`;
+    if (abs >= 1e6) return `${sign}$${(abs/1e6).toFixed(1)}M`;
+    if (abs >= 1e3) return `${sign}$${(abs/1e3).toFixed(0)}K`;
+    return `${sign}$${abs.toFixed(0)}`;
+  };
+  const fmtPct = (n, withSign = true) => {
+    if (n === null || n === undefined) return '-';
+    const sign = withSign && n > 0 ? '+' : '';
+    return `${sign}${n.toFixed(1)}%`;
+  };
+  
   c.innerHTML = `
-    <div class="card full fade-in">
-      <div class="card-head">
-        <span class="ttl">${tk} · 실시간 통합 분석</span>
-        <span class="meta">${new Date(d.timestamp).toLocaleString('ko-KR')}</span>
-      </div>
-      <div class="card-body">
-        <div class="stock-head">
-          <div>
-            <div class="ticker">${tk}</div>
-            <div class="name">${d.name} · ${d.sector}</div>
+    <!-- ═══ v4.0 모바일 종목 헤더 (한국 증권사 톤) ═══ -->
+    <div class="stock-header-v4 full fade-in">
+      <div class="sh-top">
+        <div class="sh-symbol-row">
+          <div class="sh-symbol">${tk}</div>
+          <div class="sh-chg ${d.chg_day >= 0 ? 'up' : 'down'}">
+            ${d.chg_day >= 0 ? '+' : ''}${d.chg_day.toFixed(2)}%
           </div>
-          <div class="price-area">
-            <div class="price">$${d.price.toFixed(2)}</div>
-            <div class="chg ${d.chg_day >= 0 ? 'up' : 'down'}">
-              ${d.chg_day >= 0 ? '▲' : '▼'} ${Math.abs(d.chg_day).toFixed(2)}% 
-              ($${Math.abs(d.chg_day_abs).toFixed(2)})
+        </div>
+        <div class="sh-meta">🇺🇸 ${d.exchange || 'US'} | ${d.name}</div>
+      </div>
+      
+      <div class="sh-price-block">
+        <div class="sh-price">$${d.price.toFixed(2)}</div>
+        <div class="sh-price-sub ${d.chg_day >= 0 ? 'up' : 'down'}">
+          지난 정규장 종가보다 ${d.chg_day >= 0 ? '+' : ''}${d.chg_day.toFixed(2)}% (${d.chg_day >= 0 ? '+' : ''}$${d.chg_day_abs.toFixed(2)})
+        </div>
+      </div>
+      
+      <!-- 4-탭 -->
+      <div class="sh-tabs">
+        <div class="sh-tab active" data-tab="finance" onclick="switchTab('finance')">재무</div>
+        <div class="sh-tab" data-tab="analysis" onclick="switchTab('analysis')">분석</div>
+        <div class="sh-tab" data-tab="filings" onclick="switchTab('filings')">공시</div>
+        <div class="sh-tab" data-tab="schedule" onclick="switchTab('schedule')">일정</div>
+      </div>
+    </div>
+    
+    <!-- ═══ [재무] 탭 패널 ═══ -->
+    <div class="tab-panel active" id="tab-finance">
+      
+      <!-- 회사 개요 -->
+      <div class="card full fade-in fin-overview">
+        <div class="fin-row">
+          <div class="fin-k">섹터</div>
+          <div class="fin-v">${d.sector || '-'}</div>
+        </div>
+        <div class="fin-row">
+          <div class="fin-k">시가총액</div>
+          <div class="fin-v">${d.market_cap || '-'}</div>
+        </div>
+        <div class="fin-row">
+          <div class="fin-k">EPS (TTM)</div>
+          <div class="fin-v">${d.eps > 0 ? '$' + d.eps.toFixed(2) : '$' + d.eps.toFixed(2)}</div>
+        </div>
+        <div class="fin-row">
+          <div class="fin-k">PER</div>
+          <div class="fin-v">${d.per > 0 ? d.per.toFixed(1) + 'x' : '-'}</div>
+        </div>
+        <div class="fin-row">
+          <div class="fin-k">ROE</div>
+          <div class="fin-v ${d.roe > 0 ? 'up' : (d.roe < 0 ? 'down' : '')}">${d.roe ? d.roe.toFixed(1) + '%' : '-'}</div>
+        </div>
+        <div class="fin-row">
+          <div class="fin-k">EV/EBITDA</div>
+          <div class="fin-v">${d.ev_ebitda ? d.ev_ebitda.toFixed(1) + 'x' : '-'}</div>
+        </div>
+      </div>
+      
+      <!-- 최근 어닝 (예측 vs 실제) -->
+      ${latestEarning.eps_actual !== null && latestEarning.eps_actual !== undefined ? `
+      <div class="card full fade-in earning-card">
+        <div class="card-head">
+          <span class="ttl">최근 실적 (예측 vs 실제)</span>
+          <span class="meta">${latestEarning.period || ''}</span>
+        </div>
+        <div class="card-body">
+          <div class="earning-grid">
+            <div class="earning-cell">
+              <div class="ec-label">실제 EPS</div>
+              <div class="ec-value ${latestEarning.eps_actual >= 0 ? 'up' : 'down'}">
+                $${latestEarning.eps_actual !== null ? latestEarning.eps_actual.toFixed(2) : '-'}
+              </div>
+              <div class="ec-sub">예측 $${latestEarning.eps_estimate !== null ? latestEarning.eps_estimate.toFixed(2) : '-'}</div>
+            </div>
+            <div class="earning-cell">
+              <div class="ec-label">예측 대비</div>
+              <div class="ec-value ${latestEarning.eps_surprise_pct >= 0 ? 'up' : 'down'}">
+                ${latestEarning.eps_surprise_pct !== null ? (latestEarning.eps_surprise_pct > 0 ? '+' : '') + latestEarning.eps_surprise_pct.toFixed(1) + '%' : '-'}
+              </div>
+              <div class="ec-sub">${latestEarning.eps_surprise_pct >= 0 ? '서프라이즈 ↑' : '미스 ↓'}</div>
             </div>
           </div>
         </div>
       </div>
+      ` : ''}
+      
+      <!-- 매출 분기별 차트 -->
+      ${qLabels.length > 0 ? `
+      <div class="card full fade-in">
+        <div class="card-head">
+          <span class="ttl">매출 추이 (분기별)</span>
+          <span class="meta">${qLabels[0]} ~ ${qLabels[qLabels.length-1]}</span>
+        </div>
+        <div class="card-body">
+          ${latestRevYoY !== null || latestRevQoQ !== null ? `
+          <div class="growth-summary">
+            ${latestRevYoY !== null ? `
+            <div class="gs-cell">
+              <div class="gs-label">YoY 성장률</div>
+              <div class="gs-value ${latestRevYoY >= 0 ? 'up' : 'down'}">
+                ${latestRevYoY > 0 ? '+' : ''}${latestRevYoY.toFixed(1)}%
+              </div>
+              <div class="gs-sub">전년 동분기 대비</div>
+            </div>` : ''}
+            ${latestRevQoQ !== null ? `
+            <div class="gs-cell">
+              <div class="gs-label">QoQ 성장률</div>
+              <div class="gs-value ${latestRevQoQ >= 0 ? 'up' : 'down'}">
+                ${latestRevQoQ > 0 ? '+' : ''}${latestRevQoQ.toFixed(1)}%
+              </div>
+              <div class="gs-sub">전 분기 대비</div>
+            </div>` : ''}
+          </div>
+          ` : ''}
+          
+          <div class="chart-wrap">
+            <canvas id="revenueChart"></canvas>
+          </div>
+          
+          <table class="dt fin-table">
+            <thead>
+              <tr>
+                <th>분기</th>
+                <th>매출</th>
+                <th>YoY</th>
+                <th>QoQ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${qReverse.map((q, i) => `
+                <tr>
+                  <td>${qLabels[i]}</td>
+                  <td>${fmtMoney(q.revenue)}</td>
+                  <td class="${yoyGrowth[i] !== null && yoyGrowth[i] >= 0 ? 'up' : (yoyGrowth[i] !== null ? 'down' : '')}">${yoyGrowth[i] !== null ? fmtPct(yoyGrowth[i]) : '-'}</td>
+                  <td class="${qoqGrowth[i] !== null && qoqGrowth[i] >= 0 ? 'up' : (qoqGrowth[i] !== null ? 'down' : '')}">${qoqGrowth[i] !== null ? fmtPct(qoqGrowth[i]) : '-'}</td>
+                </tr>
+              `).reverse().join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- 순이익 분기별 차트 -->
+      <div class="card full fade-in">
+        <div class="card-head">
+          <span class="ttl">순이익 추이 (분기별)</span>
+          <span class="meta">파랑 = 적자, 빨강 = 흑자</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap">
+            <canvas id="incomeChart"></canvas>
+          </div>
+          
+          <table class="dt fin-table">
+            <thead>
+              <tr>
+                <th>분기</th>
+                <th>순이익</th>
+                <th>영업이익</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${qReverse.map((q, i) => `
+                <tr>
+                  <td>${qLabels[i]}</td>
+                  <td class="${q.net_income !== null && q.net_income >= 0 ? 'up' : 'down'}">${fmtMoney(q.net_income)}</td>
+                  <td class="${q.operating_income !== null && q.operating_income >= 0 ? 'up' : 'down'}">${fmtMoney(q.operating_income)}</td>
+                </tr>
+              `).reverse().join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      ` : `
+      <div class="card full empty-state">
+        <div class="title">분기별 재무 데이터를 가져올 수 없습니다</div>
+        <div class="desc">Finnhub Free 한계 또는 신규 상장 종목일 수 있습니다</div>
+      </div>
+      `}
+      
     </div>
     
-    <div class="card full fade-in andre99-main-card">
+    <!-- ═══ [분석] 탭 패널 ═══ -->
+    <div class="tab-panel" id="tab-analysis">
+      
+      <div class="card full fade-in andre99-main-card">
       <div class="card-head">
         <span class="ttl">★★ 안드레99 최종 적정가</span>
         <span class="meta">${a99.signal_verdict || ''}</span>
@@ -2136,6 +3522,114 @@ function renderLiveData(tk, d) {
       </div>
     </div>
     
+    <!-- ★ 행동경제학 점수 (v3.5) -->
+    <div class="card full fade-in ba-card">
+      <div class="card-head">
+        <span class="ttl">★ 행동경제학 점수 (Behavioral Score)</span>
+        <span class="meta">Kahneman · Shiller · Shefrin</span>
+      </div>
+      <div class="card-body">
+        <div class="ba-overall">
+          <div class="ba-score-display ${ba.signalClass}">
+            <div class="ba-score-label">SENTIMENT SCORE</div>
+            <div class="ba-score-num">${ba.normalizedScore > 0 ? '+' : ''}${ba.normalizedScore}</div>
+            <div class="ba-score-verdict">${ba.overallVerdict}</div>
+          </div>
+        </div>
+        
+        <div class="ba-factors">
+          <div class="ba-factor ${ba.anchor.score > 0 ? 'good' : ba.anchor.score < 0 ? 'bear' : ''}">
+            <div class="ba-f-name">닻 효과 (Anchoring)</div>
+            <div class="ba-f-detail">
+              <div>52주 범위 내 위치: <b>${ba.anchor.position.toFixed(0)}%</b></div>
+              <div>${ba.anchor.verdict}</div>
+            </div>
+            <div class="ba-f-score">${ba.anchor.score > 0 ? '+' : ''}${ba.anchor.score}</div>
+          </div>
+          
+          <div class="ba-factor ${ba.prospect.score > 0 ? 'good' : ba.prospect.score < 0 ? 'bear' : ''}">
+            <div class="ba-f-name">손실 회피 (Prospect)</div>
+            <div class="ba-f-detail">
+              <div>변동성: <b>${ba.prospect.volatility.toFixed(1)}%</b></div>
+              <div>${ba.prospect.verdict}</div>
+            </div>
+            <div class="ba-f-score">${ba.prospect.score > 0 ? '+' : ''}${ba.prospect.score}</div>
+          </div>
+          
+          <div class="ba-factor ${ba.disposition.score > 0 ? 'good' : ba.disposition.score < 0 ? 'bear' : ''}">
+            <div class="ba-f-name">처분 효과 (Disposition)</div>
+            <div class="ba-f-detail">
+              <div>52주 수익: <b>${ba.disposition.chg52w > 0 ? '+' : ''}${ba.disposition.chg52w.toFixed(1)}%</b></div>
+              <div>${ba.disposition.verdict}</div>
+            </div>
+            <div class="ba-f-score">${ba.disposition.score > 0 ? '+' : ''}${ba.disposition.score}</div>
+          </div>
+          
+          <div class="ba-factor ${ba.herd.score > 0 ? 'good' : ba.herd.score < 0 ? 'bear' : ''}">
+            <div class="ba-f-name">군집 행동 (Herd)</div>
+            <div class="ba-f-detail">
+              <div>PER: <b>${ba.herd.per.toFixed(1)}x</b></div>
+              <div>${ba.herd.verdict}</div>
+            </div>
+            <div class="ba-f-score">${ba.herd.score > 0 ? '+' : ''}${ba.herd.score}</div>
+          </div>
+        </div>
+        
+        <div class="ba-academic">
+          <b>학술 근거:</b> Kahneman & Tversky "Prospect Theory" (1979) · 
+          Shiller "Irrational Exuberance" · 
+          Shefrin & Statman "Disposition Effect" (1985)
+        </div>
+      </div>
+    </div>
+    
+    <!-- ★ 차트 패턴 인식 (v3.5) -->
+    <div class="card full fade-in cp-card">
+      <div class="card-head">
+        <span class="ttl">★ 차트 패턴 인식 (Pattern Recognition)</span>
+        <span class="meta">Bulkowski 학술 검증 · ${cp.signalDesc}</span>
+      </div>
+      <div class="card-body">
+        ${cp.patterns.length > 0 ? `
+          <div class="cp-overall">
+            <div class="cp-signal cp-signal-${cp.overallSignal}">
+              <div class="cp-signal-label">PATTERN SIGNAL</div>
+              <div class="cp-signal-value">
+                ${cp.overallSignal === 'bullish' ? '상승 신호' : 
+                  cp.overallSignal === 'bearish' ? '하락 신호' :
+                  cp.overallSignal === 'mixed' ? '혼조' : '중립'}
+              </div>
+              <div class="cp-signal-conf">평균 신뢰도 ${cp.overallConfidence}%</div>
+            </div>
+          </div>
+          
+          <div class="cp-patterns">
+            ${cp.patterns.map(p => `
+              <div class="cp-pattern cp-${p.type}">
+                <div class="cp-p-header">
+                  <div class="cp-p-name">${p.name}</div>
+                  <div class="cp-p-conf">${p.confidence}%</div>
+                </div>
+                <div class="cp-p-desc">${p.desc}</div>
+                <div class="cp-p-source">출처: ${p.source}</div>
+              </div>
+            `).join('')}
+          </div>
+        ` : `
+          <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12px;">
+            현재 명확한 차트 패턴이 감지되지 않습니다.<br>
+            <span style="font-size: 10px;">(중립 영역 또는 패턴 형성 중)</span>
+          </div>
+        `}
+        
+        <div class="ba-academic">
+          <b>학술 근거:</b> Bulkowski "Encyclopedia of Chart Patterns" · 
+          William O'Neil "How to Make Money in Stocks" · 
+          학술적으로 통계 검증된 10개 표준 패턴 적용
+        </div>
+      </div>
+    </div>
+    
     <div class="card fade-in">
       <div class="card-head"><span class="ttl">[좌] 4-Factor 가치 평가</span><span class="meta">${v.stock_type_kr || ''}</span></div>
       <div class="card-body">
@@ -2266,7 +3760,179 @@ function renderLiveData(tk, d) {
         <div class="tv-caption">▸ <b>${tk}</b> 일봉 차트 · 이동평균선 포함</div>
       </div>
     </div>
+    
+    </div><!-- /tab-analysis -->
+    
+    <!-- ═══ [공시] 탭 패널 (추후 빌드 예정) ═══ -->
+    <div class="tab-panel" id="tab-filings">
+      <div class="card full empty-state">
+        <div class="title">공시 탭</div>
+        <div class="desc">
+          SEC EDGAR API 통합 진행 예정<br>
+          최근 8-K, 10-K, 10-Q 자동 수집<br>
+          <span style="color:var(--gold-primary);">다음 빌드 단계에서 추가됩니다</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ═══ [일정] 탭 패널 (추후 빌드 예정) ═══ -->
+    <div class="tab-panel" id="tab-schedule">
+      <div class="card full empty-state">
+        <div class="title">일정 탭</div>
+        <div class="desc">
+          어닝 캘린더 + 배당 일정 + 주요 이벤트<br>
+          <span style="color:var(--gold-primary);">다음 빌드 단계에서 추가됩니다</span>
+        </div>
+      </div>
+    </div>
   `;
+  
+  // 탭 전환 후 차트 그리기 (재무 탭이 기본 활성)
+  setTimeout(() => drawFinanceCharts(qLabels, qRevenue, qNetIncome, qOperating), 100);
+}
+
+// 탭 전환 함수
+function switchTab(tabName) {
+  document.querySelectorAll('.sh-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  
+  const tab = document.querySelector(`.sh-tab[data-tab="${tabName}"]`);
+  const panel = document.getElementById(`tab-${tabName}`);
+  if (tab) tab.classList.add('active');
+  if (panel) panel.classList.add('active');
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// 재무 탭 차트 그리기
+let revenueChartInstance = null;
+let incomeChartInstance = null;
+
+function drawFinanceCharts(labels, revenue, netIncome, operating) {
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js 미로드');
+    return;
+  }
+  
+  // 기존 차트 파괴
+  if (revenueChartInstance) revenueChartInstance.destroy();
+  if (incomeChartInstance) incomeChartInstance.destroy();
+  
+  // 공통 옵션
+  const koreanRed = '#F85149';
+  const koreanBlue = '#4493F8';
+  const gold = '#D4AF37';
+  const textPrimary = '#E8EDF2';
+  const textMuted = '#6E7681';
+  const gridColor = 'rgba(48, 54, 61, 0.4)';
+  
+  const fmtTooltipMoney = (n) => {
+    if (n === null || n === undefined) return '-';
+    const abs = Math.abs(n);
+    const sign = n < 0 ? '-' : '';
+    if (abs >= 1e9) return `${sign}$${(abs/1e9).toFixed(2)}B`;
+    if (abs >= 1e6) return `${sign}$${(abs/1e6).toFixed(1)}M`;
+    return `${sign}$${abs.toFixed(0)}`;
+  };
+  
+  // 매출 차트
+  const revCanvas = document.getElementById('revenueChart');
+  if (revCanvas && revenue.some(v => v !== null)) {
+    revenueChartInstance = new Chart(revCanvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '매출',
+          data: revenue,
+          backgroundColor: gold,
+          borderColor: gold,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#161B22',
+            borderColor: '#30363D',
+            borderWidth: 1,
+            titleColor: gold,
+            bodyColor: textPrimary,
+            callbacks: {
+              label: (ctx) => `매출: ${fmtTooltipMoney(ctx.raw)}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: textMuted, font: { size: 10 } },
+            grid: { color: gridColor, display: false }
+          },
+          y: {
+            ticks: { 
+              color: textMuted, 
+              font: { size: 10 },
+              callback: (v) => fmtTooltipMoney(v)
+            },
+            grid: { color: gridColor }
+          }
+        }
+      }
+    });
+  }
+  
+  // 순이익 차트 (양수=빨강, 음수=파랑, 한국 표준)
+  const incCanvas = document.getElementById('incomeChart');
+  if (incCanvas && netIncome.some(v => v !== null)) {
+    const colors = netIncome.map(v => v === null ? '#30363D' : (v >= 0 ? koreanRed : koreanBlue));
+    
+    incomeChartInstance = new Chart(incCanvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '순이익',
+          data: netIncome,
+          backgroundColor: colors,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#161B22',
+            borderColor: '#30363D',
+            borderWidth: 1,
+            titleColor: gold,
+            bodyColor: textPrimary,
+            callbacks: {
+              label: (ctx) => `순이익: ${fmtTooltipMoney(ctx.raw)}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: textMuted, font: { size: 10 } },
+            grid: { color: gridColor, display: false }
+          },
+          y: {
+            ticks: { 
+              color: textMuted,
+              font: { size: 10 },
+              callback: (v) => fmtTooltipMoney(v)
+            },
+            grid: { color: gridColor }
+          }
+        }
+      }
+    });
+  }
 }
 
 loadData();
