@@ -705,6 +705,236 @@
   }
   .mc-academic b { color: var(--accent-blue); }
   
+  /* ═══ v4.1 어닝 분석 카드 ═══ */
+  .earning-analysis-card {
+    border-top: 2px solid var(--gold-primary);
+    background: var(--bg-tertiary);
+  }
+  
+  /* 카운트다운 */
+  .ea-countdown {
+    text-align: center;
+    padding: 24px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--gold-dim);
+    margin-bottom: 20px;
+  }
+  .ea-cd-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border: 1px solid var(--gold-primary);
+    color: var(--gold-primary);
+    font-family: 'EB Garamond', serif;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    margin-bottom: 16px;
+  }
+  .ea-cd-dday {
+    font-family: 'Playfair Display', serif;
+    font-size: 56px;
+    font-weight: 900;
+    color: var(--gold-primary);
+    line-height: 1;
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+  }
+  .ea-cd-date {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .ea-cd-quarter {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .ea-cd-forecast {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border-color);
+  }
+  .ea-fc-cell {
+    text-align: center;
+    padding: 8px;
+  }
+  .ea-fc-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+  .ea-fc-value {
+    font-family: 'EB Garamond', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+  .ea-fc-value.up { color: var(--bull); }
+  .ea-fc-value.down { color: var(--bear); }
+  
+  /* 어닝 통계 */
+  .ea-stats {
+    margin-bottom: 20px;
+  }
+  .ea-stats-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 13px;
+    color: var(--gold-primary);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+  }
+  .ea-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  @media (max-width: 767px) {
+    .ea-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .ea-cd-dday { font-size: 44px; }
+  }
+  .ea-stat-cell {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .ea-st-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .ea-st-value {
+    font-family: 'EB Garamond', serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .ea-st-value.up { color: var(--bull); }
+  .ea-st-value.down { color: var(--bear); }
+  .ea-st-sub {
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+  
+  /* 어닝 이력 표 */
+  .ea-history-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 12px;
+    color: var(--gold-primary);
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+  }
+  .ea-table { margin-top: 4px; }
+  .ea-table td {
+    font-size: 11px;
+    padding: 7px 8px;
+  }
+  .ea-table td.up { color: var(--bull); }
+  .ea-table td.down { color: var(--bear); }
+  
+  /* ═══ v4.1 일정 탭 ═══ */
+  .schedule-hero {
+    background: var(--bg-secondary);
+    border: 1px solid var(--gold-dim);
+    border-top: 2px solid var(--gold-primary);
+    padding: 28px 20px;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .sched-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border: 1px solid var(--gold-primary);
+    color: var(--gold-primary);
+    font-family: 'EB Garamond', serif;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    margin-bottom: 16px;
+  }
+  .sched-dday-big {
+    font-family: 'Playfair Display', serif;
+    font-size: 72px;
+    font-weight: 900;
+    color: var(--gold-primary);
+    line-height: 1;
+    margin-bottom: 14px;
+    letter-spacing: -0.02em;
+  }
+  .sched-event-name {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 18px;
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .sched-date-line {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+  .sched-hour-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    font-size: 10px;
+    color: var(--text-primary);
+    letter-spacing: 0.05em;
+  }
+  
+  /* 어닝 이력 타임라인 */
+  .timeline-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 0;
+  }
+  .timeline-row {
+    display: grid;
+    grid-template-columns: 70px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .timeline-row:last-child { border-bottom: none; }
+  .tl-quarter {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    color: var(--gold-primary);
+    font-weight: 700;
+    text-align: center;
+    padding: 6px 0;
+    border: 1px solid var(--gold-dim);
+  }
+  .tl-info { font-size: 11px; color: var(--text-secondary); line-height: 1.6; }
+  .tl-info b { color: var(--text-primary); font-family: 'EB Garamond', serif; font-size: 13px; }
+  .tl-verdict {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+  }
+  .tl-verdict.up { color: var(--bull); border-color: var(--bull-dim); }
+  .tl-verdict.down { color: var(--bear); border-color: var(--bear-dim); }
+  
+  @media (max-width: 767px) {
+    .sched-dday-big { font-size: 56px; }
+    .timeline-row { grid-template-columns: 60px 1fr; gap: 10px; padding: 12px; }
+    .tl-verdict { grid-column: 2; justify-self: start; margin-top: 4px; }
+  }
+  
   /* ═══ v3.5 행동경제학 점수 카드 ═══ */
   .ba-card {
     border-top: 2px solid #9C5DDB;
@@ -1588,7 +1818,7 @@
 
 <div class="global-header">
   <div class="row">
-    <div class="brand">ANDRE99 <span class="ver">v4.0 BETA</span></div>
+    <div class="brand">ANDRE99 <span class="ver">v4.1 BETA</span></div>
     <div class="nav">
       <a id="navHome" class="active" onclick="showLanding()">소개</a>
       <a id="navAnalysis" onclick="showAnalysisPrompt()">분석</a>
@@ -2489,7 +2719,7 @@
 <div class="footer">
   <div class="footer-row">
     <div class="footer-left">
-      ANDRE99 <span class="ver">v4.0 BETA</span> · 4-TAB SYSTEM · 재무/분석/공시/일정
+      ANDRE99 <span class="ver">v4.1 BETA</span> · 4-TAB · 재무/분석/공시/일정 · EARNINGS INTELLIGENCE
       <div class="small">투자자문 아님 · 교육 콘텐츠 · DYOR · BACKTEST: SHARPE 0.16 (정직 보고)</div>
     </div>
     <div class="footer-right">
@@ -3522,6 +3752,186 @@ function renderLiveData(tk, d) {
       </div>
     </div>
     
+    <!-- ★ 어닝 분석 (v4.1) -->
+    <div class="card full fade-in earning-analysis-card">
+      <div class="card-head">
+        <span class="ttl">★ 어닝 분석 (Earnings Intelligence)</span>
+        <span class="meta">${(() => {
+          const ne = d.next_earning;
+          if (!ne) return '다음 일정 정보 없음';
+          return ne.days_until > 0 ? `D-${ne.days_until}` : (ne.days_until === 0 ? 'TODAY' : '발표 완료');
+        })()}</span>
+      </div>
+      <div class="card-body">
+        
+        <!-- [A] 다음 어닝 카운트다운 -->
+        ${(() => {
+          const ne = d.next_earning;
+          if (!ne) return `
+            <div style="padding: 16px; background: var(--bg-secondary); border: 1px dashed var(--border-color); text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 20px;">
+              다음 어닝 일정 정보가 없습니다 (Finnhub Free 한계)
+            </div>
+          `;
+          
+          const dateObj = new Date(ne.date);
+          const dateStr = dateObj.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+          const hourLabel = ne.hour === 'bmo' ? '장 시작 전' : (ne.hour === 'amc' ? '장 마감 후' : '시간 미정');
+          
+          return `
+            <div class="ea-countdown">
+              <div class="ea-cd-tag">NEXT EARNINGS</div>
+              <div class="ea-cd-dday">
+                ${ne.days_until > 0 ? `D-${ne.days_until}` : (ne.days_until === 0 ? 'TODAY' : '완료')}
+              </div>
+              <div class="ea-cd-date">${dateStr} · ${hourLabel}</div>
+              <div class="ea-cd-quarter">${ne.year} Q${ne.quarter} 실적 발표</div>
+              
+              ${(ne.eps_estimate !== null || ne.revenue_estimate !== null) ? `
+              <div class="ea-cd-forecast">
+                ${ne.eps_estimate !== null ? `
+                <div class="ea-fc-cell">
+                  <div class="ea-fc-label">예측 EPS</div>
+                  <div class="ea-fc-value ${ne.eps_estimate >= 0 ? 'up' : 'down'}">
+                    $${ne.eps_estimate.toFixed(2)}
+                  </div>
+                </div>` : ''}
+                ${ne.revenue_estimate !== null ? `
+                <div class="ea-fc-cell">
+                  <div class="ea-fc-label">예측 매출</div>
+                  <div class="ea-fc-value">
+                    ${(() => {
+                      const r = ne.revenue_estimate;
+                      if (r >= 1e9) return '$' + (r/1e9).toFixed(2) + 'B';
+                      if (r >= 1e6) return '$' + (r/1e6).toFixed(1) + 'M';
+                      return '$' + r.toFixed(0);
+                    })()}
+                  </div>
+                </div>` : ''}
+              </div>
+              ` : ''}
+            </div>
+          `;
+        })()}
+        
+        <!-- [B] 어닝 트랙 레코드 -->
+        ${(() => {
+          const eh = d.earnings_history || [];
+          const completedEarnings = eh.filter(e => e.eps_actual !== null);
+          
+          if (completedEarnings.length === 0) return '';
+          
+          // 적중률 계산: 서프라이즈 ±5% 이내 = 적중
+          const hits = completedEarnings.filter(e => 
+            e.eps_surprise_pct !== null && Math.abs(e.eps_surprise_pct) <= 5
+          );
+          const hitRate = completedEarnings.length > 0 
+            ? (hits.length / completedEarnings.length * 100) 
+            : 0;
+          
+          // 평균 서프라이즈
+          const validSurprises = completedEarnings
+            .filter(e => e.eps_surprise_pct !== null)
+            .map(e => e.eps_surprise_pct);
+          const avgSurprise = validSurprises.length > 0
+            ? validSurprises.reduce((s, x) => s + x, 0) / validSurprises.length
+            : 0;
+          
+          // 서프라이즈/미스 횟수
+          const surprises = completedEarnings.filter(e => 
+            e.eps_surprise_pct !== null && e.eps_surprise_pct > 5
+          ).length;
+          const misses = completedEarnings.filter(e => 
+            e.eps_surprise_pct !== null && e.eps_surprise_pct < -5
+          ).length;
+          
+          return `
+            <div class="ea-stats">
+              <div class="ea-stats-title">어닝 트랙 레코드 (최근 ${completedEarnings.length}회)</div>
+              <div class="ea-stats-grid">
+                <div class="ea-stat-cell">
+                  <div class="ea-st-label">예측 적중률</div>
+                  <div class="ea-st-value ${hitRate >= 60 ? 'up' : (hitRate < 40 ? 'down' : '')}">
+                    ${hitRate.toFixed(0)}%
+                  </div>
+                  <div class="ea-st-sub">±5% 이내 = 적중</div>
+                </div>
+                <div class="ea-stat-cell">
+                  <div class="ea-st-label">평균 서프라이즈</div>
+                  <div class="ea-st-value ${avgSurprise >= 0 ? 'up' : 'down'}">
+                    ${avgSurprise > 0 ? '+' : ''}${avgSurprise.toFixed(1)}%
+                  </div>
+                  <div class="ea-st-sub">예측 대비 평균</div>
+                </div>
+                <div class="ea-stat-cell">
+                  <div class="ea-st-label">서프라이즈</div>
+                  <div class="ea-st-value up">
+                    ${surprises}회
+                  </div>
+                  <div class="ea-st-sub">예측 초과 (+5%+)</div>
+                </div>
+                <div class="ea-stat-cell">
+                  <div class="ea-st-label">미스</div>
+                  <div class="ea-st-value down">
+                    ${misses}회
+                  </div>
+                  <div class="ea-st-sub">예측 미달 (-5%-)</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="ea-history">
+              <div class="ea-history-title">분기별 상세 기록</div>
+              <table class="dt ea-table">
+                <thead>
+                  <tr>
+                    <th>분기</th>
+                    <th>예측</th>
+                    <th>실제</th>
+                    <th>서프라이즈</th>
+                    <th>판정</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${completedEarnings.map(e => {
+                    const sp = e.eps_surprise_pct;
+                    let verdict, vClass;
+                    if (sp === null) { verdict = '-'; vClass = ''; }
+                    else if (sp > 10) { verdict = '대박'; vClass = 'up'; }
+                    else if (sp > 5) { verdict = '서프라이즈'; vClass = 'up'; }
+                    else if (sp >= -5) { verdict = '적중'; vClass = ''; }
+                    else if (sp >= -10) { verdict = '미스'; vClass = 'down'; }
+                    else { verdict = '대형 미스'; vClass = 'down'; }
+                    
+                    const qLabel = e.year && e.quarter 
+                      ? `${String(e.year).slice(2)} Q${e.quarter}` 
+                      : (e.period || '-');
+                    
+                    return `
+                      <tr>
+                        <td>${qLabel}</td>
+                        <td>${e.eps_estimate !== null ? '$' + e.eps_estimate.toFixed(2) : '-'}</td>
+                        <td class="${e.eps_actual >= 0 ? 'up' : 'down'}">$${e.eps_actual.toFixed(2)}</td>
+                        <td class="${sp !== null && sp >= 0 ? 'up' : (sp !== null && sp < 0 ? 'down' : '')}">
+                          ${sp !== null ? (sp > 0 ? '+' : '') + sp.toFixed(1) + '%' : '-'}
+                        </td>
+                        <td class="${vClass}"><b>${verdict}</b></td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        })()}
+        
+        <div class="ba-academic">
+          <b>학술 근거:</b> Ball & Brown (1968) "Empirical Evaluation of Accounting Numbers" · 
+          PEAD (Post-Earnings Announcement Drift) 표준 · 
+          어닝 서프라이즈 ±5% = 학계 기준
+        </div>
+      </div>
+    </div>
+    
     <!-- ★ 행동경제학 점수 (v3.5) -->
     <div class="card full fade-in ba-card">
       <div class="card-head">
@@ -3775,15 +4185,138 @@ function renderLiveData(tk, d) {
       </div>
     </div>
     
-    <!-- ═══ [일정] 탭 패널 (추후 빌드 예정) ═══ -->
+    <!-- ═══ [일정] 탭 패널 (v4.1) ═══ -->
     <div class="tab-panel" id="tab-schedule">
-      <div class="card full empty-state">
-        <div class="title">일정 탭</div>
-        <div class="desc">
-          어닝 캘린더 + 배당 일정 + 주요 이벤트<br>
-          <span style="color:var(--gold-primary);">다음 빌드 단계에서 추가됩니다</span>
+      
+      <!-- 다음 어닝 히어로 -->
+      ${(() => {
+        const ne = d.next_earning;
+        if (!ne) return `
+          <div class="card full empty-state">
+            <div class="title">예정된 어닝 정보 없음</div>
+            <div class="desc">Finnhub Free에서 이 종목의 다음 어닝 일정을 찾을 수 없습니다</div>
+          </div>
+        `;
+        
+        const dateObj = new Date(ne.date);
+        const dateStr = dateObj.toLocaleDateString('ko-KR', { 
+          year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' 
+        });
+        const hourLabel = ne.hour === 'bmo' ? '장 시작 전 (한국 오후 ~10시)' 
+                       : (ne.hour === 'amc' ? '장 마감 후 (한국 오전 ~5시)' 
+                       : '시간 미정');
+        
+        return `
+          <div class="schedule-hero">
+            <div class="sched-tag">NEXT EARNINGS</div>
+            <div class="sched-dday-big">
+              ${ne.days_until > 0 ? `D-${ne.days_until}` : (ne.days_until === 0 ? 'TODAY' : '발표 완료')}
+            </div>
+            <div class="sched-event-name">${tk} ${ne.year} Q${ne.quarter} 실적 발표</div>
+            <div class="sched-date-line">${dateStr}</div>
+            <div class="sched-hour-badge">${hourLabel}</div>
+            
+            ${(ne.eps_estimate !== null || ne.revenue_estimate !== null) ? `
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border-color); display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              ${ne.eps_estimate !== null ? `
+              <div class="ea-fc-cell">
+                <div class="ea-fc-label">예측 EPS</div>
+                <div class="ea-fc-value ${ne.eps_estimate >= 0 ? 'up' : 'down'}">$${ne.eps_estimate.toFixed(2)}</div>
+              </div>` : ''}
+              ${ne.revenue_estimate !== null ? `
+              <div class="ea-fc-cell">
+                <div class="ea-fc-label">예측 매출</div>
+                <div class="ea-fc-value">
+                  ${(() => {
+                    const r = ne.revenue_estimate;
+                    if (r >= 1e9) return '$' + (r/1e9).toFixed(2) + 'B';
+                    if (r >= 1e6) return '$' + (r/1e6).toFixed(1) + 'M';
+                    return '$' + r.toFixed(0);
+                  })()}
+                </div>
+              </div>` : ''}
+            </div>
+            ` : ''}
+          </div>
+        `;
+      })()}
+      
+      <!-- 어닝 이력 타임라인 -->
+      ${(() => {
+        const eh = (d.earnings_history || []).filter(e => e.eps_actual !== null);
+        if (eh.length === 0) return '';
+        
+        return `
+          <div class="card full fade-in">
+            <div class="card-head">
+              <span class="ttl">📅 어닝 발표 이력</span>
+              <span class="meta">최근 ${eh.length}개 분기</span>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="timeline-card">
+                ${eh.map(e => {
+                  const sp = e.eps_surprise_pct;
+                  let verdict, vClass;
+                  if (sp === null) { verdict = '기록만'; vClass = ''; }
+                  else if (sp > 10) { verdict = '대박'; vClass = 'up'; }
+                  else if (sp > 5) { verdict = '서프라이즈'; vClass = 'up'; }
+                  else if (sp >= -5) { verdict = '적중'; vClass = ''; }
+                  else if (sp >= -10) { verdict = '미스'; vClass = 'down'; }
+                  else { verdict = '대형 미스'; vClass = 'down'; }
+                  
+                  const qLabel = e.year && e.quarter 
+                    ? `${String(e.year).slice(2)}Q${e.quarter}` 
+                    : '-';
+                  
+                  return `
+                    <div class="timeline-row">
+                      <div class="tl-quarter">${qLabel}</div>
+                      <div class="tl-info">
+                        실제 <b>$${e.eps_actual.toFixed(2)}</b> 
+                        / 예측 ${e.eps_estimate !== null ? '$' + e.eps_estimate.toFixed(2) : '-'}
+                        <br>
+                        ${sp !== null 
+                          ? `<span style="color: ${sp >= 0 ? 'var(--bull)' : 'var(--bear)'};">서프라이즈 ${sp > 0 ? '+' : ''}${sp.toFixed(1)}%</span>`
+                          : '서프라이즈 데이터 없음'
+                        }
+                      </div>
+                      <div class="tl-verdict ${vClass}">${verdict}</div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      })()}
+      
+      <!-- 배당 정보 (있는 경우) -->
+      ${d.dividend_yield > 0 ? `
+      <div class="card full fade-in">
+        <div class="card-head">
+          <span class="ttl">💰 배당 정보</span>
+          <span class="meta">현재 배당률</span>
+        </div>
+        <div class="card-body">
+          <div class="fin-row">
+            <div class="fin-k">배당률 (연간)</div>
+            <div class="fin-v up">${d.dividend_yield.toFixed(2)}%</div>
+          </div>
+          <div style="padding: 12px 16px; font-size: 11px; color: var(--text-muted); line-height: 1.6;">
+            ⚠️ 배당 기일(ex-dividend date) 정보는 Finnhub Premium 이상에서만 제공됩니다.<br>
+            대안: 회사 IR 페이지 또는 SEC EDGAR 공시 확인 권장
+          </div>
         </div>
       </div>
+      ` : ''}
+      
+      <!-- 안내 -->
+      <div style="padding: 16px; background: var(--bg-secondary); border-left: 3px solid var(--gold-primary); font-size: 11px; color: var(--text-secondary); line-height: 1.7;">
+        <b style="color: var(--gold-primary); font-family: 'Noto Serif KR', serif;">자동 갱신</b><br>
+        모든 일정 데이터는 검색 시점에 Finnhub API에서 실시간으로 가져옵니다.
+        어닝 발표 직후 자동으로 다음 분기 일정이 표시되며, 사용자의 별도 갱신 작업이 필요하지 않습니다.
+      </div>
+      
     </div>
   `;
   
