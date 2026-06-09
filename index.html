@@ -7,33 +7,43 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&family=EB+Garamond:wght@400;500;600;700&family=Cormorant+Garamond:wght@500;600;700&family=Playfair+Display:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg-primary:   #0D1117;
-    --bg-secondary: #161B22;
-    --bg-tertiary:  #1F262E;
-    --bg-hover:     #21262D;
-    --border-color: #30363D;
-    --border-strong:#484F58;
-    --text-primary: #E8EDF2;
-    --text-secondary:#9FA8B2;
-    --text-muted:   #6E7681;
-    --gold-primary: #D4AF37;
-    --gold-dim:     #A88A2C;
-    --gold-bright:  #E8C56C;
-    --bull:         #F85149;
-    --bull-dim:     #DA3633;
-    --bear:         #4493F8;
-    --bear-dim:     #316DCA;
-    --warn:         #D29922;
-    --accent-blue:  #58A6FF;
-    --accent-green: #3FB950;
+    /* ANDRE99 Tactical Market Board — 흑백 기반 + 미세 시안 + 리스크 muted red */
+    --bg-primary:   #060708;
+    --bg-secondary: #0C0E11;
+    --bg-tertiary:  #13161A;
+    --bg-hover:     #1A1E23;
+    --border-color: #22272E;
+    --border-strong:#333A43;
+    --text-primary: #E9ECF0;
+    --text-secondary:#8B939E;
+    --text-muted:   #565E68;
+    /* 골드 변수명은 유지하되 값은 차분한 시안 포인트로 매핑 (시안 절제) */
+    --gold-primary: #56C8D8;
+    --gold-dim:     #3A8A96;
+    --gold-bright:  #7FD9E6;
+    /* 한국 표준: 상승/과열 = red, 하락/저평가 = 시안틴트 블루 */
+    --bull:         #FF5B52;
+    --bull-dim:     #9E4843;
+    --bear:         #4D9FFF;
+    --bear-dim:     #2F6390;
+    --warn:         #D65B54;
+    --accent-blue:  #56C8D8;
+    --accent-green: #56C8D8;
+    /* Tactical 전용 */
+    --cy:           #56C8D8;
+    --cy-soft:      rgba(86,200,216,0.10);
+    --rd:           #D65B54;
+    --rd-soft:      rgba(214,91,84,0.10);
+    --mono:         'SFMono-Regular',ui-monospace,'Cascadia Mono','Roboto Mono',Menlo,Consolas,monospace;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
     background: var(--bg-primary);
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
     color: var(--text-primary);
     min-height: 100vh;
     line-height: 1.5;
@@ -52,14 +62,14 @@
     max-width: 1200px; margin: 0 auto;
   }
   .global-header .brand {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 26px; font-weight: 900;
     color: var(--text-primary); letter-spacing: 0.04em;
   }
   .global-header .brand .ver {
     font-size: 11px; color: var(--gold-primary); margin-left: 10px;
     letter-spacing: 0.1em; font-weight: 500;
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
   }
   .global-header .nav { display: flex; gap: 18px; }
   .global-header .nav a {
@@ -85,7 +95,7 @@
     flex: 1; padding: 14px 18px;
     background: transparent; border: none;
     color: var(--text-primary);
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 15px; font-weight: 500; letter-spacing: 0.05em;
   }
   .search-input::placeholder {
@@ -95,7 +105,7 @@
   .search-btn {
     padding: 14px 28px; background: var(--gold-primary);
     color: var(--bg-primary); border: none; cursor: pointer;
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 13px; font-weight: 700; letter-spacing: 0.05em;
     transition: background 0.2s;
   }
@@ -114,7 +124,7 @@
     display: flex; justify-content: space-between; align-items: baseline;
   }
   .card-head .ttl {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 14px; color: var(--text-primary); font-weight: 700;
   }
   .card-head .meta { font-size: 10px; color: var(--text-muted); letter-spacing: 0.05em; }
@@ -125,13 +135,13 @@
     padding-bottom: 14px; border-bottom: 1px solid var(--border-color); margin-bottom: 16px;
   }
   .stock-head .ticker {
-    font-family: 'EB Garamond', serif; font-size: 32px; font-weight: 700;
+    font-family: var(--mono); font-size: 32px; font-weight: 700;
     color: var(--text-primary); line-height: 1;
   }
   .stock-head .name { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
   .stock-head .price-area { text-align: right; }
   .stock-head .price {
-    font-family: 'EB Garamond', serif; font-size: 28px; font-weight: 700;
+    font-family: var(--mono); font-size: 28px; font-weight: 700;
     color: var(--text-primary); line-height: 1;
   }
   .stock-head .chg { font-size: 11px; margin-top: 4px; font-weight: 700; }
@@ -155,7 +165,7 @@
     margin-bottom: 4px;
   }
   .sh-symbol {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 22px;
     font-weight: 700;
     color: var(--text-primary);
@@ -164,7 +174,7 @@
   .sh-chg {
     font-size: 14px;
     font-weight: 700;
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
   }
   .sh-chg.up { color: var(--bull); }
   .sh-chg.down { color: var(--bear); }
@@ -178,7 +188,7 @@
     border-bottom: 1px solid var(--border-color);
   }
   .sh-price {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 42px;
     font-weight: 700;
     color: var(--text-primary);
@@ -202,7 +212,7 @@
   .sh-tab {
     padding: 14px 8px;
     text-align: center;
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
     font-size: 13px;
     font-weight: 600;
     color: var(--text-secondary);
@@ -250,7 +260,7 @@
     color: var(--text-secondary);
   }
   .fin-v {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 14px;
     font-weight: 700;
     color: var(--text-primary);
@@ -280,7 +290,7 @@
     margin-bottom: 8px;
   }
   .ec-value {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 26px;
     font-weight: 700;
     color: var(--text-primary);
@@ -315,7 +325,7 @@
     margin-bottom: 4px;
   }
   .gs-value {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 22px;
     font-weight: 700;
     line-height: 1;
@@ -368,7 +378,7 @@
   .insight-summary.insight-strong-down { border-top-color: var(--bear); }
   
   .is-current-tag {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 10px;
     color: var(--text-muted);
     letter-spacing: 0.3em;
@@ -376,7 +386,7 @@
     text-transform: uppercase;
   }
   .is-current-price {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 44px;
     font-weight: 700;
     color: var(--text-primary);
@@ -389,7 +399,7 @@
     padding: 8px 20px;
     background: var(--gold-primary);
     color: var(--bg-primary);
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.05em;
@@ -425,7 +435,7 @@
   .is-counter.is-info { border-top-color: var(--gold-primary); }
   
   .ic-num {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 32px;
     font-weight: 700;
     color: var(--text-primary);
@@ -457,7 +467,7 @@
   }
   .ss-icon { font-size: 16px; }
   .ss-title {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 14px;
     font-weight: 700;
     color: var(--text-primary);
@@ -484,7 +494,7 @@
   }
   .si-icon { font-size: 16px; }
   .si-title {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 13px;
     font-weight: 700;
     color: var(--text-primary);
@@ -515,7 +525,7 @@
   }
   .insight-disclaimer b {
     color: var(--gold-primary);
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 12px;
     display: block;
     margin-bottom: 6px;
@@ -544,7 +554,7 @@
     align-items: center;
   }
   .diff-num {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 36px;
     font-weight: 900;
     color: var(--gold-primary);
@@ -555,7 +565,7 @@
   }
   .diff-info { padding-top: 4px; }
   .diff-name {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 17px;
     color: var(--text-primary);
     font-weight: 700;
@@ -567,7 +577,7 @@
     padding: 3px 10px;
     border: 1px solid var(--gold-primary);
     color: var(--gold-primary);
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 9px;
     letter-spacing: 0.2em;
   }
@@ -613,7 +623,7 @@
   .scn-conclusion.extreme-bear { border-top-color: var(--bear); }
   
   .scn-current-tag {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 10px;
     color: var(--text-muted);
     letter-spacing: 0.3em;
@@ -621,7 +631,7 @@
     text-transform: uppercase;
   }
   .scn-current-price {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 48px;
     font-weight: 700;
     color: var(--text-primary);
@@ -634,7 +644,7 @@
     padding: 6px 18px;
     background: var(--gold-primary);
     color: var(--bg-primary);
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -688,14 +698,14 @@
   }
   .scn-emoji { font-size: 18px; }
   .scn-card-title {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 14px;
     color: var(--text-primary);
     font-weight: 700;
     text-align: left;
   }
   .scn-prob {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 16px;
     font-weight: 700;
     color: var(--gold-primary);
@@ -708,7 +718,7 @@
   }
   
   .scn-price {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 28px;
     font-weight: 700;
     color: var(--text-primary);
@@ -717,7 +727,7 @@
     letter-spacing: -0.01em;
   }
   .scn-upside {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 14px;
     font-weight: 700;
     margin-bottom: 10px;
@@ -771,7 +781,7 @@
     margin-bottom: 14px;
   }
   .scn-nb-label {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 10px;
     color: var(--gold-primary);
     font-weight: 700;
@@ -780,7 +790,7 @@
     text-transform: uppercase;
   }
   .scn-narrative-box p {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 13px;
     color: var(--text-primary);
     line-height: 1.8;
@@ -820,21 +830,21 @@
     border-bottom: 1px solid var(--border-color); margin-bottom: 20px;
   }
   .final-fv-label {
-    font-family: 'Noto Serif KR', serif; font-size: 11px;
+    font-family: 'Pretendard', sans-serif; font-size: 11px;
     color: var(--gold-primary); font-weight: 700;
     letter-spacing: 0.15em; margin-bottom: 12px; text-transform: uppercase;
   }
   .final-fv-number {
-    font-family: 'EB Garamond', serif; font-size: 64px; font-weight: 700;
+    font-family: 'Pretendard', sans-serif; font-size: 64px; font-weight: 700;
     color: var(--text-primary); line-height: 1;
     letter-spacing: -0.02em; margin-bottom: 10px;
   }
   .final-fv-range {
     font-size: 11px; color: var(--text-muted);
-    font-family: 'EB Garamond', serif; margin-bottom: 14px;
+    font-family: 'Pretendard', sans-serif; margin-bottom: 14px;
   }
   .final-fv-gap {
-    font-family: 'EB Garamond', serif; font-size: 20px; font-weight: 700; margin-bottom: 10px;
+    font-family: 'Pretendard', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 10px;
   }
   .final-fv-gap.good { color: var(--bull); }
   .final-fv-gap.neutral { color: var(--text-primary); }
@@ -842,7 +852,7 @@
   .final-fv-verdict {
     display: inline-block; padding: 8px 18px;
     background: var(--gold-primary); color: var(--bg-primary);
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
   }
   .fv-breakdown {
@@ -856,12 +866,12 @@
   .fv-component.value { border-top: 2px solid var(--accent-blue); }
   .fv-component.tech { border-top: 2px solid var(--gold-primary); }
   .fv-component .comp-label {
-    font-family: 'Noto Serif KR', serif; font-size: 10px;
+    font-family: 'Pretendard', sans-serif; font-size: 10px;
     color: var(--text-secondary); font-weight: 700;
     margin-bottom: 8px; letter-spacing: 0.05em;
   }
   .fv-component .comp-price {
-    font-family: 'EB Garamond', serif; font-size: 26px; font-weight: 700;
+    font-family: 'Pretendard', sans-serif; font-size: 26px; font-weight: 700;
     color: var(--text-primary); line-height: 1; margin-bottom: 6px;
   }
   .fv-component .comp-weight {
@@ -870,7 +880,7 @@
   }
   .fv-component .comp-sub { font-size: 9px; color: var(--text-muted); }
   .fv-divider {
-    font-family: 'EB Garamond', serif; font-size: 28px;
+    font-family: var(--mono); font-size: 28px;
     color: var(--gold-primary);
   }
   @media (max-width: 767px) {
@@ -884,12 +894,12 @@
     padding: 14px 16px; margin-top: 16px;
   }
   .verdict .l {
-    font-family: 'Noto Serif KR', serif; font-size: 10px;
+    font-family: 'Pretendard', sans-serif; font-size: 10px;
     color: var(--gold-primary); font-weight: 700;
     margin-bottom: 8px; letter-spacing: 0.1em;
   }
   .verdict .h {
-    font-family: 'Noto Serif KR', serif; font-size: 14px;
+    font-family: 'Pretendard', sans-serif; font-size: 14px;
     color: var(--text-primary); font-weight: 700;
     line-height: 1.5; margin-bottom: 10px;
   }
@@ -906,7 +916,7 @@
     margin-bottom: 4px; letter-spacing: 0.05em;
   }
   .ind-matrix .cell .v {
-    font-family: 'EB Garamond', serif; font-size: 17px; font-weight: 700;
+    font-family: 'Pretendard', sans-serif; font-size: 17px; font-weight: 700;
     color: var(--text-primary); line-height: 1;
   }
   .ind-matrix .cell .v.bear { color: var(--bear); }
@@ -927,7 +937,7 @@
     margin-bottom: 20px;
   }
   .mc-narrative p {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 15px;
     color: var(--text-primary);
     line-height: 1.7;
@@ -936,7 +946,7 @@
   .mc-narrative p b {
     color: var(--gold-primary);
     font-weight: 700;
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 17px;
   }
   .mc-narrative .mc-verdict-line {
@@ -944,7 +954,7 @@
     padding: 6px 16px;
     background: var(--accent-blue);
     color: var(--bg-primary);
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.05em;
@@ -954,7 +964,7 @@
   /* 분포 시각화 */
   .mc-distribution { margin-bottom: 24px; }
   .mc-dist-label {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 11px;
     color: var(--gold-primary);
     font-weight: 700;
@@ -1007,7 +1017,7 @@
     left: 50%;
     transform: translateX(-50%);
     white-space: nowrap;
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 10px;
     color: var(--text-primary);
     background: var(--bg-secondary);
@@ -1020,7 +1030,7 @@
     display: flex;
     justify-content: space-between;
     margin-top: 12px;
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 10px;
     color: var(--text-muted);
   }
@@ -1052,7 +1062,7 @@
     letter-spacing: 0.05em;
   }
   .mc-prob-value {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 24px;
     font-weight: 700;
     line-height: 1;
@@ -1089,7 +1099,7 @@
   .mc-asym-cell.upside { border-top: 2px solid var(--bull); }
   .mc-asym-cell.downside { border-top: 2px solid var(--bear); }
   .mc-asym-label {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 10px;
     color: var(--text-secondary);
     font-weight: 700;
@@ -1097,7 +1107,7 @@
     letter-spacing: 0.03em;
   }
   .mc-asym-value {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 28px;
     font-weight: 700;
     line-height: 1;
@@ -1105,9 +1115,9 @@
   }
   .mc-asym-value.good { color: var(--bull); }
   .mc-asym-value.bear { color: var(--bear); }
-  .mc-asym-target { font-size: 11px; color: var(--text-muted); font-family: 'EB Garamond', serif; }
+  .mc-asym-target { font-size: 11px; color: var(--text-muted); font-family: 'Pretendard', sans-serif; }
   .mc-asym-divider {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 18px;
     color: var(--gold-primary);
     font-weight: 700;
@@ -1124,7 +1134,7 @@
     margin-bottom: 6px;
   }
   .mc-ratio-value {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 32px;
     font-weight: 700;
     color: var(--gold-primary);
@@ -1132,7 +1142,7 @@
     margin-bottom: 6px;
   }
   .mc-ratio-verdict {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 12px;
     color: var(--text-primary);
     font-weight: 700;
@@ -1146,7 +1156,7 @@
     margin-bottom: 14px;
   }
   .mc-params-label {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 10px;
     color: var(--gold-primary);
     letter-spacing: 0.15em;
@@ -1162,7 +1172,7 @@
     border-bottom: 1px dashed var(--border-color);
   }
   .mc-params-row:last-child { border-bottom: none; }
-  .mc-params-row b { color: var(--text-primary); font-family: 'EB Garamond', serif; }
+  .mc-params-row b { color: var(--text-primary); font-family: 'Pretendard', sans-serif; }
   
   /* 학술 근거 박스 */
   .mc-academic {
@@ -1194,13 +1204,13 @@
     padding: 4px 12px;
     border: 1px solid var(--gold-primary);
     color: var(--gold-primary);
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 10px;
     letter-spacing: 0.3em;
     margin-bottom: 16px;
   }
   .ea-cd-dday {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 56px;
     font-weight: 900;
     color: var(--gold-primary);
@@ -1209,7 +1219,7 @@
     letter-spacing: -0.02em;
   }
   .ea-cd-date {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 14px;
     color: var(--text-primary);
     font-weight: 600;
@@ -1238,7 +1248,7 @@
     letter-spacing: 0.05em;
   }
   .ea-fc-value {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 22px;
     font-weight: 700;
     color: var(--text-primary);
@@ -1252,7 +1262,7 @@
     margin-bottom: 20px;
   }
   .ea-stats-title {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 13px;
     color: var(--gold-primary);
     font-weight: 700;
@@ -1281,7 +1291,7 @@
     margin-bottom: 6px;
   }
   .ea-st-value {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 24px;
     font-weight: 700;
     color: var(--text-primary);
@@ -1297,7 +1307,7 @@
   
   /* 어닝 이력 표 */
   .ea-history-title {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 12px;
     color: var(--gold-primary);
     font-weight: 700;
@@ -1326,13 +1336,13 @@
     padding: 4px 12px;
     border: 1px solid var(--gold-primary);
     color: var(--gold-primary);
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 10px;
     letter-spacing: 0.3em;
     margin-bottom: 16px;
   }
   .sched-dday-big {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 72px;
     font-weight: 900;
     color: var(--gold-primary);
@@ -1341,7 +1351,7 @@
     letter-spacing: -0.02em;
   }
   .sched-event-name {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 18px;
     color: var(--text-primary);
     font-weight: 700;
@@ -1378,7 +1388,7 @@
   }
   .timeline-row:last-child { border-bottom: none; }
   .tl-quarter {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 14px;
     color: var(--gold-primary);
     font-weight: 700;
@@ -1387,9 +1397,9 @@
     border: 1px solid var(--gold-dim);
   }
   .tl-info { font-size: 11px; color: var(--text-secondary); line-height: 1.6; }
-  .tl-info b { color: var(--text-primary); font-family: 'EB Garamond', serif; font-size: 13px; }
+  .tl-info b { color: var(--text-primary); font-family: 'Pretendard', sans-serif; font-size: 13px; }
   .tl-verdict {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 11px;
     font-weight: 700;
     padding: 4px 10px;
@@ -1407,7 +1417,7 @@
   
   /* ═══ v3.5 행동경제학 점수 카드 ═══ */
   .ba-card {
-    border-top: 2px solid #9C5DDB;
+    border-top: 2px solid var(--cy);
     background: var(--bg-tertiary);
   }
   .ba-overall { margin-bottom: 24px; }
@@ -1425,14 +1435,14 @@
   .ba-score-display.bear { border-top-color: var(--bear); }
   
   .ba-score-label {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 11px;
-    color: #9C5DDB;
+    color: var(--cy);
     letter-spacing: 0.3em;
     margin-bottom: 12px;
   }
   .ba-score-num {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 56px;
     font-weight: 700;
     line-height: 1;
@@ -1450,7 +1460,7 @@
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.05em;
@@ -1479,7 +1489,7 @@
   .ba-factor.good { border-left-color: var(--bull); }
   .ba-factor.bear { border-left-color: var(--bear); }
   .ba-f-name {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 12px;
     color: var(--text-primary);
     font-weight: 700;
@@ -1494,10 +1504,10 @@
   }
   .ba-f-detail b {
     color: var(--text-primary);
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
   }
   .ba-f-score {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 24px;
     font-weight: 700;
     color: var(--text-primary);
@@ -1510,18 +1520,18 @@
   
   .ba-academic {
     background: var(--bg-primary);
-    border-left: 3px solid #9C5DDB;
+    border-left: 3px solid var(--cy);
     padding: 10px 14px;
     font-size: 10px;
     color: var(--text-muted);
     line-height: 1.6;
     margin-top: 14px;
   }
-  .ba-academic b { color: #9C5DDB; }
+  .ba-academic b { color: var(--cy); }
   
   /* ═══ v3.5 차트 패턴 카드 ═══ */
   .cp-card {
-    border-top: 2px solid #FF8C00;
+    border-top: 2px solid var(--gold-dim);
     background: var(--bg-tertiary);
   }
   .cp-overall { margin-bottom: 18px; }
@@ -1537,14 +1547,14 @@
   .cp-signal-none { border-top: 3px solid var(--border-strong); }
   
   .cp-signal-label {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 11px;
-    color: #FF8C00;
+    color: var(--gold-dim);
     letter-spacing: 0.3em;
     margin-bottom: 10px;
   }
   .cp-signal-value {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 28px;
     font-weight: 700;
     color: var(--text-primary);
@@ -1555,7 +1565,7 @@
   .cp-signal-conf {
     font-size: 11px;
     color: var(--text-muted);
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
   }
   
   .cp-patterns {
@@ -1579,13 +1589,13 @@
     margin-bottom: 6px;
   }
   .cp-p-name {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 13px;
     color: var(--text-primary);
     font-weight: 700;
   }
   .cp-p-conf {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 16px;
     color: var(--gold-primary);
     font-weight: 700;
@@ -1642,11 +1652,11 @@
     padding: 50px 24px; text-align: center; grid-column: 1 / -1;
   }
   .empty-state .icon {
-    font-family: 'EB Garamond', serif; font-size: 48px;
+    font-family: 'Pretendard', sans-serif; font-size: 48px;
     color: var(--gold-primary); margin-bottom: 14px;
   }
   .empty-state .title {
-    font-family: 'Noto Serif KR', serif; font-size: 18px;
+    font-family: 'Pretendard', sans-serif; font-size: 18px;
     color: var(--text-primary); font-weight: 700; margin-bottom: 10px;
   }
   .empty-state .desc { font-size: 12px; color: var(--text-secondary); line-height: 1.7; }
@@ -1688,7 +1698,7 @@
     text-transform: uppercase;
   }
   .footer-right .made-by-name {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 18px;
     font-weight: 700;
     color: var(--gold-primary);
@@ -1715,14 +1725,14 @@
     font-size: 10px; letter-spacing: 0.2em; margin-bottom: 24px; text-transform: uppercase;
   }
   .hero h1 {
-    font-family: 'Cormorant Garamond', 'EB Garamond', serif;
+    font-family: var(--mono);
     font-size: 56px; font-weight: 700;
     color: var(--text-primary); line-height: 1.1;
     margin-bottom: 18px; letter-spacing: -0.02em;
   }
   .hero h1 span { color: var(--gold-primary); }
   .hero .sub {
-    font-family: 'Noto Serif KR', serif; font-size: 18px;
+    font-family: 'Pretendard', sans-serif; font-size: 18px;
     color: var(--text-secondary); line-height: 1.6; margin-bottom: 14px;
   }
   .hero .desc {
@@ -1736,7 +1746,7 @@
   
   /* ═══ v2.1 스토리텔링 ═══ */
   .hero-story .hero-story-title {
-    font-family: 'Playfair Display', 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-weight: 700;
     letter-spacing: -0.01em;
   }
@@ -1751,11 +1761,11 @@
     margin-bottom: 36px;
   }
   .stories-head .num {
-    font-family: 'EB Garamond', serif; font-size: 12px;
+    font-family: 'Pretendard', sans-serif; font-size: 12px;
     color: var(--gold-primary); letter-spacing: 0.3em; margin-bottom: 8px;
   }
   .stories-head h2 {
-    font-family: 'Playfair Display', 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 32px; color: var(--text-primary);
     font-weight: 700; margin-bottom: 8px; letter-spacing: 0.02em;
   }
@@ -1799,13 +1809,13 @@
     min-width: 90px;
   }
   .story-year {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 44px; font-weight: 900;
     color: var(--gold-primary); line-height: 1;
     letter-spacing: 0.02em;
   }
   .story-tag {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 9px;
     color: var(--text-muted);
     letter-spacing: 0.15em;
@@ -1813,7 +1823,7 @@
     text-align: center;
   }
   .story-title {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 18px;
     color: var(--text-primary);
     font-weight: 700;
@@ -1822,7 +1832,7 @@
   .story-toggle {
     font-size: 18px;
     color: var(--gold-primary);
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     transition: transform 0.3s;
   }
   .story-card.open .story-toggle {
@@ -1863,7 +1873,7 @@
     padding: 14px 18px;
     border-left: 3px solid var(--gold-primary);
     background: var(--bg-tertiary);
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 14px;
     color: var(--text-primary);
     font-style: italic;
@@ -1872,7 +1882,7 @@
   .story-body blockquote em {
     font-size: 12px;
     color: var(--text-muted);
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
   }
   
   .story-divider {
@@ -1890,7 +1900,7 @@
     border-top: 2px solid var(--gold-primary);
   }
   .story-epilogue .ep-label {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 10px;
     color: var(--gold-primary);
     letter-spacing: 0.3em;
@@ -1906,7 +1916,7 @@
     margin-top: 16px;
     padding-top: 14px;
     border-top: 1px dashed var(--gold-dim);
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 15px;
     color: var(--text-primary);
     font-weight: 700;
@@ -1933,11 +1943,11 @@
   .section:last-child { border-bottom: none; }
   .section-head { text-align: center; margin-bottom: 30px; }
   .section-head .num {
-    font-family: 'EB Garamond', serif; font-size: 12px;
+    font-family: 'Pretendard', sans-serif; font-size: 12px;
     color: var(--gold-primary); letter-spacing: 0.3em; margin-bottom: 8px;
   }
   .section-head h2 {
-    font-family: 'Noto Serif KR', serif; font-size: 26px;
+    font-family: 'Pretendard', sans-serif; font-size: 26px;
     color: var(--text-primary); font-weight: 700; margin-bottom: 8px;
   }
   .section-head .lead {
@@ -1952,11 +1962,11 @@
     padding: 24px 20px; text-align: center;
   }
   .step-card .step-num {
-    font-family: 'Cormorant Garamond', serif; font-size: 64px; font-weight: 700;
+    font-family: 'Pretendard', sans-serif; font-size: 64px; font-weight: 700;
     color: var(--gold-primary); line-height: 1; opacity: 0.9; margin-bottom: 14px;
   }
   .step-card .step-title {
-    font-family: 'Noto Serif KR', serif; font-size: 16px;
+    font-family: 'Pretendard', sans-serif; font-size: 16px;
     color: var(--text-primary); font-weight: 700; margin-bottom: 10px;
   }
   .step-card .step-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
@@ -1970,16 +1980,16 @@
   }
   .factor-row:last-child { border-bottom: none; }
   .factor-row .factor-id {
-    font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 700;
+    font-family: 'Pretendard', sans-serif; font-size: 24px; font-weight: 700;
     color: var(--gold-primary); text-align: center; padding: 8px;
     border: 1px solid var(--gold-primary);
   }
   .factor-row .factor-info .name {
-    font-family: 'Noto Serif KR', serif; font-size: 14px;
+    font-family: 'Pretendard', sans-serif; font-size: 14px;
     color: var(--text-primary); font-weight: 700; margin-bottom: 4px;
   }
   .factor-row .factor-info .formula {
-    font-family: 'EB Garamond', serif; font-size: 12px;
+    font-family: 'Pretendard', sans-serif; font-size: 12px;
     color: var(--gold-primary); margin-bottom: 4px;
   }
   .factor-row .factor-info .desc {
@@ -1996,7 +2006,7 @@
   .stock-type-card.growth { border-top: 2px solid var(--gold-primary); }
   .stock-type-card.meta { border-top: 2px solid var(--bull); }
   .stock-type-card .type-name {
-    font-family: 'Noto Serif KR', serif; font-size: 14px;
+    font-family: 'Pretendard', sans-serif; font-size: 14px;
     color: var(--text-primary); font-weight: 700; margin-bottom: 10px;
   }
   .stock-type-card .type-cond { font-size: 10px; color: var(--text-muted); margin-bottom: 16px; min-height: 30px; }
@@ -2014,7 +2024,7 @@
   .verdict-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; margin-bottom: 8px; }
   .verdict-bar .vb-cell {
     padding: 12px 8px; text-align: center;
-    font-family: 'Noto Serif KR', serif; font-size: 11px; font-weight: 700;
+    font-family: 'Pretendard', sans-serif; font-size: 11px; font-weight: 700;
     color: var(--text-primary);
   }
   .verdict-bar .vb-cell.strong-buy { background: var(--bull); color: #fff; }
@@ -2025,7 +2035,7 @@
   .verdict-axis {
     display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px;
     font-size: 9px; color: var(--text-muted); text-align: center;
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
   }
   
   .recommend-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
@@ -2036,7 +2046,7 @@
   }
   .recommend-card:hover { border-color: var(--gold-primary); background: var(--bg-tertiary); }
   .recommend-card .r-ticker {
-    font-family: 'EB Garamond', serif; font-size: 22px; font-weight: 700;
+    font-family: 'Pretendard', sans-serif; font-size: 22px; font-weight: 700;
     color: var(--text-primary); margin-bottom: 6px;
   }
   .recommend-card:hover .r-ticker { color: var(--gold-primary); }
@@ -2048,11 +2058,11 @@
     background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 18px 16px;
   }
   .academic-card .scholar {
-    font-family: 'Noto Serif KR', serif; font-size: 13px;
+    font-family: 'Pretendard', sans-serif; font-size: 13px;
     color: var(--gold-primary); font-weight: 700; margin-bottom: 8px;
   }
   .academic-card .work {
-    font-family: 'EB Garamond', serif; font-size: 11px;
+    font-family: 'Pretendard', sans-serif; font-size: 11px;
     color: var(--text-secondary); margin-bottom: 8px; font-style: italic;
   }
   .academic-card .summary { font-size: 11px; color: var(--text-muted); line-height: 1.6; }
@@ -2062,7 +2072,7 @@
     border-left: 3px solid var(--bear); padding: 18px 20px;
   }
   .limit-box-pro .l {
-    font-family: 'Noto Serif KR', serif; font-size: 12px;
+    font-family: 'Pretendard', sans-serif; font-size: 12px;
     color: var(--bear); font-weight: 700; margin-bottom: 10px; letter-spacing: 0.05em;
   }
   .limit-box-pro .d { font-size: 11px; color: var(--text-secondary); line-height: 1.8; }
@@ -2082,13 +2092,13 @@
     padding: 4px 12px;
     border: 1px solid var(--gold-primary);
     color: var(--gold-primary);
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 10px;
     letter-spacing: 0.3em;
     margin-bottom: 16px;
   }
   .bt-honesty p {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 14px;
     color: var(--text-secondary);
     line-height: 1.8;
@@ -2122,7 +2132,7 @@
   .bt-col-a99 { border-top: 2px solid var(--accent-blue); }
   .bt-col-sp { border-top: 2px solid var(--gold-primary); }
   .bt-col-label {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 20px;
     color: var(--text-primary);
     font-weight: 700;
@@ -2150,7 +2160,7 @@
     margin-bottom: 4px;
   }
   .bt-v {
-    font-family: 'EB Garamond', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 18px;
     font-weight: 700;
     color: var(--text-primary);
@@ -2158,7 +2168,7 @@
   .bt-v.good { color: var(--bull); }
   .bt-v.bear { color: var(--bear); }
   .bt-vs {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 24px;
     color: var(--gold-primary);
     font-weight: 700;
@@ -2178,7 +2188,7 @@
     border-left: 3px solid var(--bear);
   }
   .bt-findings-title {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 14px;
     color: var(--bear);
     font-weight: 700;
@@ -2194,7 +2204,7 @@
   }
   .bt-finding:last-child { border-bottom: none; }
   .bt-f-num {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 22px;
     color: var(--gold-primary);
     font-weight: 700;
@@ -2207,7 +2217,7 @@
   }
   .bt-f-content b {
     color: var(--text-primary);
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 13px;
   }
   
@@ -2230,7 +2240,7 @@
   .roadmap-stage.future { border-left: 3px solid var(--border-strong); opacity: 0.7; }
   
   .rs-num {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em;
     font-size: 28px;
     color: var(--gold-primary);
     font-weight: 700;
@@ -2245,7 +2255,7 @@
   }
   .rs-content { padding-top: 4px; }
   .rs-title {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     font-size: 15px;
     color: var(--text-primary);
     font-weight: 700;
@@ -2288,7 +2298,7 @@
 
 <div class="global-header">
   <div class="row">
-    <div class="brand">ANDRE99 <span class="ver">v6.0 INSIGHT</span></div>
+    <div class="brand">ANDRE99 <span class="ver">TACTICAL · v6.1</span></div>
     <div class="nav">
       <a id="navHome" class="active" onclick="showLanding()">소개</a>
       <a id="navAnalysis" onclick="showAnalysisPrompt()">분석</a>
@@ -2309,7 +2319,7 @@
   
   <!-- 히어로 (스토리텔링) -->
   <div class="hero hero-story">
-    <div class="tag">ACADEMIC INSIGHT TOOL · v6.0</div>
+    <div class="tag">TACTICAL MARKET BOARD · v6.1</div>
     <h1 class="hero-story-title">시장은 살아 있다.<br><span>우리는 겸손해야 한다.</span></h1>
     <div class="sub">역사 속 가장 똑똑했던 이들도 시장 앞에서 무너졌다.</div>
     <div class="desc">
@@ -2788,7 +2798,7 @@
     </div>
     
     <div style="background: var(--bg-tertiary); border-left: 3px solid var(--gold-primary); padding: 16px 20px; margin-bottom: 28px; font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
-      <b style="color: var(--gold-primary); font-family: 'Noto Serif KR', serif;">왜 적정가를 폐기했는가:</b><br>
+      <b style="color: var(--gold-primary); font-family: 'Pretendard', sans-serif;">왜 적정가를 폐기했는가:</b><br>
       Wall Street 애널리스트의 12개월 적정가 적중률은 <b style="color: var(--text-primary);">30%</b> (Waterloo + Boston College 2012 연구).
       Damodaran 본인이 Uber를 평가할 때 보수($5.9B) vs 낙관($53.4B)이 <b style="color: var(--text-primary);">9배 차이</b>였습니다.<br><br>
       안드레99은 이 본질적 한계를 인정하고, <b style="color: var(--gold-primary);">"적정가 예측"이 아닌 "인사이트 제공"</b>으로 전환했습니다.
@@ -2857,7 +2867,7 @@
     </div>
     
     <div style="background: var(--bg-primary); border: 1px solid var(--gold-dim); border-left: 3px solid var(--gold-primary); padding: 20px; margin-top: 24px; text-align: center;">
-      <div style="font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold-primary); font-weight: 700; margin-bottom: 10px;">
+      <div style="font-family: 'Pretendard', sans-serif; letter-spacing:-0.02em; font-size: 18px; color: var(--gold-primary); font-weight: 700; margin-bottom: 10px;">
         ANDRE99은 인사이트 도구입니다
       </div>
       <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.7;">
@@ -2940,7 +2950,7 @@
     </div>
     
     <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-left: 3px solid var(--accent-blue); font-size: 12px; color: var(--text-secondary); line-height: 1.8;">
-      <b style="color: var(--accent-blue); font-family: 'Noto Serif KR', serif;">예시 문장 (자동 생성):</b><br>
+      <b style="color: var(--accent-blue); font-family: 'Pretendard', sans-serif;">예시 문장 (자동 생성):</b><br>
       "TSLA가 현재의 펀더멘털을 유지한다면, 1년 후 <b style="color: var(--gold-primary);">62.3%</b>의 확률로 안드레99 적정가 <b style="color: var(--gold-primary);">$XXX</b>에 도달합니다.
       80% 신뢰구간: $YYY ~ $ZZZ. Risk/Reward 비대칭 비율 <b style="color: var(--bull);">1.8x</b> (매력적, 상방 우위)."
     </div>
@@ -3234,7 +3244,7 @@
     </div>
     
     <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-left: 3px solid var(--gold-primary); font-size: 12px; color: var(--text-secondary); line-height: 1.8;">
-      <b style="color: var(--gold-primary); font-family: 'Noto Serif KR', serif;">개발 철학:</b><br>
+      <b style="color: var(--gold-primary); font-family: 'Pretendard', sans-serif;">개발 철학:</b><br>
       Renaissance, Two Sigma 등 진짜 헤지펀드는 모델을 시장에 내놓기 전 수십 차례 백테스트합니다.
       실패 → 개선 → 재검증의 반복. 안드레99도 같은 방식으로 진화합니다.<br><br>
       <b style="color: var(--text-primary);">"측정하지 않으면 모른다. 정직하지 않으면 발전하지 않는다."</b>
@@ -3248,7 +3258,7 @@
 <div class="footer">
   <div class="footer-row">
     <div class="footer-left">
-      ANDRE99 <span class="ver">v6.0 INSIGHT</span> · 학술 정직성 · 행동경제학 · 역사 스토리텔링
+      ANDRE99 <span class="ver">TACTICAL · v6.1</span> · 학술 정직성 · 행동경제학 · 역사 스토리텔링
       <div class="small">투자자문 아님 · 교육 콘텐츠 · DYOR · 적정가 예측 X · 인사이트 도구</div>
     </div>
     <div class="footer-right">
@@ -4951,16 +4961,16 @@ function renderLiveData(tk, d) {
       <div class="card-head"><span class="ttl">[우] EMA + 피보나치</span><span class="meta">${t.trend_kr || ''}</span></div>
       <div class="card-body">
         <div style="margin-bottom:14px; padding:12px; background:var(--bg-tertiary); border:1px solid var(--border-color);">
-          <div style="font-family:'Noto Serif KR',serif; font-size:11px; color:var(--gold-primary); font-weight:700; margin-bottom:8px; letter-spacing:0.05em;">이동평균선</div>
+          <div style="font-family:'Pretendard',sans-serif; font-size:11px; color:var(--gold-primary); font-weight:700; margin-bottom:8px; letter-spacing:0.05em;">이동평균선</div>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:11px;">
-            <div><span style="color:var(--text-muted);">21 EMA</span><br><b style="font-family:'EB Garamond',serif; font-size:15px;">$${t.ema21}</b></div>
-            <div><span style="color:var(--text-muted);">50 SMA</span><br><b style="font-family:'EB Garamond',serif; font-size:15px;">$${t.sma50}</b></div>
-            <div><span style="color:var(--text-muted);">200 SMA</span><br><b style="font-family:'EB Garamond',serif; font-size:15px;">$${t.sma200}</b></div>
+            <div><span style="color:var(--text-muted);">21 EMA</span><br><b style="font-family:var(--mono); font-size:15px;">$${t.ema21}</b></div>
+            <div><span style="color:var(--text-muted);">50 SMA</span><br><b style="font-family:var(--mono); font-size:15px;">$${t.sma50}</b></div>
+            <div><span style="color:var(--text-muted);">200 SMA</span><br><b style="font-family:var(--mono); font-size:15px;">$${t.sma200}</b></div>
           </div>
         </div>
         
         ${fibRetRows.length > 0 ? `
-        <div style="font-family:'Noto Serif KR',serif; font-size:11px; color:var(--gold-primary); font-weight:700; margin-bottom:6px; letter-spacing:0.05em;">피보나치 되돌림</div>
+        <div style="font-family:'Pretendard',sans-serif; font-size:11px; color:var(--gold-primary); font-weight:700; margin-bottom:6px; letter-spacing:0.05em;">피보나치 되돌림</div>
         <table class="dt" style="margin-bottom:14px;">
           <tbody>
             ${fibRetRows.map(f => {
@@ -4978,7 +4988,7 @@ function renderLiveData(tk, d) {
         ` : ''}
         
         ${fibExtRows.length > 0 ? `
-        <div style="font-family:'Noto Serif KR',serif; font-size:11px; color:var(--gold-primary); font-weight:700; margin-bottom:6px; letter-spacing:0.05em;">피보나치 확장 (장기 목표)</div>
+        <div style="font-family:'Pretendard',sans-serif; font-size:11px; color:var(--gold-primary); font-weight:700; margin-bottom:6px; letter-spacing:0.05em;">피보나치 확장 (장기 목표)</div>
         <table class="dt">
           <tbody>
             ${fibExtRows.map(f => `
@@ -5027,12 +5037,12 @@ function renderLiveData(tk, d) {
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;">
           <div style="background:var(--bg-tertiary); padding:14px; text-align:center; border-top:2px solid var(--bull);">
             <div style="font-size:9px; color:var(--text-muted);">매수 비중</div>
-            <div style="font-family:'EB Garamond',serif; font-size:26px; color:var(--bull); font-weight:700;">${r.bullish_pct}%</div>
+            <div style="font-family:var(--mono); font-size:26px; color:var(--bull); font-weight:700;">${r.bullish_pct}%</div>
             <div style="font-size:9px; color:var(--text-muted);">${r.strong_buy + r.buy}명 / ${r.total}명</div>
           </div>
           <div style="background:var(--bg-tertiary); padding:14px; text-align:center; border-top:2px solid var(--bear);">
             <div style="font-size:9px; color:var(--text-muted);">매도 비중</div>
-            <div style="font-family:'EB Garamond',serif; font-size:26px; color:var(--bear); font-weight:700;">${r.bearish_pct}%</div>
+            <div style="font-family:var(--mono); font-size:26px; color:var(--bear); font-weight:700;">${r.bearish_pct}%</div>
             <div style="font-size:9px; color:var(--text-muted);">${r.sell + r.strong_sell}명 / ${r.total}명</div>
           </div>
         </div>
@@ -5193,7 +5203,7 @@ function renderLiveData(tk, d) {
       
       <!-- 안내 -->
       <div style="padding: 16px; background: var(--bg-secondary); border-left: 3px solid var(--gold-primary); font-size: 11px; color: var(--text-secondary); line-height: 1.7;">
-        <b style="color: var(--gold-primary); font-family: 'Noto Serif KR', serif;">자동 갱신</b><br>
+        <b style="color: var(--gold-primary); font-family: 'Pretendard', sans-serif;">자동 갱신</b><br>
         모든 일정 데이터는 검색 시점에 Finnhub API에서 실시간으로 가져옵니다.
         어닝 발표 직후 자동으로 다음 분기 일정이 표시되며, 사용자의 별도 갱신 작업이 필요하지 않습니다.
       </div>
@@ -5233,11 +5243,11 @@ function drawFinanceCharts(labels, revenue, netIncome, operating) {
   if (incomeChartInstance) incomeChartInstance.destroy();
   
   // 공통 옵션
-  const koreanRed = '#F85149';
-  const koreanBlue = '#4493F8';
-  const gold = '#D4AF37';
-  const textPrimary = '#E8EDF2';
-  const textMuted = '#6E7681';
+  const koreanRed = 'var(--bull)';
+  const koreanBlue = 'var(--bear)';
+  const gold = 'var(--gold-primary)';
+  const textPrimary = 'var(--text-primary)';
+  const textMuted = 'var(--text-muted)';
   const gridColor = 'rgba(48, 54, 61, 0.4)';
   
   const fmtTooltipMoney = (n) => {
@@ -5270,8 +5280,8 @@ function drawFinanceCharts(labels, revenue, netIncome, operating) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#161B22',
-            borderColor: '#30363D',
+            backgroundColor: 'var(--bg-secondary)',
+            borderColor: 'var(--border-color)',
             borderWidth: 1,
             titleColor: gold,
             bodyColor: textPrimary,
@@ -5301,7 +5311,7 @@ function drawFinanceCharts(labels, revenue, netIncome, operating) {
   // 순이익 차트 (양수=빨강, 음수=파랑, 한국 표준)
   const incCanvas = document.getElementById('incomeChart');
   if (incCanvas && netIncome.some(v => v !== null)) {
-    const colors = netIncome.map(v => v === null ? '#30363D' : (v >= 0 ? koreanRed : koreanBlue));
+    const colors = netIncome.map(v => v === null ? 'var(--border-color)' : (v >= 0 ? koreanRed : koreanBlue));
     
     incomeChartInstance = new Chart(incCanvas, {
       type: 'bar',
@@ -5320,8 +5330,8 @@ function drawFinanceCharts(labels, revenue, netIncome, operating) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#161B22',
-            borderColor: '#30363D',
+            backgroundColor: 'var(--bg-secondary)',
+            borderColor: 'var(--border-color)',
             borderWidth: 1,
             titleColor: gold,
             bodyColor: textPrimary,
