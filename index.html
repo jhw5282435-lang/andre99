@@ -6,14 +6,16 @@
 <title>ANDRE99 Terminal</title>
 <style>
   :root{
-    --base:#0E0B16;--panel:#16121F;--panel2:#120E1A;--panel3:#1A1528;
-    --line:#241E30;--line-soft:#1C1726;--grid:#1F1A2B;
-    --violet:#9A7DD6;--violet-d:#7C5FC0;--violet-l:#B69BE0;
-    /* 텍스트 위계 — 대비 강화 */
-    --txt:#E2DDEC;--txt2:#9C95AE;--dim:#665F76;--dim2:#48425A;
-    /* 데이터 색 — 채도 한 단계 더 낮춤 (차분) */
-    --pos:#5CAD92;--neg:#C27C7C;--y1:#C2A468;--y2:#7E97BC;--y3:#9A7DD6;--y4:#6BA0A0;
-    --neutral:#363044;--gold:#C9A867;
+    /* 베이스: 깊은 잉크(거의 검정, 살짝 따뜻) — 레퍼런스 다크 */
+    --base:#0A0808;--panel:#141011;--panel2:#100D0E;--panel3:#1A1517;
+    --line:#2A2224;--line-soft:#201A1B;--grid:#231D1F;
+    /* 강조: 골드 (고급·증권사) — 기존 violet 변수명 유지하되 골드로 */
+    --violet:#C9A867;--violet-d:#A8863F;--violet-l:#E0C589;
+    /* 텍스트 위계 — 따뜻한 잉크 위 가독성 */
+    --txt:#EDE6DD;--txt2:#A89F95;--dim:#6E655C;--dim2:#4A4239;
+    /* 데이터 색: 상승=빨강 / 하락=파랑 (한국식). y1=골드 유지 */
+    --pos:#E24B4A;--neg:#5B89C9;--y1:#C9A867;--y2:#5B89C9;--y3:#C9A867;--y4:#7E97BC;
+    --neutral:#332A2C;--gold:#C9A867;
     /* 타이포 스케일 */
     --fs-hero:26px;--fs-h1:18px;--fs-h2:14px;--fs-body:12px;
     --fs-sm:11px;--fs-xs:10px;--fs-2xs:9px;--fs-micro:8px;
@@ -73,7 +75,7 @@
   .dd-item .company{font-size:10px;color:var(--dim);flex:1}
   .dd-item .price{font-size:11px;font-family:"JetBrains Mono",monospace;font-weight:600}
   .dd-item .badge-act{font-size:8px;padding:2px 6px;border-radius:3px;font-weight:700}
-  .badge-act.buy{background:rgba(91,184,154,.16);color:var(--pos)}
+  .badge-act.buy{background:rgba(226,75,74,.16);color:var(--pos)}
   .badge-act.hold{background:rgba(201,168,106,.16);color:var(--y1)}
   .dd-empty{padding:14px;text-align:center;color:var(--dim2);font-size:11px}
   /* 실시간 조회 옵션 */
@@ -96,7 +98,7 @@
   .wl-pop-label{font-size:11px;color:var(--dim);margin-top:18px;letter-spacing:.5px}
   .wl-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:4px}
   .wl-chip{background:var(--panel);border:1px solid var(--line);color:#fff;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;padding:8px 14px;border-radius:10px;cursor:pointer;transition:all .15s}
-  .wl-chip:hover{border-color:var(--violet);background:rgba(139,92,246,.12);transform:translateY(-1px)}
+  .wl-chip:hover{border-color:var(--violet);background:rgba(201,168,103,.12);transform:translateY(-1px)}
   .wl-note{font-size:11px;color:var(--dim);margin-top:20px;opacity:.7}
   .wl-loading{display:flex;flex-direction:column;align-items:center;gap:10px;padding:30px;font-size:14px;color:#fff}
   .wl-loading-sub{font-size:11px;color:var(--dim)}
@@ -160,7 +162,7 @@
   .hero-price-row{display:flex;align-items:baseline;gap:10px;margin-top:10px}
   .hero-price-row .hp-now{font-size:26px;font-weight:800;color:#fff;font-family:"JetBrains Mono",monospace;letter-spacing:-.02em}
   .hero-price-row .hp-chg{font-size:14px;font-weight:700;font-family:"JetBrains Mono",monospace}
-  .hero-price-row .hp-chg.up{color:#A8E6CF}.hero-price-row .hp-chg.down{color:#FFB3B3}
+  .hero-price-row .hp-chg.up{color:#FF9B9A}.hero-price-row .hp-chg.down{color:#9BBEE8}
   /* 적정가 범위 바 */
   .hero-fv{margin-top:13px;background:rgba(0,0,0,.18);border-radius:9px;padding:11px 13px}
   .hfv-label{font-size:10px;color:rgba(255,255,255,.75);margin-bottom:8px;font-weight:600}
@@ -172,7 +174,7 @@
   .hfv-nums .hfv-avg{color:#fff;font-weight:700}
   .hfv-note{font-size:10px;color:rgba(255,255,255,.85);margin-top:8px}
   .hfv-note b{font-weight:800}
-  .hfv-note .cmp-hi{color:#FFD3B3}.hfv-note .cmp-lo{color:#A8E6CF}
+  .hfv-note .cmp-hi{color:#E0A878}.hfv-note .cmp-lo{color:#6BB6A8}
   /* 지표 그리드 */
   .hero-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
   .hero-metrics .hm{background:rgba(0,0,0,.15);border-radius:7px;padding:8px 10px;
@@ -180,28 +182,28 @@
   .hero-metrics .hm:hover{background:rgba(0,0,0,.3)}
   .hero-metrics .hm-k{font-size:9px;color:rgba(255,255,255,.65);width:54px;flex-shrink:0}
   .hero-metrics .hm-v{font-size:13px;font-weight:800;color:#fff;font-family:"JetBrains Mono",monospace}
-  .cmp-hi{font-size:8px;font-weight:700;color:#FFD3B3;margin-left:auto}
-  .cmp-lo{font-size:8px;font-weight:700;color:#A8E6CF;margin-left:auto}
+  .cmp-hi{font-size:8px;font-weight:700;color:#E0A878;margin-left:auto}
+  .cmp-lo{font-size:8px;font-weight:700;color:#6BB6A8;margin-left:auto}
   .cmp-eq{font-size:8px;font-weight:700;color:rgba(255,255,255,.6);margin-left:auto}
   /* 애널리스트 바 */
   .hero-analyst{margin-top:12px;cursor:help}
   .ha-label{font-size:10px;color:rgba(255,255,255,.75);margin-bottom:6px;font-weight:600}
   .ha-bar{display:flex;height:22px;border-radius:6px;overflow:hidden;font-size:9px;font-weight:700}
   .ha-bar>div{display:flex;align-items:center;justify-content:center;color:#fff;white-space:nowrap}
-  .ha-buy{background:rgba(91,184,154,.85)}.ha-hold{background:rgba(201,168,106,.7)}.ha-sell{background:rgba(204,122,122,.85)}
+  .ha-buy{background:rgba(226,75,74,.85)}.ha-hold{background:rgba(201,168,106,.7)}.ha-sell{background:rgba(91,137,201,.85)}
 
   /* 백엔드 Hero 추가 요소 */
-  .hfv-range-full{position:absolute;left:0;right:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(204,122,122,.3),rgba(201,168,106,.3),rgba(91,184,154,.3));border-radius:4px}
+  .hfv-range-full{position:absolute;left:0;right:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(91,137,201,.3),rgba(201,168,106,.3),rgba(226,75,74,.3));border-radius:4px}
   .price-na{font-size:14px;color:rgba(255,255,255,.6);font-weight:600;font-style:italic}
   .ha-count{color:#fff;font-weight:800}
   .hero-analyst-na{margin-top:12px;font-size:10px;color:rgba(255,255,255,.5);font-style:italic}
   /* 운영자 전용 적정가 박스 */
   .hero-admin{margin-top:12px;background:rgba(124,95,192,.22);border:1px dashed rgba(182,155,224,.5);border-radius:8px;padding:10px 12px;cursor:help}
-  .hero-admin .ha-label{color:#E0D3FF}
+  .hero-admin .ha-label{color:#F0E2C0}
   .admin-fv-row{display:flex;align-items:baseline;gap:10px;margin-top:4px}
   .admin-fv-main{font-size:18px;font-weight:800;color:#fff;font-family:"JetBrains Mono",monospace}
   .admin-fv-range{font-size:10px;color:rgba(255,255,255,.7);font-family:"JetBrains Mono",monospace}
-  .admin-fv-note{font-size:9px;color:#D0C0F0;margin-top:4px}
+  .admin-fv-note{font-size:9px;color:#E5D4A8;margin-top:4px}
 
   /* ===== Yahoo 보조: 목표가 ===== */
   .hero-target{margin-top:12px;background:rgba(0,0,0,.15);border-radius:8px;padding:9px 12px;cursor:help}
@@ -209,7 +211,7 @@
   .hero-target .ht-row{display:flex;align-items:baseline;gap:9px;margin-top:5px;flex-wrap:wrap}
   .hero-target .ht-mean{font-size:17px;font-weight:800;color:#fff;font-family:"JetBrains Mono",monospace}
   .hero-target .ht-range{font-size:10px;color:rgba(255,255,255,.7);font-family:"JetBrains Mono",monospace}
-  .hero-target .ht-up{color:#A8E6CF}.hero-target .ht-down{color:#FFB3B3}
+  .hero-target .ht-up{color:#FF9B9A}.hero-target .ht-down{color:#9BBEE8}
   .hero-target .ht-key{font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(255,255,255,.18);color:#fff;text-transform:uppercase}
 
   /* ===== Yahoo 보조: 회사 개요 카드 (종합 탭) ===== */
@@ -329,8 +331,8 @@
   .scan-tag-label{font-size:9px;color:var(--dim2);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
   .scan-tag-row{display:flex;flex-wrap:wrap;gap:5px}
   .scan-tag{font-size:10px;padding:3px 9px;border-radius:5px;font-weight:600}
-  .scan-tag.strong{background:rgba(91,184,154,.16);color:var(--pos);border:1px solid rgba(91,184,154,.3)}
-  .scan-tag.weak{background:rgba(204,122,122,.16);color:var(--neg);border:1px solid rgba(204,122,122,.3)}
+  .scan-tag.strong{background:rgba(226,75,74,.16);color:var(--pos);border:1px solid rgba(226,75,74,.3)}
+  .scan-tag.weak{background:rgba(91,137,201,.16);color:var(--neg);border:1px solid rgba(91,137,201,.3)}
   .scan-right{display:flex;flex-direction:column;gap:9px}
   .scan-bar-item{cursor:help;padding:2px 0}
   .scan-bar-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
@@ -360,7 +362,7 @@
   .scr .rk{font-size:9px;color:var(--dim);width:12px}.scr .nm{font-size:11px;font-weight:700}
   .scr .ty{font-size:9px;color:var(--dim)}.scr .ch{font-size:11px;font-weight:700;font-family:"JetBrains Mono",monospace;margin-left:auto}
   .tg{font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700}
-  .tg.g{background:rgba(91,184,154,.14);color:var(--pos)}.tg.v{background:rgba(154,125,214,.14);color:var(--violet-l)}
+  .tg.g{background:rgba(226,75,74,.14);color:var(--pos)}.tg.v{background:rgba(154,125,214,.14);color:var(--violet-l)}
 
   .shead{display:flex;align-items:center;gap:12px}
   .shead .tk{font-size:18px;font-weight:800;display:flex;align-items:baseline}
@@ -381,9 +383,9 @@
   .tv-iframe{width:100%;height:100%;display:block;border:0}
   .tv-ma-legend{display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle}
   .tv-ma-legend .ma{font-size:8px;font-weight:700;font-family:"JetBrains Mono",monospace;padding:1px 5px;border-radius:3px;opacity:.85}
-  .tv-ma-legend .ma20{color:#5CAD92;background:rgba(92,173,146,.12)}
+  .tv-ma-legend .ma20{color:#E24B4A;background:rgba(92,173,146,.12)}
   .tv-ma-legend .ma50{color:#C2A468;background:rgba(194,164,104,.12)}
-  .tv-ma-legend .ma200{color:#9A7DD6;background:rgba(154,125,214,.12)}
+  .tv-ma-legend .ma200{color:#C9A867;background:rgba(154,125,214,.12)}
   .tv-fair-admin{color:var(--violet-l)!important;font-family:"JetBrains Mono",monospace;font-size:10px}
   @media(max-width:680px){.tv-wrap{height:280px}}
 
@@ -572,8 +574,8 @@
   .news-card .nc-src{font-size:9px;font-weight:700;color:var(--violet-l)}
   .news-card .nc-time{font-size:9px;color:var(--dim2);font-family:"JetBrains Mono",monospace}
   .news-card .nc-badge{font-size:8px;padding:1px 6px;border-radius:3px;font-weight:700;font-family:"JetBrains Mono",monospace}
-  .news-card .nc-badge.pos{background:rgba(91,184,154,.16);color:var(--pos)}
-  .news-card .nc-badge.neg{background:rgba(204,122,122,.16);color:var(--neg)}
+  .news-card .nc-badge.pos{background:rgba(226,75,74,.16);color:var(--pos)}
+  .news-card .nc-badge.neg{background:rgba(91,137,201,.16);color:var(--neg)}
   .news-card .nc-badge.neu{background:rgba(110,103,126,.16);color:var(--dim)}
   .news-card .nc-title{font-size:12px;font-weight:700;color:var(--txt);line-height:1.4;margin-bottom:4px}
   .news-card .nc-summary{font-size:11px;color:var(--dim);line-height:1.5}
@@ -789,15 +791,15 @@
           <div class="card">
             <div class="card-h"><span class="t">섹터 히트맵</span><span class="src">1M</span></div>
             <div class="heat">
-              <div class="h" style="background:rgba(91,184,154,.2)">반도체<span class="v up">+8.4</span></div>
-              <div class="h" style="background:rgba(91,184,154,.14)">에너지<span class="v up">+6.1</span></div>
-              <div class="h" style="background:rgba(91,184,154,.1)">금융<span class="v up">+3.2</span></div>
-              <div class="h" style="background:rgba(91,184,154,.07)">헬스<span class="v up">+1.4</span></div>
+              <div class="h" style="background:rgba(226,75,74,.2)">반도체<span class="v up">+8.4</span></div>
+              <div class="h" style="background:rgba(226,75,74,.14)">에너지<span class="v up">+6.1</span></div>
+              <div class="h" style="background:rgba(226,75,74,.1)">금융<span class="v up">+3.2</span></div>
+              <div class="h" style="background:rgba(226,75,74,.07)">헬스<span class="v up">+1.4</span></div>
               <div class="h" style="background:rgba(110,103,126,.18)">소비<span class="v dim">+0.2</span></div>
-              <div class="h" style="background:rgba(204,122,122,.1)">유틸<span class="v down">-1.1</span></div>
-              <div class="h" style="background:rgba(204,122,122,.14)">부동산<span class="v down">-2.6</span></div>
-              <div class="h" style="background:rgba(204,122,122,.17)">통신<span class="v down">-3.8</span></div>
-              <div class="h" style="background:rgba(204,122,122,.2)">소재<span class="v down">-4.9</span></div>
+              <div class="h" style="background:rgba(91,137,201,.1)">유틸<span class="v down">-1.1</span></div>
+              <div class="h" style="background:rgba(91,137,201,.14)">부동산<span class="v down">-2.6</span></div>
+              <div class="h" style="background:rgba(91,137,201,.17)">통신<span class="v down">-3.8</span></div>
+              <div class="h" style="background:rgba(91,137,201,.2)">소재<span class="v down">-4.9</span></div>
             </div>
           </div>
           <div class="card">
@@ -2662,7 +2664,7 @@ function renderNews(sym){
   const avgSent=news.reduce((a,b)=>a+b.sent,0)/news.length;
   const sEl=document.getElementById('newsSentiment');
   sEl.textContent=(avgSent>=0?'+':'')+avgSent.toFixed(2)+' '+sentText(avgSent);
-  sEl.style.background=avgSent>=0.15?'rgba(91,184,154,.16)':(avgSent<=-0.15?'rgba(204,122,122,.16)':'rgba(110,103,126,.16)');
+  sEl.style.background=avgSent>=0.15?'rgba(226,75,74,.16)':(avgSent<=-0.15?'rgba(91,137,201,.16)':'rgba(110,103,126,.16)');
   sEl.style.color=sentColor(avgSent);
 
   function applyFilter(f){
@@ -2778,18 +2780,18 @@ function renderModalChart(){
   // 적정가 라인
   if(FV_ON){
     const fy=py(d.fv);
-    s+=`<line x1="${PX.l}" y1="${fy.toFixed(1)}" x2="${W-PX.r}" y2="${fy.toFixed(1)}" stroke="#9A7DD6" stroke-width="1.6" stroke-dasharray="8 5" opacity="0.9"/>`;
-    s+=`<rect x="${W-PX.r}" y="${(fy-8).toFixed(1)}" width="60" height="16" rx="3" fill="#7C5FC0"/>`;
+    s+=`<line x1="${PX.l}" y1="${fy.toFixed(1)}" x2="${W-PX.r}" y2="${fy.toFixed(1)}" stroke="#C9A867" stroke-width="1.6" stroke-dasharray="8 5" opacity="0.9"/>`;
+    s+=`<rect x="${W-PX.r}" y="${(fy-8).toFixed(1)}" width="60" height="16" rx="3" fill="#A8863F"/>`;
     s+=`<text x="${(W-PX.r+30).toFixed(1)}" y="${(fy+3.5).toFixed(1)}" fill="#fff" font-size="10" text-anchor="middle" font-family="JetBrains Mono" font-weight="700">적정 $${Math.round(d.fv)}</text>`;
   }
   // 거래량 막대
   ohlc.forEach((c,i)=>{
     const up=c.close>=c.open;
-    s+=`<rect x="${(px(i)-cw/2).toFixed(1)}" y="${vy(c.volume).toFixed(1)}" width="${cw.toFixed(1)}" height="${(PX.t+priceH+gap+volH-vy(c.volume)).toFixed(1)}" fill="${up?'#5CAD92':'#C27C7C'}" opacity="0.35"/>`;
+    s+=`<rect x="${(px(i)-cw/2).toFixed(1)}" y="${vy(c.volume).toFixed(1)}" width="${cw.toFixed(1)}" height="${(PX.t+priceH+gap+volH-vy(c.volume)).toFixed(1)}" fill="${up?'#E24B4A':'#5B89C9'}" opacity="0.35"/>`;
   });
   // 캔들
   ohlc.forEach((c,i)=>{
-    const up=c.close>=c.open;const col=up?'#5CAD92':'#C27C7C';
+    const up=c.close>=c.open;const col=up?'#E24B4A':'#5B89C9';
     const x=px(i);
     // 심지
     s+=`<line x1="${x.toFixed(1)}" y1="${py(c.high).toFixed(1)}" x2="${x.toFixed(1)}" y2="${py(c.low).toFixed(1)}" stroke="${col}" stroke-width="1"/>`;
@@ -2805,11 +2807,11 @@ function renderModalChart(){
   }
   if(MA_STATE[20])s+=maPath(ma20,'#C2A468');
   if(MA_STATE[50])s+=maPath(ma50,'#7E97BC');
-  if(MA_STATE[200])s+=maPath(ma200,'#B69BE0');
+  if(MA_STATE[200])s+=maPath(ma200,'#E0C589');
   // 현재가 점/라벨
   const lastY=py(d.price);
-  s+=`<circle cx="${px(ohlc.length-1).toFixed(1)}" cy="${lastY.toFixed(1)}" r="4" fill="${d.chgp>=0?'#5CAD92':'#C27C7C'}"/>`;
-  s+=`<rect x="${W-PX.r}" y="${(lastY-8).toFixed(1)}" width="60" height="16" rx="3" fill="${d.chgp>=0?'#5CAD92':'#C27C7C'}"/>`;
+  s+=`<circle cx="${px(ohlc.length-1).toFixed(1)}" cy="${lastY.toFixed(1)}" r="4" fill="${d.chgp>=0?'#E24B4A':'#5B89C9'}"/>`;
+  s+=`<rect x="${W-PX.r}" y="${(lastY-8).toFixed(1)}" width="60" height="16" rx="3" fill="${d.chgp>=0?'#E24B4A':'#5B89C9'}"/>`;
   s+=`<text x="${(W-PX.r+30).toFixed(1)}" y="${(lastY+3.5).toFixed(1)}" fill="#0E0B16" font-size="10" text-anchor="middle" font-family="JetBrains Mono" font-weight="800">$${Math.round(d.price)}</text>`;
   // 거래량 라벨
   s+=`<text x="${PX.l}" y="${(PX.t+priceH+gap+11).toFixed(1)}" fill="var(--dim2)" font-size="9" font-family="JetBrains Mono">VOL</text>`;
@@ -2822,11 +2824,11 @@ function renderModalChart(){
     <span class="mc ${d.chgp>=0?'up':'down'}">${d.chg>=0?'+':''}$${Math.abs(d.chg)} (${d.chgp>=0?'+':''}${d.chgp}%)</span>
     <span class="mo">O ${Math.round(ohlc[ohlc.length-1].open)} · H ${Math.round(ohlc[ohlc.length-1].high)} · L ${Math.round(ohlc[ohlc.length-1].low)} · C ${Math.round(d.price)}</span>`;
   // 범례
-  let leg='<span><i style="background:#5CAD92"></i>상승</span><span><i style="background:#C27C7C"></i>하락</span>';
+  let leg='<span><i style="background:#E24B4A"></i>상승</span><span><i style="background:#5B89C9"></i>하락</span>';
   if(MA_STATE[20])leg+='<span><i style="background:#C2A468"></i>MA20</span>';
   if(MA_STATE[50])leg+='<span><i style="background:#7E97BC"></i>MA50</span>';
-  if(MA_STATE[200])leg+='<span><i style="background:#B69BE0"></i>MA200</span>';
-  if(FV_ON)leg+='<span><i style="background:#9A7DD6"></i>적정가 $'+Math.round(d.fv)+'</span>';
+  if(MA_STATE[200])leg+='<span><i style="background:#E0C589"></i>MA200</span>';
+  if(FV_ON)leg+='<span><i style="background:#C9A867"></i>적정가 $'+Math.round(d.fv)+'</span>';
   document.getElementById('mLegend').innerHTML=leg;
 }
 
