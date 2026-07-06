@@ -667,6 +667,21 @@
   #detailBody .dt-sec:first-child{margin-top:0}
   #detailBody .dt-peergraph{display:flex;flex-direction:column;gap:14px}
   #detailBody .dt-peergraph .pcard{width:100%;min-width:0}
+  #detailModal .modal-box{max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+  #detailModal .modal-head{flex-shrink:0}
+  #detailModal #detailBody{overflow-y:auto;flex:1;min-height:0}
+  #detailBody .dt-swipe-wrap{position:relative}
+  #detailBody .dt-swipe{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+  #detailBody .dt-swipe::-webkit-scrollbar{display:none}
+  #detailBody .dt-pane{flex:0 0 100%;scroll-snap-align:start;min-width:0;padding:2px 2px 4px}
+  #detailBody .dt-pane .pcard{width:100%;min-width:0}
+  #detailBody .dt-arrow{position:absolute;top:calc(50% - 14px);z-index:5;width:32px;height:32px;border-radius:50%;background:var(--panel3);border:1px solid var(--line);color:var(--txt);font-size:17px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.92;padding:0}
+  #detailBody .dt-arrow.left{left:-6px}#detailBody .dt-arrow.right{right:-6px}
+  #detailBody .dt-arrow:hover{background:var(--violet-d);color:#fff}
+  @media(hover:none){#detailBody .dt-arrow{display:none}}
+  #detailBody .dt-dots{display:flex;gap:7px;justify-content:center;margin-top:14px}
+  #detailBody .dt-dot{width:7px;height:7px;border-radius:50%;background:var(--line)}
+  #detailBody .dt-dot.on{background:var(--violet)}
   .peer-chips{display:flex;flex-wrap:wrap;gap:7px;padding:4px 2px}
   .peer-chip{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;color:var(--txt);font-family:"JetBrains Mono",monospace;cursor:pointer;transition:all .15s}
   .peer-chip:hover{border-color:var(--violet);color:var(--violet-l);background:rgba(138,138,144,.1)}
@@ -2988,14 +3003,17 @@ function openDetail(key){
     ttl='동종업종 피어 · 상세';
     var rp=(typeof STOCKS!=='undefined'&&STOCKS[CURRENT]&&STOCKS[CURRENT].realPeers)?STOCKS[CURRENT].realPeers:null;
     if(rp&&rp.length){
-      html='<div class="dt-sec">지표 표</div><table class="dt-tbl"><thead><tr><th>종목</th><th>PER</th><th>PBR</th><th>순이익률</th><th>EBITDA</th><th>시총</th></tr></thead><tbody>';
+      var tbl='<table class="dt-tbl"><thead><tr><th>종목</th><th>PER</th><th>PBR</th><th>순이익률</th><th>EBITDA</th><th>시총</th></tr></thead><tbody>';
       rp.forEach(function(p){
         var mc=p.marketCap;var cap=(mc&&mc>0)?(mc>=1e6?'$'+(mc/1e6).toFixed(2)+'T':'$'+(mc/1e3).toFixed(0)+'B'):'-';
-        html+='<tr'+(p.isSelf?' class="me"':'')+'><td>'+p.symbol+'</td><td>'+fmtN(p.per)+'</td><td>'+fmtN(p.pbr)+'</td><td>'+fmtP(p.netMargin)+'</td><td>'+fmtP(p.ebitdaMargin)+'</td><td>'+cap+'</td></tr>';
+        tbl+='<tr'+(p.isSelf?' class="me"':'')+'><td>'+p.symbol+'</td><td>'+fmtN(p.per)+'</td><td>'+fmtN(p.pbr)+'</td><td>'+fmtP(p.netMargin)+'</td><td>'+fmtP(p.ebitdaMargin)+'</td><td>'+cap+'</td></tr>';
       });
-      html+='</tbody></table>';
-      var pg=document.querySelector('#peerGrid .pswipe');
-      if(pg)html+='<div class="dt-sec">밸류·수익성·규모 그래프</div><div class="dt-peergraph">'+pg.innerHTML+'</div>';
+      tbl+='</tbody></table>';
+      var pcards=document.querySelectorAll('#peerGrid .pcard');
+      var panes=['<div class="dt-pane"><div class="dt-sec">지표 표</div>'+tbl+'</div>'];
+      pcards.forEach(function(pc){panes.push('<div class="dt-pane">'+pc.outerHTML+'</div>');});
+      var ddots=panes.map(function(x,i){return '<span class="dt-dot'+(i===0?' on':'')+'"></span>';}).join('');
+      html='<div class="dt-swipe-wrap"><button class="dt-arrow left" aria-label="이전">‹</button><div class="dt-swipe">'+panes.join('')+'</div><button class="dt-arrow right" aria-label="다음">›</button></div><div class="dt-dots">'+ddots+'</div>';
     }else{html='<div class="dt-note">피어 데이터 준비중입니다.</div>';}
   }else if(key==='pulse'){
     ttl='마켓 펄스 · 상세';var s=document.querySelector('.regime');
@@ -3007,6 +3025,15 @@ function openDetail(key){
   title.textContent=ttl;
   body.innerHTML=html+'<div class="dt-future">🔜 더 많은 정보가 여기에 추가됩니다</div>';
   m.classList.add('show');
+  if(key==='peer'){
+    var sw=body.querySelector('.dt-swipe');var dts=body.querySelectorAll('.dt-dot');
+    if(sw){
+      sw.addEventListener('scroll',function(){var i=Math.round(sw.scrollLeft/Math.max(1,sw.clientWidth));dts.forEach(function(d,j){d.classList.toggle('on',j===i);});});
+      var la=body.querySelector('.dt-arrow.left'),ra=body.querySelector('.dt-arrow.right');
+      if(la)la.addEventListener('click',function(){sw.scrollBy({left:-sw.clientWidth,behavior:'smooth'});});
+      if(ra)ra.addEventListener('click',function(){sw.scrollBy({left:sw.clientWidth,behavior:'smooth'});});
+    }
+  }
 }
 function closeDetail(){var m=document.getElementById('detailModal');if(m)m.classList.remove('show');}
 document.getElementById('scan9Expand').addEventListener('click',()=>openScanModal(CURRENT));
