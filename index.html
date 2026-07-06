@@ -647,6 +647,22 @@
   .peer-tk.is-self{color:var(--violet-l)}
   .peer-empty{padding:22px 14px;font-size:11px;color:var(--dim);text-align:center;line-height:1.6}
   .peer-note{padding:8px 4px 2px;font-size:8.5px;color:var(--dim);line-height:1.4}
+  .pswipe-wrap{position:relative}
+  .pswipe-arrow{position:absolute;top:calc(50% - 14px);z-index:5;width:28px;height:28px;border-radius:50%;background:var(--panel3);border:1px solid var(--line);color:var(--txt);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.9;padding:0}
+  .pswipe-arrow.left{left:-4px}.pswipe-arrow.right{right:-4px}
+  .pswipe-arrow:hover{background:var(--violet-d);color:#fff}
+  @media(hover:none){.pswipe-arrow{display:none}}
+  .src-btn{font-size:9px;font-weight:700;color:var(--violet-l);cursor:pointer;background:rgba(19,205,180,.12);padding:2px 8px;border-radius:8px;white-space:nowrap}
+  .src-btn:hover{background:rgba(19,205,180,.22)}
+  #detailBody .dt-tbl{width:100%;border-collapse:collapse;margin-top:4px}
+  #detailBody .dt-tbl th{color:var(--dim);font-size:10px;font-weight:600;padding:0 6px 8px;text-align:right}
+  #detailBody .dt-tbl th:first-child{text-align:left}
+  #detailBody .dt-tbl td{font-size:14px;padding:9px 6px;text-align:right;border-top:1px solid var(--line-soft);font-family:"JetBrains Mono",monospace}
+  #detailBody .dt-tbl td:first-child{text-align:left;font-weight:700}
+  #detailBody .dt-tbl tr.me td{background:rgba(19,205,180,.08)}
+  #detailBody .dt-note{font-size:11px;color:var(--dim);margin-top:12px}
+  #detailBody .dt-future{margin-top:16px;padding:22px;text-align:center;color:var(--dim2);font-size:12px;border:1px dashed var(--line);border-radius:8px}
+  #detailBody .dt-clone{transform:scale(1.04);transform-origin:left top;margin:6px 0 16px}
   .peer-chips{display:flex;flex-wrap:wrap;gap:7px;padding:4px 2px}
   .peer-chip{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;color:var(--txt);font-family:"JetBrains Mono",monospace;cursor:pointer;transition:all .15s}
   .peer-chip:hover{border-color:var(--violet);color:var(--violet-l);background:rgba(138,138,144,.1)}
@@ -821,14 +837,14 @@
       <div class="overview">
         <div class="ov-col">
           <div class="card">
-            <div class="card-h"><span class="t">🌡 마켓 펄스</span><span class="src">RegimeFlag</span></div>
+            <div class="card-h"><span class="t">🌡 마켓 펄스</span><span class="src-btn" onclick="openDetail('pulse')">⤢ 상세</span></div>
             <div class="regime">
               <div class="reg"><div class="m">US 대형주</div><div class="nm cy1">리플레이션</div><div class="d">AI 모멘텀 + 금리 고착</div></div>
               <div class="reg"><div class="m">매크로</div><div class="nm neg">변동성 ↑</div><div class="d">중동 리스크 · 유가</div></div>
             </div>
           </div>
           <div class="card">
-            <div class="card-h"><span class="t">섹터 히트맵</span><span class="src">1M</span></div>
+            <div class="card-h"><span class="t">섹터 히트맵</span><span class="src-btn" onclick="openDetail('heat')">⤢ 상세</span></div>
             <div class="heat">
               <div class="h" style="background:rgba(226,75,74,.2)">반도체<span class="v up">+8.4</span></div>
               <div class="h" style="background:rgba(226,75,74,.14)">에너지<span class="v up">+6.1</span></div>
@@ -856,7 +872,7 @@
 
           <div id="coCard"></div>
           <div class="card">
-            <div class="card-h"><span class="t">스캔 등급</span><span class="badge" id="scan9Expand" style="cursor:pointer">9-AXIS ⤢ 상세</span></div>
+            <div class="card-h"><span class="t">스캔 등급</span><span class="badge" id="scan9Expand" style="cursor:pointer">⤢ 상세보기</span></div>
             <div class="scan9 scan9-clickable" id="scan9"></div>
           </div>
           <div class="card tv-card">
@@ -885,7 +901,7 @@
             <div id="riskFlags"></div>
           </div>
           <div class="card">
-            <div class="card-h"><span class="t">동종업종 피어</span><span class="src" id="peerGroup">데이터 분석 SW</span></div>
+            <div class="card-h"><span class="t">동종업종 피어</span><span style="display:flex;gap:8px;align-items:center"><span class="src" id="peerGroup">데이터 분석 SW</span><span class="src-btn" onclick="openDetail('peer')">⤢ 상세</span></span></div>
             <div id="peerGrid"></div>
           </div>
         </div>
@@ -1826,9 +1842,14 @@ function renderPeers(sym){
   let cardsHtml='';
   CARDS.forEach(function(c){cardsHtml+='<div class="pcard"><div class="pc-h"><b>'+c.t+'</b><span>'+c.s+'</span></div>'+c.ms.map(renderMetric).join('')+'</div>';});
   const dots=CARDS.map(function(c,i){return '<span class="pdot'+(i===0?' on':'')+'"></span>';}).join('');
-  grid.innerHTML='<div class="pswipe">'+cardsHtml+'</div><div class="pdots">'+dots+'</div><div class="peer-note">청록 = 5사 중앙값보다 유리(밸류=싼 편·수익성=높은 편) · 카드를 옆으로 넘기세요</div>';
+  grid.innerHTML='<div class="pswipe-wrap"><button class="pswipe-arrow left" aria-label="이전">‹</button><div class="pswipe">'+cardsHtml+'</div><button class="pswipe-arrow right" aria-label="다음">›</button></div><div class="pdots">'+dots+'</div><div class="peer-note">청록 = 5사 중앙값보다 유리(밸류=싼 편·수익성=높은 편) · 카드를 넘겨 보세요</div>';
   const sw=grid.querySelector('.pswipe');const dotsEl=grid.querySelectorAll('.pdot');
-  if(sw){sw.addEventListener('scroll',function(){const i=Math.round(sw.scrollLeft/Math.max(1,sw.clientWidth));dotsEl.forEach(function(d,j){d.classList.toggle('on',j===i);});});}
+  if(sw){
+    sw.addEventListener('scroll',function(){const i=Math.round(sw.scrollLeft/Math.max(1,sw.clientWidth));dotsEl.forEach(function(d,j){d.classList.toggle('on',j===i);});});
+    const la=grid.querySelector('.pswipe-arrow.left'),ra=grid.querySelector('.pswipe-arrow.right');
+    if(la)la.addEventListener('click',function(){sw.scrollBy({left:-sw.clientWidth,behavior:'smooth'});});
+    if(ra)ra.addEventListener('click',function(){sw.scrollBy({left:sw.clientWidth,behavior:'smooth'});});
+  }
 }
 
 function renderPchart(sym){
@@ -2953,6 +2974,35 @@ document.getElementById('chartModal').addEventListener('click',e=>{if(e.target.i
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeScanModal()}});
 // 9축 스캔 모달
 document.getElementById('scan9').addEventListener('click',()=>openScanModal(CURRENT));
+function openDetail(key){
+  var m=document.getElementById('detailModal');if(!m)return;
+  var body=document.getElementById('detailBody'),title=document.getElementById('detailTitle');
+  var fmtN=function(v){return (v!=null&&v>0)?Number(v).toFixed(1)+'배':'-';};
+  var fmtP=function(v){return (v!=null&&v!==0)?Number(v).toFixed(1)+'%':'-';};
+  var html='',ttl='상세';
+  if(key==='peer'){
+    ttl='동종업종 피어 · 상세';
+    var rp=(typeof STOCKS!=='undefined'&&STOCKS[CURRENT]&&STOCKS[CURRENT].realPeers)?STOCKS[CURRENT].realPeers:null;
+    if(rp&&rp.length){
+      html='<table class="dt-tbl"><thead><tr><th>종목</th><th>PER</th><th>PBR</th><th>순이익률</th><th>EBITDA</th><th>시총</th></tr></thead><tbody>';
+      rp.forEach(function(p){
+        var mc=p.marketCap;var cap=(mc&&mc>0)?(mc>=1e6?'$'+(mc/1e6).toFixed(2)+'T':'$'+(mc/1e3).toFixed(0)+'B'):'-';
+        html+='<tr'+(p.isSelf?' class="me"':'')+'><td>'+p.symbol+'</td><td>'+fmtN(p.per)+'</td><td>'+fmtN(p.pbr)+'</td><td>'+fmtP(p.netMargin)+'</td><td>'+fmtP(p.ebitdaMargin)+'</td><td>'+cap+'</td></tr>';
+      });
+      html+='</tbody></table>';
+    }else{html='<div class="dt-note">피어 데이터 준비중입니다.</div>';}
+  }else if(key==='pulse'){
+    ttl='마켓 펄스 · 상세';var s=document.querySelector('.regime');
+    html='<div class="dt-clone">'+(s?s.innerHTML:'')+'</div><div class="dt-note">추후 실시간 거시 지표(지수·VIX·금리·환율)로 확장됩니다.</div>';
+  }else if(key==='heat'){
+    ttl='섹터 히트맵 · 상세';var hh=document.querySelector('.heat');
+    html='<div class="dt-clone">'+(hh?hh.innerHTML:'')+'</div><div class="dt-note">추후 실시간 섹터 ETF 데이터로 확장됩니다.</div>';
+  }
+  title.textContent=ttl;
+  body.innerHTML=html+'<div class="dt-future">🔜 더 많은 정보가 여기에 추가됩니다</div>';
+  m.classList.add('show');
+}
+function closeDetail(){var m=document.getElementById('detailModal');if(m)m.classList.remove('show');}
 document.getElementById('scan9Expand').addEventListener('click',()=>openScanModal(CURRENT));
 document.getElementById('scanClose').addEventListener('click',closeScanModal);
 document.getElementById('scanModal').addEventListener('click',e=>{if(e.target.id==='scanModal')closeScanModal()});
@@ -3056,5 +3106,14 @@ renderTicker();
 tick();setInterval(tick,1000);
 showWelcome();  // 첫 화면: 종목 검색 안내 (데모 제거됨)
 </script>
+<div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title"><span class="m-tk" id="detailTitle">상세</span></div>
+      <span class="modal-close" onclick="closeDetail()">✕ 닫기</span>
+    </div>
+    <div id="detailBody"></div>
+  </div>
+</div>
 </body>
 </html>
