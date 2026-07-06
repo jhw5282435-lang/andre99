@@ -135,7 +135,7 @@
   .card-h .src{font-size:9px;color:var(--dim2)}
   .badge{font-size:9px;color:var(--violet-l);background:rgba(91,211,191,.1);padding:2px 7px;border-radius:4px;font-weight:600}
 
-  .overview{display:grid;grid-template-columns:230px 1fr 280px;gap:12px;padding:16px;min-height:100%}
+  .overview{display:grid;grid-template-columns:minmax(240px,1.15fr) minmax(500px,1.7fr) minmax(260px,1.25fr);gap:12px;padding:16px;min-height:100%}
   @media(max-width:1200px){.overview{grid-template-columns:1fr}}
   .ov-col{display:flex;flex-direction:column;gap:12px}
 
@@ -663,6 +663,10 @@
   #detailBody .dt-note{font-size:11px;color:var(--dim);margin-top:12px}
   #detailBody .dt-future{margin-top:16px;padding:22px;text-align:center;color:var(--dim2);font-size:12px;border:1px dashed var(--line);border-radius:8px}
   #detailBody .dt-clone{transform:scale(1.04);transform-origin:left top;margin:6px 0 16px}
+  #detailBody .dt-sec{font-size:11px;font-weight:700;color:var(--violet-l);margin:20px 0 8px;letter-spacing:.03em}
+  #detailBody .dt-sec:first-child{margin-top:0}
+  #detailBody .dt-peergraph{display:flex;flex-direction:column;gap:14px}
+  #detailBody .dt-peergraph .pcard{width:100%;min-width:0}
   .peer-chips{display:flex;flex-wrap:wrap;gap:7px;padding:4px 2px}
   .peer-chip{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;color:var(--txt);font-family:"JetBrains Mono",monospace;cursor:pointer;transition:all .15s}
   .peer-chip:hover{border-color:var(--violet);color:var(--violet-l);background:rgba(138,138,144,.1)}
@@ -2984,12 +2988,14 @@ function openDetail(key){
     ttl='동종업종 피어 · 상세';
     var rp=(typeof STOCKS!=='undefined'&&STOCKS[CURRENT]&&STOCKS[CURRENT].realPeers)?STOCKS[CURRENT].realPeers:null;
     if(rp&&rp.length){
-      html='<table class="dt-tbl"><thead><tr><th>종목</th><th>PER</th><th>PBR</th><th>순이익률</th><th>EBITDA</th><th>시총</th></tr></thead><tbody>';
+      html='<div class="dt-sec">지표 표</div><table class="dt-tbl"><thead><tr><th>종목</th><th>PER</th><th>PBR</th><th>순이익률</th><th>EBITDA</th><th>시총</th></tr></thead><tbody>';
       rp.forEach(function(p){
         var mc=p.marketCap;var cap=(mc&&mc>0)?(mc>=1e6?'$'+(mc/1e6).toFixed(2)+'T':'$'+(mc/1e3).toFixed(0)+'B'):'-';
         html+='<tr'+(p.isSelf?' class="me"':'')+'><td>'+p.symbol+'</td><td>'+fmtN(p.per)+'</td><td>'+fmtN(p.pbr)+'</td><td>'+fmtP(p.netMargin)+'</td><td>'+fmtP(p.ebitdaMargin)+'</td><td>'+cap+'</td></tr>';
       });
       html+='</tbody></table>';
+      var pg=document.querySelector('#peerGrid .pswipe');
+      if(pg)html+='<div class="dt-sec">밸류·수익성·규모 그래프</div><div class="dt-peergraph">'+pg.innerHTML+'</div>';
     }else{html='<div class="dt-note">피어 데이터 준비중입니다.</div>';}
   }else if(key==='pulse'){
     ttl='마켓 펄스 · 상세';var s=document.querySelector('.regime');
