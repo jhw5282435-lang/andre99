@@ -175,6 +175,20 @@
   .hero-krw .hk-note{font-size:10px;color:var(--dim);margin-left:auto}
   .soon-box{text-align:center;padding:16px 12px;color:var(--dim);font-size:12px;border:1px dashed var(--line);border-radius:8px;line-height:1.7}
   .soon-box span{font-size:10px;color:var(--dim2)}
+  .scan9.s10{display:block}
+  .s10-sum{font-size:14px;font-weight:800;margin-bottom:4px}
+  .s10-sum .sp{color:var(--violet-l)}.s10-sum .sf{color:var(--pos)}.s10-sum .sm{color:var(--dim)}
+  .s10-desc{font-size:9.5px;color:var(--dim);line-height:1.5;margin-bottom:8px}
+  .s10-row{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-top:1px solid var(--line-soft)}
+  .s10-ic{width:17px;height:17px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;margin-top:1px}
+  .s10-ic.p{background:rgba(19,205,180,.16);color:var(--violet-l)}
+  .s10-ic.f{background:rgba(239,68,68,.14);color:var(--pos)}
+  .s10-ic.m{background:var(--panel2);color:var(--dim)}
+  .s10-t{font-size:12px;font-weight:700}
+  .s10-t small{font-size:9px;font-weight:400;color:var(--dim)}
+  .s10-ev{font-size:10px;color:var(--txt2);margin-top:2px}
+  .s10-neutral{margin-top:10px;font-size:10px;color:var(--dim);padding:7px 9px;border:1px dashed var(--line);border-radius:8px}
+  .s10-disc{margin-top:10px;padding-top:9px;border-top:1px solid var(--line-soft);font-size:9px;color:var(--dim)}
   /* 적정가 범위 바 */
   .hero-fv{margin-top:14px;background:rgba(255,255,255,.04);border-radius:8px;padding:11px 13px}
   .hfv-label{font-size:10px;color:rgba(255,255,255,.75);margin-bottom:8px;font-weight:600}
@@ -858,26 +872,17 @@
           <div class="card">
             <div class="card-h"><span class="t">🌡 마켓 펄스</span><span class="src-btn" onclick="openDetail('pulse')">⤢ 상세</span></div>
             <div class="regime">
-              <div class="reg"><div class="m">US 대형주</div><div class="nm cy1">리플레이션</div><div class="d">AI 모멘텀 + 금리 고착</div></div>
-              <div class="reg"><div class="m">매크로</div><div class="nm neg">변동성 ↑</div><div class="d">중동 리스크 · 유가</div></div>
+              <div class="soon-box">실시간 거시 지표 연동 준비중<br><span>지수 · VIX · 금리 · 유가 · 달러/원 — 자동 갱신 예정</span></div>
             </div>
           </div>
           <div class="card">
             <div class="card-h"><span class="t">섹터 히트맵</span><span class="src-btn" onclick="openDetail('heat')">⤢ 상세</span></div>
-            <div class="heat">
-              <div class="h" style="background:rgba(226,75,74,.2)">반도체<span class="v up">+8.4</span></div>
-              <div class="h" style="background:rgba(226,75,74,.14)">에너지<span class="v up">+6.1</span></div>
-              <div class="h" style="background:rgba(226,75,74,.1)">금융<span class="v up">+3.2</span></div>
-              <div class="h" style="background:rgba(226,75,74,.07)">헬스<span class="v up">+1.4</span></div>
-              <div class="h" style="background:rgba(110,103,126,.18)">소비<span class="v dim">+0.2</span></div>
-              <div class="h" style="background:rgba(91,137,201,.1)">유틸<span class="v down">-1.1</span></div>
-              <div class="h" style="background:rgba(91,137,201,.14)">부동산<span class="v down">-2.6</span></div>
-              <div class="h" style="background:rgba(91,137,201,.17)">통신<span class="v down">-3.8</span></div>
-              <div class="h" style="background:rgba(91,137,201,.2)">소재<span class="v down">-4.9</span></div>
+            <div class="heat" style="display:block">
+              <div class="soon-box">실시간 섹터 데이터 연동 준비중<br><span>섹터 ETF 기준 등락 · 자동 갱신 예정</span></div>
             </div>
           </div>
           <div class="card">
-            <div class="card-h"><span class="t">🔎 ACS 스크리너</span><span class="src">~2,200</span></div>
+            <div class="card-h"><span class="t">🔎 ACS 스크리너</span><span class="src">준비중</span></div>
             <div id="screener"></div>
           </div>
           <div class="card">
@@ -891,7 +896,7 @@
 
           <div id="coCard"></div>
           <div class="card">
-            <div class="card-h"><span class="t">스캔 등급</span><span class="badge" id="scan9Expand" style="cursor:pointer">⤢ 상세보기</span></div>
+            <div class="card-h"><span class="t">🔬 안드레 10-스크린</span><span class="badge" id="scan9Expand" style="cursor:pointer">⤢ 상세보기</span></div>
             <div class="scan9 scan9-clickable" id="scan9"></div>
           </div>
           <div class="card tv-card">
@@ -1047,7 +1052,7 @@
     <span style="display:inline-flex;gap:5px;align-items:center"><span class="ld"></span>LIVE</span>
     <span>SOURCE <span class="bd">yfinance · SEC EDGAR · Damodaran</span></span>
     <span>EOD · 15min delay</span>
-    <span style="margin-left:auto" id="statusStock">2,200 종목 · US · PLTR · 샘플 데이터</span>
+    <span style="margin-left:auto" id="statusStock">US 터미널</span>
   </div>
 </div>
 
@@ -1108,27 +1113,27 @@
 // ===================== 종목 데이터셋 =====================
 const STOCKS={
   PLTR:{name:"Palantir Technologies",mkt:"NASDAQ",sector:"소프트웨어",peer:"SW 64사",ceo:"A.Karp",fy:"12월",cap:"$328B",price:141.43,chg:4.62,chgp:3.38,fv:155.00,under:9.6,conf:78,acs:0.92,grade:"A",cls:"성장주",action:"★★ BUY",actcls:"buy",seed:11,growth:.04,trend:.04,revBase:640,marginBase:78,opmBase:12,debtBase:28,
-    grades9:[['수익성','개선중','cy1'],['성장성','초고성장','pos'],['재무안정','우량','pos'],['밸류','고평가','cy1'],['모멘텀','강세','pos'],['회계품질','SBC주의','cy1'],['현금흐름','FCF+','pos'],['거버넌스','B','cy1'],['스마트머니','순매수','pos']],
+    grades9:[],
     pct:[['매출성장',94,'pos','6%'],['영업이익률',71,'pos','29%'],['Rule of 40',88,'pos','12%'],['FCF마진',76,'pos','24%'],['PSR',18,'neg','82%'],['PER',12,'neg','88%'],['SBC/매출',28,'y1','72%']],
     fv4:[['Fwd 12M',118,138,162],['3Y 멀티플',124,151,188],['5Y DCF',132,164,205,1],['Rev DCF',110,148,179],['가중평균',126,155,191,1]],
     risk:[['SBC 희석','주의','y1'],['고밸류에이션','경고','neg'],['현금흐름','양호','g']]},
   AAPL:{name:"Apple Inc.",mkt:"NASDAQ",sector:"하드웨어",peer:"HW 38사",ceo:"T.Cook",fy:"9월",cap:"$3.7T",price:248.13,chg:1.97,chgp:.80,fv:242.00,under:-2.5,conf:71,acs:0.34,grade:"B+",cls:"가치주",action:"★ HOLD",actcls:"hold",seed:42,growth:.015,trend:.012,revBase:1200,marginBase:46,opmBase:31,debtBase:145,
-    grades9:[['수익성','최우량','pos'],['성장성','둔화','cy1'],['재무안정','우량','pos'],['밸류','적정','pos'],['모멘텀','중립','cy1'],['회계품질','우수','pos'],['현금흐름','강력','pos'],['거버넌스','A','pos'],['스마트머니','중립','cy1']],
+    grades9:[],
     pct:[['매출성장',42,'y1','58%'],['영업이익률',92,'pos','8%'],['Rule of 40',68,'pos','32%'],['FCF마진',95,'pos','5%'],['PSR',38,'y1','62%'],['PER',45,'y1','55%'],['SBC/매출',82,'pos','18%']],
     fv4:[['Fwd 12M',218,238,262],['3Y 멀티플',224,245,272],['5Y DCF',210,242,278,1],['Rev DCF',220,246,270],['가중평균',218,242,270,1]],
     risk:[['성장 둔화','주의','y1'],['중국 의존','주의','y1'],['현금흐름','최우량','g']]},
   NVDA:{name:"NVIDIA Corporation",mkt:"NASDAQ",sector:"반도체",peer:"Semis 52사",ceo:"J.Huang",fy:"1월",cap:"$2.8T",price:1142.10,chg:-24.50,chgp:-2.10,fv:1320.00,under:15.6,conf:82,acs:0.81,grade:"A",cls:"성장주",action:"★★ BUY",actcls:"buy",seed:88,growth:.06,trend:.07,revBase:600,marginBase:75,opmBase:62,debtBase:24,
-    grades9:[['수익성','최우량','pos'],['성장성','폭발적','pos'],['재무안정','우량','pos'],['밸류','고평가','neg'],['모멘텀','초강세','pos'],['회계품질','우수','pos'],['현금흐름','강력','pos'],['거버넌스','A-','pos'],['스마트머니','순매수','pos']],
+    grades9:[],
     pct:[['매출성장',99,'pos','1%'],['영업이익률',98,'pos','2%'],['Rule of 40',99,'pos','1%'],['FCF마진',94,'pos','6%'],['PSR',8,'neg','92%'],['PER',15,'neg','85%'],['SBC/매출',45,'y1','55%']],
     fv4:[['Fwd 12M',1180,1280,1420],['3Y 멀티플',1240,1380,1620],['5Y DCF',1320,1450,1720,1],['Rev DCF',1150,1320,1580],['가중평균',1240,1320,1590,1]],
     risk:[['고밸류에이션','경고','neg'],['경쟁 심화','주의','y1'],['현금흐름','최우량','g']]},
   GS:{name:"Goldman Sachs Group",mkt:"NYSE",sector:"금융",peer:"IB 28사",ceo:"D.Solomon",fy:"12월",cap:"$210B",price:612.40,chg:6.80,chgp:1.12,fv:690.00,under:12.7,conf:74,acs:0.74,grade:"A-",cls:"가치주",action:"★★ BUY",actcls:"buy",seed:55,growth:.02,trend:.015,revBase:520,marginBase:88,opmBase:35,debtBase:480,
-    grades9:[['수익성','우량','pos'],['성장성','회복','pos'],['재무안정','양호','cy1'],['밸류','저평가','pos'],['모멘텀','강세','pos'],['회계품질','우수','pos'],['현금흐름','양호','pos'],['거버넌스','A','pos'],['스마트머니','순매수','pos']],
+    grades9:[],
     pct:[['ROE',78,'pos','22%'],['영업이익률',82,'pos','18%'],['트레이딩',91,'pos','9%'],['배당수익',68,'pos','32%'],['PBR',72,'pos','28%'],['PER',81,'pos','19%'],['레버리지',32,'y1','68%']],
     fv4:[['Fwd 12M',580,650,720],['3Y 멀티플',600,680,760],['5Y DCF',620,690,780,1],['배당할인',590,672,740],['가중평균',598,690,750,1]],
     risk:[['레버리지','주의','y1'],['경기 민감','주의','y1'],['트레이딩 수익','우량','g']]},
   TSLA:{name:"Tesla Inc.",mkt:"NASDAQ",sector:"자동차",peer:"Auto 42사",ceo:"E.Musk",fy:"12월",cap:"$1.1T",price:352.30,chg:-15.40,chgp:-4.18,fv:340.00,under:-3.5,conf:58,acs:0.12,grade:"B",cls:"혼합형",action:"★ HOLD",actcls:"hold",seed:33,growth:.03,trend:-.005,revBase:240,marginBase:18,opmBase:8,debtBase:18,
-    grades9:[['수익성','압박','cy1'],['성장성','둔화','cy1'],['재무안정','우량','pos'],['밸류','고평가','neg'],['모멘텀','약세','neg'],['회계품질','보통','cy1'],['현금흐름','양호','pos'],['거버넌스','C','neg'],['스마트머니','혼조','cy1']],
+    grades9:[],
     pct:[['매출성장',58,'y1','42%'],['영업이익률',38,'y1','62%'],['Rule of 40',48,'y1','52%'],['FCF마진',52,'y1','48%'],['PSR',12,'neg','88%'],['PER',8,'neg','92%'],['SBC/매출',62,'pos','38%']],
     fv4:[['Fwd 12M',280,330,400],['3Y 멀티플',300,348,440],['5Y DCF',320,340,460,1],['Rev DCF',290,332,420],['가중평균',298,340,430,1]],
     risk:[['고밸류에이션','경고','neg'],['수요 둔화','주의','y1'],['현금흐름','양호','g']]}
@@ -1191,13 +1196,7 @@ const SCAN9_INFO={
   '스마트머니':{desc:'전문가 동향 — 애널리스트 매수 의견',formula:'애널리스트 매수의견(bullish) 비율'}
 };
 // 종목별 9축 점수 (0~100, 업종 내 백분위는 상위 %)
-const SCAN9_DATA={
-  PLTR:[['수익성',58,'상위 36%'],['성장성',94,'상위 6%'],['재무안정',82,'상위 18%'],['밸류',22,'상위 78%'],['모멘텀',88,'상위 12%'],['회계품질',48,'상위 52%'],['현금흐름',76,'상위 24%'],['거버넌스',54,'상위 46%'],['스마트머니',72,'상위 28%']],
-  AAPL:[['수익성',96,'상위 4%'],['성장성',42,'상위 58%'],['재무안정',88,'상위 12%'],['밸류',58,'상위 42%'],['모멘텀',62,'상위 38%'],['회계품질',92,'상위 8%'],['현금흐름',98,'상위 2%'],['거버넌스',86,'상위 14%'],['스마트머니',64,'상위 36%']],
-  NVDA:[['수익성',98,'상위 2%'],['성장성',99,'상위 1%'],['재무안정',86,'상위 14%'],['밸류',18,'상위 82%'],['모멘텀',96,'상위 4%'],['회계품질',88,'상위 12%'],['현금흐름',94,'상위 6%'],['거버넌스',78,'상위 22%'],['스마트머니',82,'상위 18%']],
-  GS:[['수익성',74,'상위 26%'],['성장성',56,'상위 44%'],['재무안정',62,'상위 38%'],['밸류',78,'상위 22%'],['모멘텀',72,'상위 28%'],['회계품질',82,'상위 18%'],['현금흐름',68,'상위 32%'],['거버넌스',84,'상위 16%'],['스마트머니',76,'상위 24%']],
-  TSLA:[['수익성',38,'상위 62%'],['성장성',48,'상위 52%'],['재무안정',84,'상위 16%'],['밸류',12,'상위 88%'],['모멘텀',32,'상위 68%'],['회계품질',58,'상위 42%'],['현금흐름',64,'상위 36%'],['거버넌스',42,'상위 58%'],['스마트머니',54,'상위 46%']]
-};
+const SCAN9_DATA={}; // 하드코딩 백분위 제거(가짜 박멸) — 야간배치 후 실데이터
 
 // ===================== 지표 해설 데이터 (툴팁: 계산식 + 의미) =====================
 // 종목 무관 공통 — 각 지표가 어떻게 계산되고 무슨 의미인지
@@ -1323,6 +1322,7 @@ function adaptBackendToTerminal(d){
   const metrics={
     per:pos(d.per),psr:pos(d.psr),pbr:pos(d.pbr),eps:num(d.eps),roe:num(d.roe),roa:num(d.roa),
     grossMargin:num(d.gross_margin),opMargin:num(d.operating_margin),netMargin:num(d.net_margin),
+    fwdPe:num(d.fwd_pe),pegRatio:num(d.peg_ratio),
     revGrowth:num(d.revenue_growth_yoy),epsGrowth:num(d.eps_growth_yoy),beta:pos(d.beta),
     divYield:num(d.dividend_yield),debtToEquity:num(d.debt_to_equity),currentRatio:pos(d.current_ratio),
     marketCap:d.market_cap||null
@@ -1402,6 +1402,7 @@ function adaptBackendToTerminal(d){
     overview:overview,priceTarget:priceTarget,
     companyInfo:companyInfo,keyFin:keyFin,consensus:consensus,dividend:dividend,
     peers:peers,
+    screenExtra:d.screen_extra||null,
     _adminValuation:adminOnly,isReal:true,timestamp:d.timestamp||null
   };
 }
@@ -1595,16 +1596,34 @@ function renderOverview(sym){
   }
   // 종목헤더 → 히어로로 통합(제거됨)
   // 9축
-  document.getElementById('scan9').innerHTML=d.grades9.map(([ax,gr,c])=>`<div class="sg"><div class="ax">${ax}</div><div class="gr ${c}">${gr}</div></div>`).join('');
+  (function(){
+    const el=document.getElementById('scan9');if(!el)return;
+    el.classList.add('s10');
+    const rows=d.grades9||[];
+    const isNew=rows.length>0&&['p','f','m'].indexOf(rows[0][1])>=0;
+    if(!rows.length||!isNew){
+      el.innerHTML='<div class="soon-box">실시간 조회 시 안드레 10-스크린이 계산됩니다</div>';
+    }else{
+      const ic={p:'✓',f:'✕',m:'…'};
+      const cnt={p:0,f:0,m:0};rows.forEach(function(r){cnt[r[1]]=(cnt[r[1]]||0)+1;});
+      let html='<div class="s10-sum"><span class="sp">'+cnt.p+' 통과</span> · <span class="sf">'+cnt.f+' 걸림</span> · <span class="sm">'+cnt.m+' 측정중</span></div>';
+      html+='<div class="s10-desc">스크린 = 체로 거른다 — 이 종목을 10가지 기준에 통과시킨 결과이며, 예측이 아닌 현재 데이터의 사실입니다.</div>';
+      html+=rows.map(function(r){return '<div class="s10-row"><span class="s10-ic '+r[1]+'">'+(ic[r[1]]||'…')+'</span><div class="s10-tx"><div class="s10-t">'+r[0]+(r[1]==='m'?' <small>측정중</small>':'')+'</div><div class="s10-ev">'+(r[2]||'')+'</div></div></div>';}).join('');
+      if(rows.neutralInfo)html+='<div class="s10-neutral">ⓘ 공매도 잔량 '+rows.neutralInfo.shortPct+'%'+(rows.neutralInfo.shortRatio?' · 커버 '+rows.neutralInfo.shortRatio+'일':'')+' — 판정 아님(양면 신호 · 참고 정보)</div>';
+      html+='<div class="s10-disc">현재 데이터 기준 스크리닝 · 측정 불가 항목은 숨기지 않고 표시합니다</div>';
+      el.innerHTML=html;
+    }
+  })();
   const isRealStock=!!d.isReal;
   const ADMIN=(typeof ADMIN_MODE!=='undefined'&&ADMIN_MODE);
   // ACS badge — 실시간 종목은 ACS 미산출 → 숨김
   const acsBadgeEl=document.getElementById('acsBadge');
-  if(isRealStock){acsBadgeEl.style.display='none';}
-  else{acsBadgeEl.style.display='';acsBadgeEl.textContent=(d.acs>=0?'+':'')+d.acs;}
+  acsBadgeEl.style.display='none'; // ACS 배지 — 야간배치(Phase 3) 실데이터 후 부활
+  var acsPanel=document.getElementById('acs');
+  if(acsPanel)acsPanel.innerHTML='<div class="soon-box">10-시그널 ACS — 야간배치 구축 후 제공</div>';
   // 백분위 — 실시간 종목은 업종 백분위 데이터 없음 → 카드 숨김
   const pctCard=document.getElementById('pctList')?document.getElementById('pctList').closest('.card'):null;
-  if(isRealStock&&(!d.pct||d.pct.length===0)){if(pctCard)pctCard.style.display='none';}
+  if(!d.pct||d.pct.length===0){if(pctCard)pctCard.style.display='none';}
   else{
     if(pctCard)pctCard.style.display='';
     document.getElementById('pctSrc').textContent=d.peer;
@@ -1631,10 +1650,10 @@ function renderOverview(sym){
   if(isRealStock){if(acsCard)acsCard.style.display='none';}
   else{if(acsCard)acsCard.style.display='';renderACS(sym);}
   // 스크리너 (고정)
-  document.getElementById('screener').innerHTML=SCREENER.map((s,i)=>`<div class="scr" data-sym="${s[0]}"><span class="rk num">${i+1}</span><div><div class="nm">${s[0]} <span class="tg ${s[3]}">${s[2]}</span></div><div class="ty">${s[1]}</div></div><span class="ch up">+${s[4]}</span></div>`).join('');
+  document.getElementById('screener').innerHTML='<div class="soon-box">야간배치 구축 후 실데이터로 제공됩니다<br><span>10-시그널 ACS · 유니버스 ~500</span></div>';
   document.querySelectorAll('#screener .scr').forEach(el=>el.addEventListener('click',()=>{if(STOCKS[el.dataset.sym])switchStock(el.dataset.sym)}));
   // 상태바 — 실시간/샘플 구분
-  document.getElementById('statusStock').textContent=isRealStock?`US · ${sym} · 실시간 조회`:`2,200 종목 · US · ${sym} · 샘플 데이터`;
+  document.getElementById('statusStock').textContent=isRealStock?`US · ${sym} · 실시간 조회`:`US · ${sym} · 샘플(백엔드 미연결)`;
   // 피어 그리드
   renderPeers(sym);
   // 회사 개요 카드 (Yahoo 보조 데이터)
@@ -2302,92 +2321,79 @@ function computeScan9(b){
   const m=b.metrics||{};
   const f=b.factors||{};
   const kf=b.keyFin||null;
-  const an=b.analyst||null;
-  const w52=b.week52Pos; // 0~100 (52주 저점 대비 위치)
-  // 선형 보간 헬퍼: v를 [lo,hi] 구간에서 0~100으로. clamp.
-  const sc=(v,lo,hi)=>{
-    if(v==null||!isFinite(v))return null;
-    if(hi===lo)return 50;
-    let t=(v-lo)/(hi-lo)*100;
-    return Math.max(0,Math.min(100,Math.round(t)));
-  };
-  // 여러 점수 평균 (null 제외)
-  const avg=(arr)=>{
-    const xs=arr.filter(x=>x!=null);
-    if(xs.length===0)return null;
-    return Math.round(xs.reduce((a,c)=>a+c,0)/xs.length);
-  };
+  const sx=b.screenExtra||{};
+  const w52=b.week52Pos;
+  const fx1=(v,d)=>v==null?'-':Number(v).toFixed(d==null?1:d);
+  const rows=[];
+  const push=(name,state,ev)=>rows.push([name,state,ev]);
 
-  // ① 수익성: 순이익률·영업이익률·ROE
-  const profit=avg([sc(m.netMargin,0,30),sc(m.opMargin,0,35),sc(m.roe,0,40)]);
-  // ② 성장성: 매출 YoY·EPS YoY
-  const growth=avg([sc(m.revGrowth,0,50),sc(m.epsGrowth,-10,60)]);
-  // ③ 재무안정: 유동비율 + 부채 + 이익/현금 체력(보강)
-  // 유동비율만으로는 우량주(애플 등 낮은 유동비율+강한 현금창출)를 오판할 수 있어
-  // ROE·FCF 같은 체력 지표를 보조로 반영.
-  const curScore=sc(m.currentRatio,0.6,2.5);
-  const deRaw=(m.debtToEquity!=null&&m.debtToEquity>0)?m.debtToEquity:null;
-  const debtScore=deRaw!=null?(100-sc(deRaw,0,200)):null;
-  // 체력 보조: ROE가 높거나 FCF가 양수면 재무 여력이 있다고 봄
-  let strengthScore=null;
-  const roeS=(m.roe!=null)?sc(m.roe,0,40):null;
-  let fcfPos=null;
-  if(b.keyFin&&b.keyFin.freeCashflow!=null)fcfPos=(b.keyFin.freeCashflow>0?80:30);
-  strengthScore=avg([roeS,fcfPos]);
-  const stable=avg([curScore,debtScore,strengthScore]);
-  // ④ 밸류: PER을 업종평균(sectorPer) 대비 평가. 낮을수록 저평가=고득점.
-  // 성장주의 고PER을 0으로 깔지 않도록 로그 스케일로 완만하게 보정.
-  let value=null;
+  // ① 수익성 — ROE·순이익률·영업이익률
+  if(m.netMargin!=null&&m.roe!=null){
+    push('수익성',(m.netMargin>0&&m.roe>=10)?'p':'f','순이익률 '+fx1(m.netMargin)+'% · ROE '+fx1(m.roe)+'%'+(m.opMargin!=null?' · 영업이익률 '+fx1(m.opMargin)+'%':''));
+  }else push('수익성','m','수익성 데이터 수집 중');
+
+  // ② 성장성 — 과거 YoY + 포워드 컨센서스
+  let g0y=null;
+  if(Array.isArray(b.consensus)){const c0=b.consensus.find(x=>x&&x.period==='0y');if(c0&&c0.growth!=null)g0y=c0.growth*100;}
+  if(m.revGrowth!=null){
+    push('성장성',(m.revGrowth>0)?'p':'f','매출 '+(m.revGrowth>=0?'+':'')+fx1(m.revGrowth)+'% YoY'+(g0y!=null?' · 컨센 올해 '+(g0y>=0?'+':'')+fx1(g0y,0)+'%':''));
+  }else if(g0y!=null){
+    push('성장성',(g0y>0)?'p':'f','컨센서스 올해 성장 '+(g0y>=0?'+':'')+fx1(g0y,0)+'%');
+  }else push('성장성','m','성장 데이터 수집 중');
+
+  // ③ 전망 흐름 (신규) — 애널리스트 추정치 리비전
+  if(sx.rev_up30!=null&&sx.rev_down30!=null){
+    const u=sx.rev_up30,dn=sx.rev_down30;
+    push('전망 흐름',u>dn?'p':(dn>u?'f':'m'),'최근 30일 추정치 상향 '+u+'건 · 하향 '+dn+'건'+(u===dn?' (균형)':''));
+  }else push('전망 흐름','m','리비전 데이터 연동 후 표시');
+
+  // ④ 밸류 — 업종 대비 + 포워드
   if(m.per!=null&&m.per>0){
-    if(f.sectorPer!=null&&f.sectorPer>0){
-      // ratio=per/sectorPer. log2 기준: 0.5배=85, 1배(평균)=60, 2배=35, 4배=10
-      const ratio=m.per/f.sectorPer;
-      const lg=Math.log2(ratio); // 0.5배→-1, 1배→0, 2배→1, 4배→2
-      value=Math.max(5,Math.min(95,Math.round(60-lg*25)));
-    }else{
-      // 업종평균 없으면 절대기준(로그): PER 15→60, 30→40, 60→20
-      const lg=Math.log2(m.per/15);
-      value=Math.max(5,Math.min(95,Math.round(60-lg*20)));
-    }
-  }
-  // ⑤ 모멘텀: 52주 위치 + 52주 수익률
-  const mom=avg([w52!=null?w52:null,sc(m.chg52w!=null?m.chg52w:(b.chg52w),-30,80)]);
-  // ⑥ 회계품질: 매출총이익률(높고 안정적일수록 양호) — 단순 프록시
-  const quality=sc(m.grossMargin,20,70);
-  // ⑦ 현금흐름: FCF 양수 여부 + 규모(매출 대비). keyFin 없으면 null.
-  let cash=null;
-  if(kf&&kf.freeCashflow!=null){
-    if(kf.freeCashflow<=0)cash=25; // 적자 현금흐름
-    else if(kf.totalRevenue!=null&&kf.totalRevenue>0){
-      const fcfMargin=kf.freeCashflow/kf.totalRevenue*100;
-      cash=sc(fcfMargin,0,30);
-    }else cash=65; // 양수지만 비율 못 구함
-  }
-  // ⑧ 거버넌스: 백엔드 데이터 없음 → 임시 중립(측정 안 됨). 회색 처리.
-  const gov=null;
-  // ⑨ 스마트머니: 애널리스트 매수의견 비율
-  const smart=an?sc(an.bullishPct,30,90):null;
+    const sp=(f.sectorPer!=null&&f.sectorPer>0)?f.sectorPer:null;
+    const pass=sp?(m.per<=sp*1.15):(m.per<=25);
+    let ev='PER '+fx1(m.per)+'배'+(sp?' vs 업종 '+fx1(sp)+'배':'');
+    if(m.fwdPe!=null&&m.fwdPe>0)ev+=' · 포워드 '+fx1(m.fwdPe)+'배';
+    if(m.pegRatio!=null&&m.pegRatio>0)ev+=' · PEG '+fx1(m.pegRatio);
+    push('밸류',pass?'p':'f',ev);
+  }else push('밸류','m','PER 산출 불가(적자 등) — 판정 보류');
 
-  // 점수 → [축, 점수(0~100|null), 업종%문자열] 형태로
-  const pctStr=(s)=>s==null?'측정 안 됨':('상위 '+Math.max(1,Math.round(100-s))+'%');
-  const rows=[
-    ['수익성',profit],['성장성',growth],['재무안정',stable],
-    ['밸류',value],['모멘텀',mom],['회계품질',quality],
-    ['현금흐름',cash],['거버넌스',gov],['스마트머니',smart]
-  ];
-  // 상세 모달용: [축, 점수, 업종%]
-  const scanData=rows.map(r=>[r[0],r[1]!=null?r[1]:0,r[1]!=null?pctStr(r[1]):'측정 안 됨']);
-  // 종합탭 9칸용: [축, 라벨글자, 색클래스]
-  const label=(s)=>{
-    if(s==null)return ['측정중','dim'];
-    if(s>=75)return ['우수','pos'];
-    if(s>=55)return ['양호','pos'];
-    if(s>=40)return ['보통','cy1'];
-    if(s>=25)return ['주의','neg'];
-    return ['취약','neg'];
-  };
-  const grades9=rows.map(r=>{const l=label(r[1]);return [r[0],l[0],l[1]];});
-  return {grades9:grades9,scanData:scanData};
+  // ⑤ 모멘텀 — 52주 위치
+  if(w52!=null){
+    push('모멘텀',w52>=50?'p':'f','52주 범위 '+Math.round(w52)+'% 지점'+(m.chg52w!=null?' · 52주 '+(m.chg52w>=0?'+':'')+fx1(m.chg52w,0)+'%':''));
+  }else push('모멘텀','m','가격 위치 데이터 수집 중');
+
+  // ⑥ 현금흐름 — FCF
+  if(kf&&kf.freeCashflow!=null){
+    const pos=kf.freeCashflow>0;
+    let ev='FCF '+(pos?'+':'-')+'$'+Math.abs(kf.freeCashflow/1e9).toFixed(1)+'B';
+    if(pos&&kf.totalRevenue)ev+=' (매출의 '+Math.round(kf.freeCashflow/kf.totalRevenue*100)+'%)';
+    push('현금흐름',pos?'p':'f',ev);
+  }else push('현금흐름','m','현금흐름 데이터 수집 중');
+
+  // ⑦ 재무안정 — 유동비율
+  if(m.currentRatio!=null){
+    push('재무안정',m.currentRatio>=1.2?'p':'f','유동비율 '+fx1(m.currentRatio,2)+(m.debtToEquity!=null&&m.debtToEquity>0?' · 부채비율 '+Math.round(m.debtToEquity)+'%':''));
+  }else push('재무안정','m','재무 데이터 수집 중');
+
+  // ⑧ 회계품질 — 프록시 중단(4원칙: 얇은 스크린은 측정중), SBC·발생액 연동 후 판정
+  push('회계품질','m','SBC·발생액 데이터 연동 후 판정');
+
+  // ⑨ 스마트머니 — 내부자 순매수 (교체)
+  if(sx.insider&&sx.insider.net_shares!=null){
+    const ins=sx.insider;
+    push('스마트머니',ins.net_shares>0?'p':(ins.net_shares<0?'f':'m'),'내부자 '+(ins.net_shares>0?'순매수':(ins.net_shares<0?'순매도':'중립'))+(ins.buy_count!=null?' · 매수 '+ins.buy_count+'건 · 매도 '+(ins.sell_count||0)+'건':'')+(ins.period?' (최근 '+ins.period+')':''));
+  }else push('스마트머니','m','내부자 거래 데이터 연동 후 표시');
+
+  // ⑩ 거버넌스 — 판정 룰 정의 전
+  push('거버넌스','m','내부자 거래 룰 정의 후 판정');
+
+  // 중립 정보(판정 아님): 공매도
+  if(sx.short&&sx.short.pct_float!=null){
+    rows.neutralInfo={shortPct:(sx.short.pct_float*100).toFixed(1),shortRatio:sx.short.short_ratio!=null?fx1(sx.short.short_ratio):null};
+  }
+
+  const scanData=rows.map(r=>[r[0],r[1]==='p'?78:(r[1]==='f'?32:0),r[1]==='m'?'측정 안 됨':'']);
+  return {grades9:rows,scanData:scanData};
 }
 
 
@@ -3021,6 +3027,9 @@ function openDetail(key){
   }else if(key==='heat'){
     ttl='섹터 히트맵 · 상세';var hh=document.querySelector('.heat');
     html='<div class="dt-clone">'+(hh?hh.innerHTML:'')+'</div><div class="dt-note">추후 실시간 섹터 ETF 데이터로 확장됩니다.</div>';
+  }else if(key==='screen'){
+    ttl='안드레 10-스크린 · 상세';var s9=document.getElementById('scan9');
+    html='<div class="dt-clone">'+(s9?s9.innerHTML:'')+'</div>';
   }
   title.textContent=ttl;
   body.innerHTML=html+'<div class="dt-future">🔜 더 많은 정보가 여기에 추가됩니다</div>';
@@ -3036,7 +3045,7 @@ function openDetail(key){
   }
 }
 function closeDetail(){var m=document.getElementById('detailModal');if(m)m.classList.remove('show');}
-document.getElementById('scan9Expand').addEventListener('click',()=>openScanModal(CURRENT));
+document.getElementById('scan9Expand').addEventListener('click',()=>openDetail('screen'));
 document.getElementById('scanClose').addEventListener('click',closeScanModal);
 document.getElementById('scanModal').addEventListener('click',e=>{if(e.target.id==='scanModal')closeScanModal()});
 // 기간 토글
