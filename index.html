@@ -961,7 +961,7 @@
         <div class="filings-head">
           <div class="fh-left">
             <span class="fh-tk" id="filTk">PLTR</span>
-            <span class="fh-meta" id="filMeta">Palantir Technologies · CIK 0001321655</span>
+            <span class="fh-meta" id="filMeta">—</span>
           </div>
           <div class="fh-right">
             <span class="fil-source">SEC EDGAR · 실시간 공시</span>
@@ -1011,7 +1011,7 @@
         <div class="news-head">
           <div class="nh-left">
             <span class="nh-tk" id="newsTk">PLTR</span>
-            <span class="nh-meta" id="newsMeta">Palantir Technologies · 최근 뉴스</span>
+            <span class="nh-meta" id="newsMeta">—</span>
           </div>
           <div class="nh-right">
             <span class="news-source">GDELT · Finnhub · 실시간</span>
@@ -1086,7 +1086,7 @@
     <div class="modal-head">
       <div class="modal-title">
         <span class="m-tk" id="mTk">PLTR</span>
-        <span class="m-nm" id="mNm">Palantir Technologies · NASDAQ</span>
+        <span class="m-nm" id="mNm">—</span>
       </div>
       <div class="modal-tools">
         <div class="grp">
@@ -1111,33 +1111,7 @@
 
 <script>
 // ===================== 종목 데이터셋 =====================
-const STOCKS={
-  PLTR:{name:"Palantir Technologies",mkt:"NASDAQ",sector:"소프트웨어",peer:"SW 64사",ceo:"A.Karp",fy:"12월",cap:"$328B",price:141.43,chg:4.62,chgp:3.38,fv:155.00,under:9.6,conf:78,acs:0.92,grade:"A",cls:"성장주",action:"★★ BUY",actcls:"buy",seed:11,growth:.04,trend:.04,revBase:640,marginBase:78,opmBase:12,debtBase:28,
-    grades9:[],
-    pct:[['매출성장',94,'pos','6%'],['영업이익률',71,'pos','29%'],['Rule of 40',88,'pos','12%'],['FCF마진',76,'pos','24%'],['PSR',18,'neg','82%'],['PER',12,'neg','88%'],['SBC/매출',28,'y1','72%']],
-    fv4:[['Fwd 12M',118,138,162],['3Y 멀티플',124,151,188],['5Y DCF',132,164,205,1],['Rev DCF',110,148,179],['가중평균',126,155,191,1]],
-    risk:[['SBC 희석','주의','y1'],['고밸류에이션','경고','neg'],['현금흐름','양호','g']]},
-  AAPL:{name:"Apple Inc.",mkt:"NASDAQ",sector:"하드웨어",peer:"HW 38사",ceo:"T.Cook",fy:"9월",cap:"$3.7T",price:248.13,chg:1.97,chgp:.80,fv:242.00,under:-2.5,conf:71,acs:0.34,grade:"B+",cls:"가치주",action:"★ HOLD",actcls:"hold",seed:42,growth:.015,trend:.012,revBase:1200,marginBase:46,opmBase:31,debtBase:145,
-    grades9:[],
-    pct:[['매출성장',42,'y1','58%'],['영업이익률',92,'pos','8%'],['Rule of 40',68,'pos','32%'],['FCF마진',95,'pos','5%'],['PSR',38,'y1','62%'],['PER',45,'y1','55%'],['SBC/매출',82,'pos','18%']],
-    fv4:[['Fwd 12M',218,238,262],['3Y 멀티플',224,245,272],['5Y DCF',210,242,278,1],['Rev DCF',220,246,270],['가중평균',218,242,270,1]],
-    risk:[['성장 둔화','주의','y1'],['중국 의존','주의','y1'],['현금흐름','최우량','g']]},
-  NVDA:{name:"NVIDIA Corporation",mkt:"NASDAQ",sector:"반도체",peer:"Semis 52사",ceo:"J.Huang",fy:"1월",cap:"$2.8T",price:1142.10,chg:-24.50,chgp:-2.10,fv:1320.00,under:15.6,conf:82,acs:0.81,grade:"A",cls:"성장주",action:"★★ BUY",actcls:"buy",seed:88,growth:.06,trend:.07,revBase:600,marginBase:75,opmBase:62,debtBase:24,
-    grades9:[],
-    pct:[['매출성장',99,'pos','1%'],['영업이익률',98,'pos','2%'],['Rule of 40',99,'pos','1%'],['FCF마진',94,'pos','6%'],['PSR',8,'neg','92%'],['PER',15,'neg','85%'],['SBC/매출',45,'y1','55%']],
-    fv4:[['Fwd 12M',1180,1280,1420],['3Y 멀티플',1240,1380,1620],['5Y DCF',1320,1450,1720,1],['Rev DCF',1150,1320,1580],['가중평균',1240,1320,1590,1]],
-    risk:[['고밸류에이션','경고','neg'],['경쟁 심화','주의','y1'],['현금흐름','최우량','g']]},
-  GS:{name:"Goldman Sachs Group",mkt:"NYSE",sector:"금융",peer:"IB 28사",ceo:"D.Solomon",fy:"12월",cap:"$210B",price:612.40,chg:6.80,chgp:1.12,fv:690.00,under:12.7,conf:74,acs:0.74,grade:"A-",cls:"가치주",action:"★★ BUY",actcls:"buy",seed:55,growth:.02,trend:.015,revBase:520,marginBase:88,opmBase:35,debtBase:480,
-    grades9:[],
-    pct:[['ROE',78,'pos','22%'],['영업이익률',82,'pos','18%'],['트레이딩',91,'pos','9%'],['배당수익',68,'pos','32%'],['PBR',72,'pos','28%'],['PER',81,'pos','19%'],['레버리지',32,'y1','68%']],
-    fv4:[['Fwd 12M',580,650,720],['3Y 멀티플',600,680,760],['5Y DCF',620,690,780,1],['배당할인',590,672,740],['가중평균',598,690,750,1]],
-    risk:[['레버리지','주의','y1'],['경기 민감','주의','y1'],['트레이딩 수익','우량','g']]},
-  TSLA:{name:"Tesla Inc.",mkt:"NASDAQ",sector:"자동차",peer:"Auto 42사",ceo:"E.Musk",fy:"12월",cap:"$1.1T",price:352.30,chg:-15.40,chgp:-4.18,fv:340.00,under:-3.5,conf:58,acs:0.12,grade:"B",cls:"혼합형",action:"★ HOLD",actcls:"hold",seed:33,growth:.03,trend:-.005,revBase:240,marginBase:18,opmBase:8,debtBase:18,
-    grades9:[],
-    pct:[['매출성장',58,'y1','42%'],['영업이익률',38,'y1','62%'],['Rule of 40',48,'y1','52%'],['FCF마진',52,'y1','48%'],['PSR',12,'neg','88%'],['PER',8,'neg','92%'],['SBC/매출',62,'pos','38%']],
-    fv4:[['Fwd 12M',280,330,400],['3Y 멀티플',300,348,440],['5Y DCF',320,340,460,1],['Rev DCF',290,332,420],['가중평균',298,340,430,1]],
-    risk:[['고밸류에이션','경고','neg'],['수요 둔화','주의','y1'],['현금흐름','양호','g']]}
-};
+const STOCKS={};  // 하드코딩 쇼케이스 제거 — 모든 종목은 실시간 조회로만 채워짐
 const SCREENER=[['PLTR','Software','성장','v',0.92],['NVDA','Semis','성장','v',0.81],['GS','Financials','가치','g',0.74],['UNH','Healthcare','가치','g',0.58],['META','Comm','혼합','v',0.41]];
 const ACS_SIG=['Quality_Z','EQF 회계','Mom_Z','AlphaSignal','RiskParity','MacroAnchor','IGRS 성장','RegimeFlag','MagicMOS','SmartMoney'];
 
@@ -1480,12 +1454,18 @@ function cmap(c){return{pos:'var(--pos)',neg:'var(--neg)',y1:'var(--y1)',g:'var(
 
 // ===================== 티커 바 =====================
 function renderTicker(){
-  const arr=Object.keys(STOCKS).concat(['AMZN','GOOGL','META','AMD']).map(s=>{
-    if(STOCKS[s]){const d=STOCKS[s];return[s,'$'+d.price.toLocaleString(),(d.chgp>=0?'+':'')+d.chgp+'%',d.chgp>=0]}
-    const fake={AMZN:['$221','+0.5%',1],GOOGL:['$192','+1.9%',1],META:['$712','-0.7%',0],AMD:['$168','+2.8%',1]};
-    return [s,fake[s][0],fake[s][1],fake[s][2]];
+  // 실제로 조회한 종목만 표시 (가짜 시세 제거)
+  const arr=Object.keys(STOCKS).filter(s=>STOCKS[s]&&STOCKS[s].price!=null).map(s=>{
+    const d=STOCKS[s];
+    return [s,'$'+Number(d.price).toLocaleString(),(d.chgp>=0?'+':'')+Number(d.chgp).toFixed(2)+'%',d.chgp>=0];
   });
-  const html=arr.concat(arr).map(([s,p,c,u])=>`<span class="tk" data-sym="${s}"><span class="sym">${s}</span><span class="pr num">${p} <span class="${u?'up':'down'}">${c}</span></span></span>`).join('');
+  if(!arr.length){
+    document.getElementById('ticker').innerHTML='<span class="tk" style="opacity:.5"><span class="sym">종목을 검색하면 여기에 표시됩니다</span></span>';
+    return;
+  }
+  const rep_=arr.length<6?4:2;
+  let seq=[];for(let i=0;i<rep_;i++)seq=seq.concat(arr);
+  const html=seq.map(([s,p,c,u])=>`<span class="tk" data-sym="${s}"><span class="sym">${s}</span><span class="pr num">${p} <span class="${u?'up':'down'}">${c}</span></span></span>`).join('');
   document.getElementById('ticker').innerHTML=html;
   document.querySelectorAll('#ticker .tk').forEach(t=>t.addEventListener('click',()=>{if(STOCKS[t.dataset.sym])switchStock(t.dataset.sym)}));
 }
@@ -1638,7 +1618,7 @@ function renderOverview(sym){
   }
   // 리스크 — 실시간 종목은 리스크 플래그 데이터 없음 → 카드 숨김
   const riskCard=document.getElementById('riskFlags')?document.getElementById('riskFlags').closest('.card'):null;
-  if(isRealStock&&(!d.risk||d.risk.length===0)){if(riskCard)riskCard.style.display='none';}
+  if(!d.risk||d.risk.length===0){if(riskCard)riskCard.style.display='none';}
   else{
     if(riskCard)riskCard.style.display='';
     document.getElementById('riskFlags').innerHTML=d.risk.map(([nm,st,c],i)=>`<div class="pct"${i>0?' style="margin-top:6px"':''}><span class="nm" style="width:auto;flex:1">${nm}</span><span class="tg ${c==='g'?'g':''}" ${c!=='g'?`style="background:rgba(${c==='neg'?'204,122,122':'19,205,180'},.15);color:var(--${c==='neg'?'neg':'y1'})"`:''}>${st}</span></div>`).join('');
@@ -2300,10 +2280,9 @@ async function fetchStock(ticker){
     const adapted=adaptBackendToTerminal(raw);
     BK[adapted.symbol]=adapted;       // BK에 등록
     fetchCache[adapted.symbol]=adapted;
-    // STOCKS에도 최소 항목 추가 (switchStock 호환용)
-    if(!STOCKS[adapted.symbol]){
-      STOCKS[adapted.symbol]=makeStockStub(adapted);
-    }
+    // STOCKS를 항상 실데이터로 갱신 (하드코딩 잔재가 실데이터를 가로막지 않도록)
+    STOCKS[adapted.symbol]=makeStockStub(adapted);
+    try{ if(typeof renderTicker==='function') renderTicker(); }catch(e){}
     isFetching=false;
     return adapted;
   }catch(e){
