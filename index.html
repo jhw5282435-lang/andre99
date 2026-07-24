@@ -1052,6 +1052,7 @@
     <span style="display:inline-flex;gap:5px;align-items:center"><span class="ld"></span>LIVE</span>
     <span>SOURCE <span class="bd">yfinance · SEC EDGAR · Damodaran</span></span>
     <span>EOD · 15min delay</span>
+    <span class="bd" id="buildVer" style="color:var(--violet-l)">v2026.07.24-B</span>
     <span style="margin-left:auto" id="statusStock">US 터미널</span>
   </div>
 </div>
@@ -2258,6 +2259,8 @@ function attachHover(){
 // ===================== 종목 전환 =====================
 // ===================== 백엔드 실시간 호출 =====================
 // 안드레99 Cloudflare Workers 백엔드 (티커 → 실시간 분석)
+const BUILD_VER='v2026.07.24-B';
+console.log('%c ANDRE99 v2026.07.24-B ','background:#13CDB4;color:#000;font-weight:700');
 const WORKER_URL='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 const fetchCache={};  // 같은 종목 재요청 방지 (세션 캐시)
 let isFetching=false;
