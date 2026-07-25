@@ -4,7 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B0B0C">
-<title>ANDRE99</title>
+<title>안드레99 — 미국주식 계측 터미널</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="안드레99">
+<meta name="description" content="아무 미국주식이나 검색하면 10가지 기준으로 걸러서 근거까지 보여드립니다. 무료 한국어 미국주식 분석 터미널.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <style>
 :root{
@@ -55,6 +63,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .sec-h .note{margin-left:auto;font-size:11.5px;color:var(--tx3)}
 
 /* ── 지수 Hero ── */
+.idxhead{padding:0 16px 7px;font-size:11px;color:var(--tx3)}
 .idx{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);
   border-radius:24px;overflow:hidden;margin:0 16px}
 .idx > div{background:var(--s1);padding:16px 16px 15px;min-height:92px}
@@ -220,7 +229,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.07.24-B</span>
+      <span class="ver">v2026.07.25-C</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -231,6 +240,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 <!-- ══ 홈 ══ -->
 <main class="page on" id="p-home">
   <div class="sec">
+    <div class="idxhead"><span id="idxNote">불러오는 중</span></div>
     <div class="idx" id="idxGrid">
       <div><div class="k">불러오는 중</div><div class="v">—</div></div>
       <div><div class="k">불러오는 중</div><div class="v">—</div></div>
@@ -343,8 +353,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.07.24-B';
-console.log('%c ANDRE99 v2026.07.24-B ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.07.25-C';
+console.log('%c ANDRE99 v2026.07.25-C ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 var fx=function(v,d){return (v==null||isNaN(v))?'—':Number(v).toLocaleString('en-US',{minimumFractionDigits:d==null?2:d,maximumFractionDigits:d==null?2:d})};
@@ -362,13 +372,24 @@ document.querySelectorAll('.nb').forEach(function(b){ b.addEventListener('click'
 $('toSearch').addEventListener('click',function(){ show('stock'); setTimeout(function(){$('q').focus();},60); });
 
 /* ── 시장 상태 ── */
+var MKT_OPEN=false;
+
+// 미국장 마지막 거래일 (ET 기준)
+function lastTradingDay(){
+  var et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+  var d=new Date(et.getFullYear(),et.getMonth(),et.getDate());
+  var m=et.getHours()*60+et.getMinutes();
+  if(m<570) d.setDate(d.getDate()-1);          // 개장 전이면 전 거래일
+  while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()-1);  // 주말 제외
+  return d;
+}
+
 function marketStatus(){
-  var now=new Date();
-  var et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
+  var et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
   var m=et.getHours()*60+et.getMinutes(), wd=et.getDay();
-  var open=(wd>=1&&wd<=5&&m>=570&&m<960);
-  $('mDot').className='dot'+(open?'':' off');
-  $('mStat').textContent=open?'정규장':'장 마감';
+  MKT_OPEN=(wd>=1&&wd<=5&&m>=570&&m<960);
+  $('mDot').className='dot'+(MKT_OPEN?'':' off');
+  $('mStat').textContent=MKT_OPEN?'정규장':'장 마감';
   renderStamp();
 }
 var DATA_TS=null;   // 데이터가 만들어진 시각
@@ -379,9 +400,15 @@ function renderStamp(){
   var el=$('mTime'); if(!el) return;
   if(!DATA_TS){ el.textContent='불러오는 중'; el.className='n stale'; return; }
   var diff=Math.floor((Date.now()-DATA_TS.getTime())/60000);
-  var t=DATA_TS.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});
   var ago = diff<1 ? '방금' : (diff<60 ? diff+'분 전' : Math.floor(diff/60)+'시간 전');
-  el.textContent=t+' 기준 · '+ago;
+  if(MKT_OPEN){
+    var t=DATA_TS.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});
+    el.textContent=t+' 기준 · '+ago;
+  }else{
+    // 장 마감 시엔 "언제 종가인지"를 밝힌다 (방금 받은 값처럼 보이지 않게)
+    var d=lastTradingDay(), wk=['일','월','화','수','목','금','토'][d.getDay()];
+    el.textContent=(d.getMonth()+1)+'/'+d.getDate()+'('+wk+') 종가 · '+ago+' 갱신';
+  }
   el.className = diff>30 ? 'n stale' : 'n';
 }
 marketStatus(); setInterval(marketStatus,60000);
@@ -400,6 +427,12 @@ function loadMarket(){
       if(x.symbol==='KRW=X'){ USDKRW=x.price; USDKRW_CHG=x.chg_pct; }
     });
 
+    var idxNote=$('idxNote');
+    if(idxNote){
+      var ld=lastTradingDay(), lwk=['일','월','화','수','목','금','토'][ld.getDay()];
+      idxNote.textContent = MKT_OPEN ? '미국장 진행 중 · 코스피는 직전 종가'
+        : '미국 '+(ld.getMonth()+1)+'/'+ld.getDate()+'('+lwk+') 종가 · 코스피는 한국장 종가';
+    }
     $('idxGrid').innerHTML=(d.indices||[]).map(function(x){
       return '<div><div class="k">'+x.name+'</div><div class="v n">'+fx(x.price,x.price>1000?0:2)+
         '</div><div class="c n '+dirCls(x.chg_pct)+'">'+pct(x.chg_pct)+'</div></div>';
