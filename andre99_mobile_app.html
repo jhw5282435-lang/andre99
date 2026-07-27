@@ -213,6 +213,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .edet summary::-webkit-details-marker{display:none}
 .edet summary::after{content:" \25BE";color:var(--tx3);font-size:11px;margin-left:6px}
 .edet[open] summary::after{content:" \25B4"}
+.ecode{display:inline-block;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--tx3)}
+.ebtn{margin-top:16px;min-height:44px;padding:0 22px;border-radius:14px;
+  background:var(--tx);color:#0B0B0C;font-size:13.5px;font-weight:700}
 .tvwrap{margin:0 16px;background:var(--s1);border-radius:20px;padding:12px 12px 10px;overflow:hidden}
 .ivs{display:flex;gap:6px;margin-bottom:10px}
 .iv{flex:1;min-height:38px;border-radius:12px;background:var(--s2);color:var(--tx2);
@@ -292,7 +295,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.07.25-F</span>
+      <span class="ver">v2026.07.25-G</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -416,8 +419,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.07.25-F';
-console.log('%c ANDRE99 v2026.07.25-F ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.07.25-G';
+console.log('%c ANDRE99 v2026.07.25-G ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 var fx=function(v,d){return (v==null||isNaN(v))?'—':Number(v).toLocaleString('en-US',{minimumFractionDigits:d==null?2:d,maximumFractionDigits:d==null?2:d})};
@@ -660,8 +663,17 @@ function krwBlock(d){
 function loadStock(sym){
   show('stock');
   $('stockBody').innerHTML='<div class="sec"><div class="skel">'+sym+' 불러오는 중…</div></div>';
-  fetch(API+'/?symbol='+encodeURIComponent(sym)).then(function(r){return r.json()}).then(function(d){
-    if(!d||d.error) throw new Error('err');
+  fetch(API+'/?symbol='+encodeURIComponent(sym)).then(function(r){
+    return r.json().then(function(j){ return {code:r.status, body:j}; })
+                   .catch(function(){ return {code:r.status, body:null}; });
+  }).then(function(res){
+    var d=res.body;
+    if(!d||d.error){
+      var msg=(d&&d.error)?String(d.error):'';
+      var e=new Error(msg||('HTTP '+res.code));
+      e.code=res.code; e.raw=msg;
+      throw e;
+    }
     LAST=d;
     var rows=screenRows(d);
     var cnt={p:0,f:0,m:0}; rows.forEach(function(x){cnt[x.s]++});
@@ -779,9 +791,31 @@ function loadStock(sym){
     });
     var wa=$('wAdd'); if(wa) wa.addEventListener('click',function(){ addWatch(d.symbol||sym); });
     renderEarn(d);
-  }).catch(function(){
-    $('stockBody').innerHTML='<div class="sec"><div class="empty"><h3>불러오지 못했습니다</h3>'+
-      '<p>티커를 다시 확인해 주세요. 미국 상장 종목만 조회할 수 있습니다.</p></div></div>';
+  }).catch(function(e){
+    var raw=String((e&&(e.raw||e.message))||'');
+    var code=(e&&e.code)||0;
+    var title='불러오지 못했습니다', desc='', retry=true;
+
+    if(/429|rate|limit|too many/i.test(raw)||code===429){
+      title='잠시 후 다시 시도해 주세요';
+      desc='데이터 제공처의 조회 한도에 닿았습니다. 잠깐 기다리면 다시 조회됩니다.<br><span class="ecode">일시적 한도 초과</span>';
+    }else if(/not found|no data|없|404/i.test(raw)||code===404){
+      title='찾을 수 없는 티커입니다';
+      desc='철자를 확인해 주세요. 미국 상장 종목만 조회할 수 있습니다.';
+      retry=false;
+    }else if(code>=500||/timeout|network|failed to fetch/i.test(raw)){
+      title='일시적인 오류입니다';
+      desc='잠시 후 다시 시도해 주세요.<br><span class="ecode">'+esc(raw.slice(0,80))+'</span>';
+    }else{
+      desc='원인: <span class="ecode">'+esc(raw.slice(0,80)||('HTTP '+code))+'</span>';
+    }
+
+    $('stockBody').innerHTML='<div class="sec"><div class="empty"><h3>'+title+'</h3>'+
+      '<p>'+desc+'</p>'+
+      (retry?'<button class="ebtn" id="eRetry">다시 시도</button>':'')+
+      '</div></div>';
+    var rb=$('eRetry');
+    if(rb) rb.addEventListener('click',function(){ loadStock(sym); });
   });
 }
 
