@@ -167,7 +167,28 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .notch i{flex:1;height:26px;border-radius:6px;border:1px solid var(--line);background:var(--s3)}
 .notch i.p{background:var(--tx);border-color:var(--tx)}
 .notch i.f{background:none;border-color:var(--tx2)}
-.sr{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.sr{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.sr.tap{cursor:pointer}
+.sr.tap:active{background:var(--s2);border-radius:10px}
+.sbody{flex:1;min-width:0}
+.chev{margin-left:6px;color:var(--tx3);font-size:11px}
+.finload{font-size:10.5px;color:var(--tx3);margin-left:8px}
+.spk{flex:none;width:52px;padding-top:3px}
+.spk svg{display:block;width:52px;height:22px;overflow:visible}
+.spk .dir{font-size:9.5px;color:var(--tx3);text-align:right;margin-top:2px;font-family:var(--mono)}
+.spk.none{opacity:.3}
+.spk.none .nodata{font-size:9px;color:var(--tx3);text-align:right;padding-top:6px;line-height:1.3}
+.exp{margin-top:10px;background:var(--s2);border-radius:14px;padding:12px}
+.exp-h{font-size:10.5px;color:var(--tx3);margin-bottom:9px;line-height:1.5}
+.exp table{width:100%;border-collapse:collapse}
+.exp th,.exp td{text-align:right;padding:6px 0;font-size:11.5px;font-family:var(--mono);
+  border-bottom:1px solid var(--line)}
+.exp th:first-child,.exp td:first-child{text-align:left}
+.exp th{color:var(--tx3);font-size:10px;font-weight:600}
+.exp td{color:var(--tx2)}
+.exp td.hl{color:var(--tx);font-weight:700}
+.exp tr:last-child td{border-bottom:0}
+.exp-f{margin-top:9px;font-size:10.5px;color:var(--tx3);line-height:1.55}
 .sr:last-of-type{border-bottom:0}
 .sr .st{font-size:11px;font-weight:700;width:36px;flex:none;padding-top:2px}
 .sr .st.p{color:var(--tx)} .sr .st.f{color:var(--tx2)} .sr .st.m{color:var(--tx3)}
@@ -295,7 +316,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.07.25-G</span>
+      <span class="ver">v2026.07.27-J</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -419,8 +440,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.07.25-G';
-console.log('%c ANDRE99 v2026.07.25-G ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.07.27-J';
+console.log('%c ANDRE99 v2026.07.27-J ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 var fx=function(v,d){return (v==null||isNaN(v))?'—':Number(v).toLocaleString('en-US',{minimumFractionDigits:d==null?2:d,maximumFractionDigits:d==null?2:d})};
@@ -570,6 +591,81 @@ $('go').addEventListener('click',function(){ if($('q').value.trim()) loadStock($
 $('q').addEventListener('keydown',function(e){ if(e.key==='Enter'&&$('q').value.trim()) loadStock($('q').value.trim().toUpperCase()); });
 
 var LAST=null;
+/* ── 공시 누적값을 분기값으로 환산 ──
+   10-Q는 회사에 따라 누적(YTD)으로 보고된다. 예: 애플 FY26 Q2 매출 $254.9B = Q1+Q2.
+   같은 회계연도의 직전 분기를 빼야 진짜 분기값이 나온다.
+   직전 분기가 데이터에 없으면 환산 불가 → 그래프에서 제외한다(가짜를 그리지 않는다). */
+function toQuarterly(qf){
+  var src=(qf||[]).filter(function(r){return r&&r.year!=null&&r.quarter!=null;});
+  if(!src.length) return [];
+  src=src.slice().sort(function(a,b){return new Date(a.period)-new Date(b.period);});
+  var find=function(y,q){
+    for(var i=0;i<src.length;i++){ if(src[i].year===y&&src[i].quarter===q) return src[i]; }
+    return null;
+  };
+  var sub=function(a,b){ return (a==null)?null:((b==null)?null:(a-b)); };
+  var out=[];
+  src.forEach(function(r){
+    var ok=true, prev=null;
+    if(r.quarter>1){
+      prev=find(r.year, r.quarter-1);
+      if(!prev) ok=false;                 // 환산 불가 → 제외
+    }
+    if(!ok) return;
+    out.push({
+      year:r.year, quarter:r.quarter, period:r.period,
+      revenue:          prev? sub(r.revenue,prev.revenue)                   : r.revenue,
+      net_income:       prev? sub(r.net_income,prev.net_income)             : r.net_income,
+      operating_income: prev? sub(r.operating_income,prev.operating_income) : r.operating_income,
+      gross_profit:     prev? sub(r.gross_profit,prev.gross_profit)         : r.gross_profit
+    });
+  });
+  return out;
+}
+
+function bn(v){
+  if(v==null||isNaN(v)) return '—';
+  var a=Math.abs(v);
+  if(a>=1e9) return '$'+(v/1e9).toFixed(1)+'B';
+  if(a>=1e6) return '$'+(v/1e6).toFixed(0)+'M';
+  return '$'+Math.round(v).toLocaleString();
+}
+
+/* 스파크라인 + 업종 밴드
+   band = {lo, mid, hi} — 피어들의 최소·중앙·최대. 소아과 성장곡선처럼
+   "또래 범위" 위에 이 회사를 얹어, 눈금 없는 선의 과장을 막는다. */
+function sparkHTML(vals, band, strong){
+  var v=vals.filter(function(x){return x!=null&&!isNaN(x);});
+  if(v.length<3) return '<div class="spk none"><div class="nodata">추이 없음</div></div>';
+  var W=52,H=22;
+  var all=v.slice();
+  if(band){ if(band.lo!=null)all.push(band.lo); if(band.hi!=null)all.push(band.hi); }
+  var mn=Math.min.apply(null,all), mx=Math.max.apply(null,all), sp=(mx-mn)||1;
+  var Y=function(x){ return (H-((x-mn)/sp)*H); };
+  var pts=v.map(function(x,i){ return ((i/(v.length-1))*W).toFixed(1)+','+Y(x).toFixed(1); });
+  var last=pts[pts.length-1].split(',');
+
+  var bg='';
+  if(band&&band.lo!=null&&band.hi!=null&&band.hi>band.lo){
+    var y1=Y(band.hi), y2=Y(band.lo);
+    bg+='<rect x="0" y="'+y1.toFixed(1)+'" width="'+W+'" height="'+Math.max(1,(y2-y1)).toFixed(1)+
+        '" fill="var(--tx2)" opacity=".13"/>';
+  }
+  if(band&&band.mid!=null){
+    var ym=Y(band.mid).toFixed(1);
+    bg+='<line x1="0" y1="'+ym+'" x2="'+W+'" y2="'+ym+'" stroke="var(--tx3)" stroke-width="1" stroke-dasharray="2 2" opacity=".8"/>';
+  }
+  var a=v[0], b=v[v.length-1];
+  var pc=(a&&Math.abs(a)>0.0001)?((b-a)/Math.abs(a)*100):null;
+  return '<div class="spk"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+bg+
+    '<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+(strong?'var(--tx)':'var(--tx2)')+
+    '" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+
+    '<circle cx="'+last[0]+'" cy="'+last[1]+'" r="1.9" fill="var(--tx)"/></svg>'+
+    (pc!=null?'<div class="dir">'+(pc>=0?'+':'')+pc.toFixed(0)+'%</div>':'')+'</div>';
+}
+
+function qLabel(r){ return String(r.year).slice(2)+'Q'+r.quarter; }
+
 function screenRows(d){
   var kf=d.key_financials||{};
   var fmt=function(v,u){return v==null?null:Number(v).toFixed(1)+(u||'')};
@@ -585,14 +681,101 @@ function screenRows(d){
       ? ((d.price-d.week52_low)/(d.week52_high-d.week52_low))*100 : null);
   var fcf=pick(kf.free_cashflow, d.free_cashflow);
   var rev=pick(kf.total_revenue);
+  // ── 추이 재료 ──
+  // 야후 정규화 분기값이 오면 그것을 쓴다(환산 불필요). 없으면 핀허브 누적을 환산해 폴백.
+  var QF, FSRC;
+  if(Array.isArray(d.fin_quarters)&&d.fin_quarters.length>=3){
+    QF=d.fin_quarters; FSRC='야후 · 정규화 분기값';
+  }else{
+    QF=toQuarterly(d.quarterly_financials); FSRC='SEC 공시 · 누적 환산';
+  }
+  var mgHist=QF.map(function(x){
+    return (x.revenue&&x.net_income!=null&&x.revenue!==0)?(x.net_income/x.revenue*100):null;
+  });
+  var revHist=QF.map(function(x){ return x.revenue; });
+  var fcfHist=QF.map(function(x){ return x.free_cashflow!=null?x.free_cashflow:null; });
+  var curHist=QF.map(function(x){ return x.current_ratio!=null?x.current_ratio:null; });
+  var sbcHist=QF.map(function(x){
+    return (x.sbc!=null&&x.revenue)?(Math.abs(x.sbc)/x.revenue*100):null;
+  });
+  var hasFCF=fcfHist.filter(function(v){return v!=null;}).length>=3;
+  var hasCUR=curHist.filter(function(v){return v!=null;}).length>=3;
+  var hasSBC=sbcHist.filter(function(v){return v!=null;}).length>=3;
+  // 업종 중앙값 (피어 순이익률)
+  var peerBand=null, peerRank=null, peerN=0;
+  if(Array.isArray(d.peers)){
+    var pm=d.peers.filter(function(x){return x&&!x.is_self&&x.net_margin!=null;})
+                  .map(function(x){return Number(x.net_margin);}).sort(function(a,b){return a-b;});
+    peerN=pm.length;
+    if(pm.length>=3){   // 3개 미만이면 중앙값이 우연이라 표시하지 않는다
+      var mid=pm.length%2?pm[(pm.length-1)/2]:(pm[pm.length/2-1]+pm[pm.length/2])/2;
+      peerBand={lo:pm[0], mid:mid, hi:pm[pm.length-1]};
+      if(netMargin!=null){
+        var above=pm.filter(function(x){return netMargin>x;}).length;
+        peerRank=(pm.length+1-above);   // 1위 = 가장 높음
+      }
+    }
+  }
+  // 표 생성
+  var tblMargin=null, tblRev=null;
+  if(QF.length>=3){
+    tblMargin='<div class="exp-h">분기별 · '+FSRC+
+      (peerBand?' · 업종 범위 '+peerBand.lo.toFixed(1)+'~'+peerBand.hi.toFixed(1)+'% (중앙값 '+peerBand.mid.toFixed(1)+'%)':'')+'</div>'+
+      '<table><tr><th>분기</th><th>매출</th><th>순이익</th><th>순이익률</th></tr>'+
+      QF.slice().reverse().map(function(x,i){
+        var m=(x.revenue&&x.net_income!=null&&x.revenue!==0)?(x.net_income/x.revenue*100):null;
+        return '<tr><td>'+qLabel(x)+'</td><td>'+bn(x.revenue)+'</td><td>'+bn(x.net_income)+'</td>'+
+          '<td class="'+(i===0?'hl':'')+'">'+(m!=null?m.toFixed(1)+'%':'—')+'</td></tr>';
+      }).join('')+'</table>'+
+      '<div class="exp-f">순이익률 = 순이익 ÷ 매출.'+(FSRC.indexOf('환산')>=0?' 누적 공시는 직전 분기를 빼서 환산했습니다.':'')+'</div>';
+
+    tblRev='<div class="exp-h">분기별 매출 · '+FSRC+'</div>'+
+      '<table><tr><th>분기</th><th>매출</th><th>영업이익</th><th>전분기比</th></tr>'+
+      QF.slice().reverse().map(function(x,i,arr){
+        var nx=arr[i+1];
+        var qq=(nx&&nx.revenue&&x.revenue)?((x.revenue-nx.revenue)/Math.abs(nx.revenue)*100):null;
+        return '<tr><td>'+qLabel(x)+'</td><td class="'+(i===0?'hl':'')+'">'+bn(x.revenue)+'</td>'+
+          '<td>'+bn(x.operating_income)+'</td>'+
+          '<td>'+(qq!=null?(qq>=0?'+':'')+qq.toFixed(1)+'%':'—')+'</td></tr>';
+      }).join('')+'</table>'+
+      '<div class="exp-f">누적 공시는 분기값으로 환산했습니다. 분기 매출은 계절성이 있어 전년 동기와 비교하는 것이 정확합니다.</div>';
+  }
+
+  var tblFcf=null, tblCur=null;
+  if(hasFCF){
+    tblFcf='<div class="exp-h">분기별 현금흐름 · '+FSRC+'</div>'+
+      '<table><tr><th>분기</th><th>영업현금</th><th>설비투자</th><th>FCF</th></tr>'+
+      QF.slice().reverse().map(function(x,i){
+        return '<tr><td>'+qLabel(x)+'</td><td>'+bn(x.operating_cashflow)+'</td>'+
+          '<td>'+bn(x.capex!=null?-Math.abs(x.capex):null)+'</td>'+
+          '<td class="'+(i===0?'hl':'')+'">'+bn(x.free_cashflow)+'</td></tr>';
+      }).join('')+'</table>'+
+      '<div class="exp-f">FCF(잉여현금흐름) = 영업으로 번 현금 − 설비투자. 회사가 실제로 손에 쥔 현금입니다.</div>';
+  }
+  if(hasCUR){
+    tblCur='<div class="exp-h">분기별 재무안정 · '+FSRC+'</div>'+
+      '<table><tr><th>분기</th><th>유동자산</th><th>유동부채</th><th>유동비율</th></tr>'+
+      QF.slice().reverse().map(function(x,i){
+        return '<tr><td>'+qLabel(x)+'</td><td>'+bn(x.current_assets)+'</td>'+
+          '<td>'+bn(x.current_liabilities)+'</td>'+
+          '<td class="'+(i===0?'hl':'')+'">'+(x.current_ratio!=null?x.current_ratio.toFixed(2):'—')+'</td></tr>';
+      }).join('')+'</table>'+
+      '<div class="exp-f">유동비율 = 1년 안에 현금화할 자산 ÷ 1년 안에 갚을 빚. 1.2 이상이면 여유가 있다고 봅니다.</div>';
+  }
+
   var r=[];
   r.push((netMargin!=null&&roe!=null)
     ? row('수익성',(netMargin>0&&roe>=10)?'p':'f','순이익률 '+fmt(netMargin,'%')+' · ROE '+fmt(roe,'%')+(opMargin!=null?' · 영업이익률 '+fmt(opMargin,'%'):''))
     : row('수익성','m','수익성 데이터 수집 중'));
+  r[r.length-1].hist=mgHist; r[r.length-1].band=peerBand; r[r.length-1].table=tblMargin;
+  if(peerBand&&peerRank!=null&&r[r.length-1].s!=='m'){
+    r[r.length-1].e += ' · 업종 '+(peerN+1)+'개사 중 '+peerRank+'위';
+  }
   var g=pick(d.revenue_growth_yoy);
   r.push(g!=null
     ? row('성장성',g>0?'p':'f','매출 '+(g>=0?'+':'')+fmt(g,'% YoY')+(d.eps_growth_yoy!=null?' · EPS '+(d.eps_growth_yoy>=0?'+':'')+fmt(d.eps_growth_yoy,'%'):''))
     : row('성장성','m','성장 데이터 수집 중'));
+  r[r.length-1].hist=revHist; r[r.length-1].table=tblRev;
   var sx=d.screen_extra||{};
   r.push((sx.rev_up30!=null&&sx.rev_down30!=null)
     ? row('전망 흐름',sx.rev_up30>sx.rev_down30?'p':(sx.rev_down30>sx.rev_up30?'f':'m'),
@@ -608,10 +791,28 @@ function screenRows(d){
   r.push(fcf!=null
     ? row('현금흐름',fcf>0?'p':'f','FCF '+(fcf>0?'+':'-')+'$'+Math.abs(fcf/1e9).toFixed(1)+'B'+((fcf>0&&rev)?' (매출의 '+Math.round(fcf/rev*100)+'%)':''))
     : row('현금흐름','m','현금흐름 데이터 수집 중'));
+  if(hasFCF){ r[r.length-1].hist=fcfHist; r[r.length-1].table=tblFcf; }
   r.push(curRatio!=null
     ? row('재무안정',curRatio>=1.2?'p':'f','유동비율 '+curRatio.toFixed(2)+(d.debt_to_equity>0?' · 부채비율 '+Math.round(d.debt_to_equity)+'%':''))
     : row('재무안정','m','재무 데이터 수집 중'));
-  r.push(row('회계품질','m','주식보상·발생액 연동 후 판정'));
+  if(hasCUR){ r[r.length-1].hist=curHist; r[r.length-1].table=tblCur; }
+  if(hasSBC){
+    var sbcNow=sbcHist[sbcHist.length-1];
+    var tblSbc='<div class="exp-h">주식보상비용(SBC) · '+FSRC+'</div>'+
+      '<table><tr><th>분기</th><th>매출</th><th>SBC</th><th>매출 대비</th></tr>'+
+      QF.slice().reverse().map(function(x,i){
+        var pv=(x.sbc!=null&&x.revenue)?(Math.abs(x.sbc)/x.revenue*100):null;
+        return '<tr><td>'+qLabel(x)+'</td><td>'+bn(x.revenue)+'</td>'+
+          '<td>'+bn(x.sbc!=null?Math.abs(x.sbc):null)+'</td>'+
+          '<td class="'+(i===0?'hl':'')+'">'+(pv!=null?pv.toFixed(1)+'%':'—')+'</td></tr>';
+      }).join('')+'</table>'+
+      '<div class="exp-f">SBC는 직원에게 현금 대신 주식으로 준 보상입니다. 현금은 안 나가지만 주식 수가 늘어 기존 주주 몫이 줄어듭니다. 매출의 10%를 넘으면 부담이 큰 편으로 봅니다.</div>';
+    r.push(row('회계품질', sbcNow<=10?'p':'f',
+      '주식보상 매출의 '+sbcNow.toFixed(1)+'%'+(sbcNow>10?' — 부담이 큰 편':'')));
+    r[r.length-1].hist=sbcHist; r[r.length-1].table=tblSbc;
+  }else{
+    r.push(row('회계품질','m','주식보상 데이터 연동 후 판정'));
+  }
   r.push((sx.insider&&sx.insider.net_shares!=null)
     ? row('스마트머니',sx.insider.net_shares>0?'p':(sx.insider.net_shares<0?'f':'m'),
         '내부자 '+(sx.insider.net_shares>0?'순매수':(sx.insider.net_shares<0?'순매도':'중립')))
@@ -660,6 +861,73 @@ function krwBlock(d){
   return line;
 }
 
+function screenCardHTML(d){
+  var rows=screenRows(d);
+  LAST_ROWS=rows;
+  var cnt={p:0,f:0,m:0}; rows.forEach(function(x){cnt[x.s]++;});
+  var lbl={p:'통과',f:'걸림',m:'측정'};
+  var loading = d._finLoading ? '<span class="finload">재무 불러오는 중…</span>' : '';
+  return '<div class="sec-h"><h2>안드레 10-스크린</h2>'+loading+
+    '<button class="note" id="wAdd" style="min-height:32px">＋ 관심</button></div><div class="scr">'+
+    '<div class="notch">'+rows.map(function(x){return '<i class="'+(x.s==='m'?'':x.s)+'"></i>';}).join('')+'</div>'+
+    '<div class="scr-sum">'+cnt.p+' 통과 <small>· '+cnt.f+' 걸림 · '+cnt.m+' 측정중</small></div>'+
+    '<div class="scr-desc">스크린은 체로 거른다는 뜻입니다. 지금 데이터를 10가지 기준에 통과시킨 결과이며, 예측이 아닙니다.</div>'+
+    rows.map(function(x,i){
+      var spk = (x.hist && x.hist.filter(function(v){return v!=null;}).length>=3)
+        ? sparkHTML(x.hist, x.band, x.s==='p')
+        : '<div class="spk none"><div class="nodata">'+(d._finLoading?'…':'추이 없음')+'</div></div>';
+      var body = x.table ? '<div class="exp" id="exp'+i+'" hidden>'+x.table+'</div>' : '';
+      return '<div class="sr'+(x.table?' tap':'')+'" data-row="'+i+'">'+
+        '<span class="st '+x.s+'">'+lbl[x.s]+'</span>'+
+        '<div class="sbody"><div class="t">'+x.n+(x.s==='m'?' <small>측정중</small>':'')+
+        (x.table?'<span class="chev" id="chev'+i+'">⌄</span>':'')+'</div>'+
+        '<div class="ev">'+x.e+'</div>'+body+'</div>'+spk+'</div>';
+    }).join('')+
+    (function(){
+      var sx=d.screen_extra||{};
+      if(!sx.short||sx.short.pct_float==null)return '';
+      return '<div class="neutral">공매도 잔량 '+(sx.short.pct_float*100).toFixed(1)+'%'+
+        (sx.short.short_ratio!=null?' · 커버 '+Number(sx.short.short_ratio).toFixed(1)+'일':'')+
+        ' — 하락에 거는 물량이자 급등의 재료도 되기 때문에, 통과·걸림으로 세지 않고 참고 정보로만 둡니다.</div>';
+    })()+'</div>';
+}
+
+/* 아코디언·관심추가 바인딩 (재렌더 때마다 다시 걸어준다) */
+function bindScreenCard(sym){
+  document.querySelectorAll('.sr.tap').forEach(function(el){
+    el.addEventListener('click',function(){
+      var i=el.dataset.row, box=$('exp'+i), cv=$('chev'+i);
+      if(!box) return;
+      var open=box.hasAttribute('hidden');
+      if(open){ box.removeAttribute('hidden'); } else { box.setAttribute('hidden',''); }
+      if(cv) cv.textContent = open ? '⌃' : '⌄';
+    });
+  });
+  var wa=$('wAdd'); if(wa) wa.addEventListener('click',function(){ addWatch(sym); });
+}
+
+/* 재무를 별도 요청으로 늦게 불러온다 (즉각 보상: 본 화면을 막지 않음) */
+function loadFinancials(sym){
+  fetch(API+'/financials?symbol='+encodeURIComponent(sym))
+    .then(function(r){return r.json()})
+    .then(function(f){
+      if(!LAST || (LAST.symbol||'')!==sym) return;          // 그 사이 다른 종목으로 이동
+      LAST._finLoading=false;
+      if(f && f.status==='ok' && Array.isArray(f.quarters) && f.quarters.length){
+        LAST.fin_quarters=f.quarters;
+        LAST.fin_available=f.available||{};
+      }
+      var wrap=$('scrWrap');
+      if(wrap){ wrap.innerHTML=screenCardHTML(LAST); bindScreenCard(sym); }
+    })
+    .catch(function(){
+      if(!LAST) return;
+      LAST._finLoading=false;
+      var wrap=$('scrWrap');
+      if(wrap){ wrap.innerHTML=screenCardHTML(LAST); bindScreenCard(sym); }
+    });
+}
+
 function loadStock(sym){
   show('stock');
   $('stockBody').innerHTML='<div class="sec"><div class="skel">'+sym+' 불러오는 중…</div></div>';
@@ -674,7 +942,7 @@ function loadStock(sym){
       e.code=res.code; e.raw=msg;
       throw e;
     }
-    LAST=d;
+    LAST=d; d._finLoading=true;
     var rows=screenRows(d);
     var cnt={p:0,f:0,m:0}; rows.forEach(function(x){cnt[x.s]++});
     var lbl={p:'통과',f:'걸림',m:'측정'};
@@ -693,22 +961,7 @@ function loadStock(sym){
       '<div class="chg n '+dirCls(d.chg_day)+'">'+(d.chg_day_abs!=null?(d.chg_day>=0?'+':'')+'$'+Math.abs(d.chg_day_abs).toFixed(2)+' ':'')+pct(d.chg_day)+'</div>'+
       krwBlock(d)+'</div>';
 
-    html+='<div class="sec"><div class="sec-h"><h2>안드레 10-스크린</h2>'+
-      '<button class="note" id="wAdd" style="min-height:32px">＋ 관심</button></div><div class="scr">'+
-      '<div class="notch">'+rows.map(function(x){return '<i class="'+(x.s==='m'?'':x.s)+'"></i>';}).join('')+'</div>'+
-      '<div class="scr-sum">'+cnt.p+' 통과 <small>· '+cnt.f+' 걸림 · '+cnt.m+' 측정중</small></div>'+
-      '<div class="scr-desc">스크린은 체로 거른다는 뜻입니다. 지금 데이터를 10가지 기준에 통과시킨 결과이며, 예측이 아닙니다.</div>'+
-      rows.map(function(x){
-        return '<div class="sr"><span class="st '+x.s+'">'+lbl[x.s]+'</span><div><div class="t">'+x.n+
-          '</div><div class="ev">'+x.e+'</div></div></div>';
-      }).join('')+
-      (function(){
-        var sx=d.screen_extra||{};
-        if(!sx.short||sx.short.pct_float==null)return '';
-        return '<div class="neutral">공매도 잔량 '+(sx.short.pct_float*100).toFixed(1)+'%'+
-          (sx.short.short_ratio!=null?' · 커버 '+Number(sx.short.short_ratio).toFixed(1)+'일':'')+
-          ' — 하락에 거는 물량이자 급등의 재료도 되기 때문에, 통과·걸림으로 세지 않고 참고 정보로만 둡니다.</div>';
-      })()+'</div></div>';
+    html+='<div class="sec" id="scrWrap">'+screenCardHTML(d)+'</div>';
 
     html+='<div class="shareRow">'+
       '<button class="shareBtn main" data-card="sq">■ 정사각형 카드</button>'+
@@ -770,6 +1023,8 @@ function loadStock(sym){
 
     $('stockBody').innerHTML=html;
     LAST_ROWS=rows;
+    bindScreenCard(d.symbol||sym);
+    loadFinancials(d.symbol||sym);
     setChart(d.symbol||sym,'D');
     document.querySelectorAll('.iv').forEach(function(b){
       b.addEventListener('click',function(){
@@ -789,7 +1044,7 @@ function loadStock(sym){
     document.querySelectorAll('[data-card]').forEach(function(b){
       b.addEventListener('click',function(){ makeCard(b.dataset.card); });
     });
-    var wa=$('wAdd'); if(wa) wa.addEventListener('click',function(){ addWatch(d.symbol||sym); });
+
     renderEarn(d);
   }).catch(function(e){
     var raw=String((e&&(e.raw||e.message))||'');
