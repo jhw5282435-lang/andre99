@@ -367,7 +367,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.07.31-L</span>
+      <span class="ver">v2026.08.02-M</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -494,8 +494,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.07.31-L';
-console.log('%c ANDRE99 v2026.07.31-L ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.02-M';
+console.log('%c ANDRE99 v2026.08.02-M ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 var fx=function(v,d){return (v==null||isNaN(v))?'—':Number(v).toLocaleString('en-US',{minimumFractionDigits:d==null?2:d,maximumFractionDigits:d==null?2:d})};
@@ -1185,7 +1185,9 @@ function sgn(v){ return v==null?'' : (v>=0?'+':'')+v.toFixed(1)+'%'; }
 
 /* 실적 히어로 — 발표 전/후 자동 전환 */
 function earnHeroHTML(d){
-  var hist=(d.earnings_history||[]).slice(0,8);
+  // 소스가 어떤 순서로 주든 최신이 [0]에 오도록 프론트에서도 보장한다
+  var hist=(d.earnings_history||[]).slice()
+    .sort(function(a,b){ return new Date(b.period||0) - new Date(a.period||0); }).slice(0,8);
   var nx=d.next_earning||null;
   var QF=Array.isArray(d.fin_quarters)?d.fin_quarters:[];
   var sym=d.symbol||'';
@@ -1254,8 +1256,8 @@ function earnHeroHTML(d){
 
   var rows='';
   rows+='<div class="dr"><span class="k">EPS</span><span class="v">'+
-    (cur.eps_estimate!=null?'예상 <b>$'+cur.eps_estimate+'</b> → ':'')+
-    '실제 <b>$'+cur.eps_actual+'</b>'+
+    (cur.eps_estimate!=null?'예상 <b>$'+Number(cur.eps_estimate).toFixed(2)+'</b> → ':'')+
+    '실제 <b>$'+Number(cur.eps_actual).toFixed(2)+'</b>'+
     (sp!=null?' <span class="'+dirCls(sp)+'">'+sgn(sp)+(sp>=0?' 상회':' 하회')+'</span>':'')+'</span></div>';
   if(qCur&&qCur.revenue!=null){
     rows+='<div class="dr"><span class="k">매출</span><span class="v"><b>'+bn(qCur.revenue)+'</b>'+
@@ -1285,7 +1287,9 @@ function earnHeroHTML(d){
 }
 
 function renderEarn(d){
-  var hist=(d.earnings_history||[]).slice(0,8), nx=d.next_earning||null;
+  var hist=(d.earnings_history||[]).slice()
+    .sort(function(a,b){ return new Date(b.period||0) - new Date(a.period||0); }).slice(0,8);
+  var nx=d.next_earning||null;
   var tk=$('earnTk'); if(tk) tk.textContent = d.symbol ? d.symbol+' · 최근 '+hist.length+'분기' : '';
   if(!hist.length&&!nx){
     $('earnBody').innerHTML='<div class="empty"><h3>실적 기록이 없습니다</h3>'+
@@ -1388,7 +1392,7 @@ function renderEarn(d){
   if(nx&&nx.days_until!=null&&!(nx.days_until>=0&&nx.days_until<=7)){
     html+='<div class="dcard"><div class="dd-big n">D-'+nx.days_until+'</div>'+
       '<div class="dd-tx"><div class="t">다음 실적 발표</div><div class="s">'+(nx.date||'')+
-      (nx.eps_estimate?' · 컨센서스 EPS $'+nx.eps_estimate:'')+'</div></div></div>';
+      (nx.eps_estimate?' · 컨센서스 EPS $'+Number(nx.eps_estimate).toFixed(2):'')+'</div></div></div>';
   }
 
   html+='<div class="scr">'+
@@ -1422,8 +1426,8 @@ function renderEarn(d){
       var up=(r.eps_estimate!=null&&r.eps_actual!=null&&r.eps_actual>=r.eps_estimate);
       return '<div class="sr"><span class="st '+(up?'p':'f')+'">'+(up?'상회':'하회')+'</span>'+
         '<div><div class="t">'+q+'</div><div class="ev">'+
-        (r.eps_estimate!=null?'예상 $'+r.eps_estimate:'예상 —')+' → '+
-        (r.eps_actual!=null?'실제 $'+r.eps_actual:'실제 —')+
+        (r.eps_estimate!=null?'예상 $'+Number(r.eps_estimate).toFixed(2):'예상 —')+' → '+
+        (r.eps_actual!=null?'실제 $'+Number(r.eps_actual).toFixed(2):'실제 —')+
         (sp!=null?' ('+(sp>=0?'+':'')+Number(sp).toFixed(1)+'%)':'')+'</div></div></div>';
     }).join('')+'</details>';
 
