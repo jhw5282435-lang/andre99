@@ -196,6 +196,28 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .sr .ev{font-size:12px;color:var(--tx2);margin-top:2px;line-height:1.5}
 
 /* ── 지표 그리드 ── */
+/* 종목 탭 안의 실적 섹션 */
+function renderStockEarn(d){
+  var box=$('stEarnBody'); if(!box) return;
+  var hist=(d.earnings_history||[]).slice()
+    .sort(function(a,b){ return new Date(b.period||0) - new Date(a.period||0); });
+  var note=$('stEarnNote');
+  if(note) note.textContent = hist.length ? (d.symbol||'')+' · 최근 '+hist.length+'분기' : '';
+  if(!hist.length && !d.next_earning){
+    box.innerHTML='<div class="empty"><h3>실적 기록이 없습니다</h3>'+
+      '<p>이 종목은 분기 실적 데이터가 확인되지 않습니다.</p></div>';
+    return;
+  }
+  box.innerHTML = earnParts(d);
+}
+
+/* ── 종목 탭 카테고리 (탭 안의 탭) ── */
+.catbar{display:flex;gap:7px;padding:2px 16px 14px;position:sticky;top:52px;z-index:15;
+  background:var(--bg)}
+.catchip{flex:1;min-height:40px;border-radius:14px;background:var(--s2);color:var(--tx2);
+  font-size:13px;font-weight:700}
+.catchip.on{background:var(--tx);color:#0B0B0C}
+
 /* ── 실적 캘린더 ── */
 .datestrip{display:flex;gap:7px;overflow-x:auto;padding:0 16px 4px;scrollbar-width:none}
 .datestrip::-webkit-scrollbar{display:none}
@@ -367,7 +389,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.02-M</span>
+      <span class="ver">v2026.08.02-O</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -450,6 +472,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     <div class="sec-h"><h2>종목 실적</h2><span class="note" id="earnTk"></span></div>
     <div id="earnBody"></div>
   </div>
+  <p class="foot" id="calFoot">종목별 실적은 <b>종목 탭 → 실적</b>에서 볼 수 있습니다.</p>
 </main>
 
 <!-- ══ 경제 ══ -->
@@ -494,8 +517,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.02-M';
-console.log('%c ANDRE99 v2026.08.02-M ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.02-O';
+console.log('%c ANDRE99 v2026.08.02-O ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 var fx=function(v,d){return (v==null||isNaN(v))?'—':Number(v).toLocaleString('en-US',{minimumFractionDigits:d==null?2:d,maximumFractionDigits:d==null?2:d})};
@@ -916,6 +939,20 @@ function krwBlock(d){
   return line;
 }
 
+var CUR_CAT='screen';
+function setCat(cat){
+  CUR_CAT=cat;
+  ['screen','info','earn'].forEach(function(c){
+    document.querySelectorAll('.cat-'+c).forEach(function(el){
+      if(c===cat) el.removeAttribute('hidden'); else el.setAttribute('hidden','');
+    });
+  });
+  document.querySelectorAll('.catchip').forEach(function(b){
+    b.classList.toggle('on', b.dataset.cat===cat);
+  });
+  window.scrollTo(0,0);
+}
+
 function screenCardHTML(d){
   var rows=screenRows(d);
   LAST_ROWS=rows;
@@ -1016,14 +1053,14 @@ function loadStock(sym){
       '<div class="chg n '+dirCls(d.chg_day)+'">'+(d.chg_day_abs!=null?(d.chg_day>=0?'+':'')+'$'+Math.abs(d.chg_day_abs).toFixed(2)+' ':'')+pct(d.chg_day)+'</div>'+
       krwBlock(d)+'</div>';
 
-    html+='<div class="sec" id="scrWrap">'+screenCardHTML(d)+'</div>';
+    html+='<div class="sec cat-screen" id="scrWrap">'+screenCardHTML(d)+'</div>';
 
-    html+='<div class="shareRow">'+
+    html+='<div class="shareRow cat-screen">'+
       '<button class="shareBtn main" data-card="sq">■ 정사각형 카드</button>'+
       '<button class="shareBtn" data-card="st">▮ 세로 카드</button></div>';
 
     // ── 주가 차트 (TradingView) ──
-    html+='<div class="sec"><div class="sec-h"><h2>주가 차트</h2>'+
+    html+='<div class="sec cat-screen"><div class="sec-h"><h2>주가 차트</h2>'+
       '<a class="note tvlink" href="https://www.tradingview.com/symbols/'+encodeURIComponent(d.symbol||sym)+'/" target="_blank" rel="noopener">TradingView</a></div>'+
       '<div class="tvwrap">'+
         '<div class="ivs">'+
@@ -1037,7 +1074,7 @@ function loadStock(sym){
 
     var mi=function(k,v){ return '<div><div class="k">'+k+'</div><div class="v n">'+(v==null||v===''?'—':v)+'</div></div>'; };
     var w52=(d.week52_pos!=null)?Math.round(d.week52_pos)+'%':null;
-    html+='<div class="sec"><div class="sec-h"><h2>핵심 지표</h2><span class="note">TTM 기준</span></div><div class="mg">'+
+    html+='<div class="sec cat-screen"><div class="sec-h"><h2>핵심 지표</h2><span class="note">TTM 기준</span></div><div class="mg">'+
       mi('PER', d.per?Number(d.per).toFixed(1)+'배':null)+
       mi('PBR', d.pbr?Number(d.pbr).toFixed(1)+'배':null)+
       mi('PSR', d.psr?Number(d.psr).toFixed(1)+'배':null)+
@@ -1059,7 +1096,7 @@ function loadStock(sym){
     if(d.shares) facts.push(['발행주식', d.shares]);
 
     if(co.summary||facts.length){
-      html+='<div class="sec"><div class="sec-h"><h2>기업 개요</h2>'+
+      html+='<div class="sec cat-info"><div class="sec-h"><h2>기업 개요</h2>'+
         (co.source?'<span class="note">Yahoo Finance</span>':'')+'</div><div class="ovw">';
       if(co.summary){
         html+='<p class="ovw-s" id="ovwSum">'+esc(co.summary)+'</p>'+
@@ -1076,8 +1113,26 @@ function loadStock(sym){
       html+='</div></div>';
     }
 
+    // ── 실적 섹션 (실적 탭에서 종목 탭으로 이동) ──
+    html+='<div class="sec cat-earn" id="stEarnWrap"><div class="sec-h"><h2>실적</h2>'+
+      '<span class="note" id="stEarnNote"></span></div>'+
+      '<div id="stEarnBody"><div class="skel">실적 불러오는 중…</div></div></div>';
+
+    // ── 카테고리 칩 (탭 안의 탭) ──
+    var chips='<div class="catbar">'+
+      '<button class="catchip on" data-cat="screen">스크린</button>'+
+      '<button class="catchip" data-cat="info">기업개요</button>'+
+      '<button class="catchip" data-cat="earn">실적</button>'+
+    '</div>';
+    html=chips+html;
+
     $('stockBody').innerHTML=html;
+    setCat('screen');
     LAST_ROWS=rows;
+    document.querySelectorAll('.catchip').forEach(function(b){
+      b.addEventListener('click',function(){ setCat(b.dataset.cat); });
+    });
+    renderStockEarn(d);
     bindScreenCard(d.symbol||sym);
     loadFinancials(d.symbol||sym);
     setChart(d.symbol||sym,'D');
@@ -1245,16 +1300,22 @@ function earnHeroHTML(d){
     seasonal: isSeasonal, revQoQ: revQoQ, netQoQ: netQoQ
   });
 
-  var chipQoQ='<div class="chip'+(mainIsYoY?'':' main')+'">'+
-    '<div class="k">전분기 대비<em>QoQ</em></div>'+
-    '<div class="v '+(epsQoQ!=null?dirCls(epsQoQ):'')+'">'+(epsQoQ!=null?sgn(epsQoQ):'—')+'</div>'+
-    '<div class="s">'+(isSeasonal?'계절 요인':'EPS 성장')+'</div></div>';
-  var chipYoY='<div class="chip'+(mainIsYoY?' main':'')+'">'+
-    '<div class="k">작년 동기 대비<em>YoY</em></div>'+
-    '<div class="v '+(epsYoY!=null?dirCls(epsYoY):'')+'">'+(epsYoY!=null?sgn(epsYoY):'—')+'</div>'+
-    '<div class="s">EPS 성장</div></div>';
+  // 왼쪽 = 전분기 실적 / 오른쪽 = 이번 분기 실적 (요청 구조)
+  var qLbl=function(x){ return x&&x.year?String(x.year).slice(2)+'Q'+x.quarter:'—'; };
+  var chipQoQ='<div class="chip">'+
+    '<div class="k">전분기 '+qLbl(prev)+'</div>'+
+    '<div class="v">'+(prev&&prev.eps_actual!=null?'$'+Number(prev.eps_actual).toFixed(2):'—')+'</div>'+
+    '<div class="s">EPS</div></div>';
+  var chipYoY='<div class="chip main">'+
+    '<div class="k">이번 분기 '+qLbl(cur)+'</div>'+
+    '<div class="v">'+(cur.eps_actual!=null?'$'+Number(cur.eps_actual).toFixed(2):'—')+'</div>'+
+    '<div class="s">'+(epsQoQ!=null?(epsQoQ>=0?'▲ ':'▼ ')+Math.abs(epsQoQ).toFixed(1)+'%':'EPS')+'</div></div>';
 
   var rows='';
+  rows+='<div class="dr"><span class="k">성장</span><span class="v">'+
+    '전분기 대비 <b class="'+(epsQoQ!=null?dirCls(epsQoQ):'')+'">'+(epsQoQ!=null?sgn(epsQoQ):'—')+'</b>'+
+    (epsYoY!=null?' · 작년 대비 <b class="'+dirCls(epsYoY)+'">'+sgn(epsYoY)+'</b>':' · 작년 대비 —')+
+    '</span></div>';
   rows+='<div class="dr"><span class="k">EPS</span><span class="v">'+
     (cur.eps_estimate!=null?'예상 <b>$'+Number(cur.eps_estimate).toFixed(2)+'</b> → ':'')+
     '실제 <b>$'+Number(cur.eps_actual).toFixed(2)+'</b>'+
@@ -1285,6 +1346,24 @@ function earnHeroHTML(d){
     '<div class="eh-caution">ⓘ '+VERDICT.caution+'</div>'+
   '</div>';
 }
+
+/* 어닝 그래프 · 판독 소견 · 분기상세 — renderEarn 내부 로직을 조각으로 재사용 */
+function earnParts(d){
+  var box=document.createElement('div');
+  var save=$('earnBody');
+  // renderEarn은 #earnBody에 그리므로 임시 컨테이너로 바꿔치기
+  box.id='earnBody';
+  if(save) save.id='earnBody_tmp';
+  document.body.appendChild(box);
+  try{ renderEarn(d); }catch(e){}
+  var out=box.innerHTML;
+  document.body.removeChild(box);
+  if(save) save.id='earnBody';
+  return out;
+}
+function earnChartHTML(d){ return ''; }
+function earnReportHTML(d){ return ''; }
+function earnDetailHTML(d){ return ''; }
 
 function renderEarn(d){
   var hist=(d.earnings_history||[]).slice()
@@ -1432,7 +1511,6 @@ function renderEarn(d){
     }).join('')+'</details>';
 
   $('earnBody').innerHTML=html;
-  var sec=$('earnDetailSec'); if(sec) sec.removeAttribute('hidden');
 }
 
 /* ── 실적 캘린더 ── */
