@@ -196,21 +196,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .sr .ev{font-size:12px;color:var(--tx2);margin-top:2px;line-height:1.5}
 
 /* ── 지표 그리드 ── */
-/* 종목 탭 안의 실적 섹션 */
-function renderStockEarn(d){
-  var box=$('stEarnBody'); if(!box) return;
-  var hist=(d.earnings_history||[]).slice()
-    .sort(function(a,b){ return new Date(b.period||0) - new Date(a.period||0); });
-  var note=$('stEarnNote');
-  if(note) note.textContent = hist.length ? (d.symbol||'')+' · 최근 '+hist.length+'분기' : '';
-  if(!hist.length && !d.next_earning){
-    box.innerHTML='<div class="empty"><h3>실적 기록이 없습니다</h3>'+
-      '<p>이 종목은 분기 실적 데이터가 확인되지 않습니다.</p></div>';
-    return;
-  }
-  box.innerHTML = earnParts(d);
-}
-
 /* ── 종목 탭 카테고리 (탭 안의 탭) ── */
 .catbar{display:flex;gap:7px;padding:2px 16px 14px;position:sticky;top:52px;z-index:15;
   background:var(--bg)}
@@ -389,7 +374,7 @@ function renderStockEarn(d){
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.02-O</span>
+      <span class="ver">v2026.08.03-Q</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -517,10 +502,28 @@ function renderStockEarn(d){
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.02-O';
-console.log('%c ANDRE99 v2026.08.02-O ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.03-Q';
+console.log('%c ANDRE99 v2026.08.03-Q ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
+
+/* 응답이 없어도 화면이 영원히 멈추지 않게 시간 제한을 둔다.
+   (2026-08-03: 피어 조회가 10초 넘게 걸려 '불러오는 중'에서 멈추는 사고) */
+function fetchT(url, ms){
+  ms = ms || 12000;
+  return new Promise(function(resolve, reject){
+    var done=false;
+    var t=setTimeout(function(){
+      if(done) return; done=true;
+      var e=new Error('시간 초과'); e.timeout=true; reject(e);
+    }, ms);
+    fetch(url).then(function(r){
+      if(done) return; done=true; clearTimeout(t); resolve(r);
+    }).catch(function(err){
+      if(done) return; done=true; clearTimeout(t); reject(err);
+    });
+  });
+}
 var fx=function(v,d){return (v==null||isNaN(v))?'—':Number(v).toLocaleString('en-US',{minimumFractionDigits:d==null?2:d,maximumFractionDigits:d==null?2:d})};
 var pct=function(v){return (v==null||isNaN(v))?'—':(v>=0?'+':'')+Number(v).toFixed(2)+'%'};
 var dirCls=function(v){return v==null?'ft':(v>0?'up':(v<0?'dn':'ft'))};
@@ -585,7 +588,7 @@ function heatColor(p){
   return p>=0 ? 'rgba(255,77,79,'+a.toFixed(3)+')' : 'rgba(47,128,237,'+a.toFixed(3)+')';
 }
 function loadMarket(){
-  fetch(API+'/market').then(function(r){return r.json()}).then(function(d){
+  fetchT(API+'/market', 12000).then(function(r){return r.json()}).then(function(d){
     if(!d||d.status!=='ok') throw new Error('no data');
     if(d.timestamp){ DATA_TS=new Date(d.timestamp); renderStamp(); }
     (d.macro||[]).forEach(function(x){
@@ -939,6 +942,21 @@ function krwBlock(d){
   return line;
 }
 
+/* 종목 탭 안의 실적 섹션 */
+function renderStockEarn(d){
+  var box=$('stEarnBody'); if(!box) return;
+  var hist=(d.earnings_history||[]).slice()
+    .sort(function(a,b){ return new Date(b.period||0) - new Date(a.period||0); });
+  var note=$('stEarnNote');
+  if(note) note.textContent = hist.length ? (d.symbol||'')+' · 최근 '+hist.length+'분기' : '';
+  if(!hist.length && !d.next_earning){
+    box.innerHTML='<div class="empty"><h3>실적 기록이 없습니다</h3>'+
+      '<p>이 종목은 분기 실적 데이터가 확인되지 않습니다.</p></div>';
+    return;
+  }
+  box.innerHTML = earnParts(d);
+}
+
 var CUR_CAT='screen';
 function setCat(cat){
   CUR_CAT=cat;
@@ -998,9 +1016,24 @@ function bindScreenCard(sym){
   var wa=$('wAdd'); if(wa) wa.addEventListener('click',function(){ addWatch(sym); });
 }
 
+/* 피어는 야후를 5~6회 더 부르는 느린 구간이라 본 화면 뒤에서 따로 받는다 */
+function loadPeers(sym){
+  fetchT(API+'/?symbol='+encodeURIComponent(sym), 20000)
+    .then(function(r){return r.json()})
+    .then(function(j){
+      if(!LAST || (LAST.symbol||'')!==sym) return;
+      if(j && Array.isArray(j.peers) && j.peers.length){
+        LAST.peers=j.peers;
+        var wrap=$('scrWrap');
+        if(wrap){ wrap.innerHTML=screenCardHTML(LAST); bindScreenCard(sym); }
+      }
+    })
+    .catch(function(){});
+}
+
 /* 재무를 별도 요청으로 늦게 불러온다 (즉각 보상: 본 화면을 막지 않음) */
 function loadFinancials(sym){
-  fetch(API+'/financials?symbol='+encodeURIComponent(sym))
+  fetchT(API+'/financials?symbol='+encodeURIComponent(sym), 15000)
     .then(function(r){return r.json()})
     .then(function(f){
       if(!LAST || (LAST.symbol||'')!==sym) return;          // 그 사이 다른 종목으로 이동
@@ -1023,7 +1056,7 @@ function loadFinancials(sym){
 function loadStock(sym){
   show('stock');
   $('stockBody').innerHTML='<div class="sec"><div class="skel">'+sym+' 불러오는 중…</div></div>';
-  fetch(API+'/?symbol='+encodeURIComponent(sym)).then(function(r){
+  fetchT(API+'/?symbol='+encodeURIComponent(sym)+'&peers=0', 12000).then(function(r){
     return r.json().then(function(j){ return {code:r.status, body:j}; })
                    .catch(function(){ return {code:r.status, body:null}; });
   }).then(function(res){
@@ -1134,6 +1167,7 @@ function loadStock(sym){
     });
     renderStockEarn(d);
     bindScreenCard(d.symbol||sym);
+    loadPeers(d.symbol||sym);
     loadFinancials(d.symbol||sym);
     setChart(d.symbol||sym,'D');
     document.querySelectorAll('.iv').forEach(function(b){
@@ -1161,7 +1195,10 @@ function loadStock(sym){
     var code=(e&&e.code)||0;
     var title='불러오지 못했습니다', desc='', retry=true;
 
-    if(/429|rate|limit|too many/i.test(raw)||code===429){
+    if(e&&e.timeout){
+      title='응답이 늦어지고 있습니다';
+      desc='데이터를 가져오는 데 시간이 오래 걸립니다. 잠시 후 다시 시도해 주세요.';
+    }else if(/429|rate|limit|too many/i.test(raw)||code===429){
       title='잠시 후 다시 시도해 주세요';
       desc='데이터 제공처의 조회 한도에 닿았습니다. 잠깐 기다리면 다시 조회됩니다.<br><span class="ecode">일시적 한도 초과</span>';
     }else if(/not found|no data|없|404/i.test(raw)||code===404){
@@ -1552,7 +1589,7 @@ function loadCalendar(date){
   var body=$('calBody');
   if(CAL_CACHE[date]){ renderCalendar(CAL_CACHE[date]); return; }
   body.innerHTML='<div class="skel">불러오는 중…</div>';
-  fetch(API+'/calendar?date='+encodeURIComponent(date))
+  fetchT(API+'/calendar?date='+encodeURIComponent(date), 12000)
     .then(function(r){return r.json()})
     .then(function(j){
       if(!j||j.status!=='ok') throw new Error((j&&j.error)||'실패');
