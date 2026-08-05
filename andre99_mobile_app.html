@@ -238,6 +238,41 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .ovw-r .v{color:var(--tx);line-height:1.5}
 .ovw-w{display:inline-flex;align-items:center;margin-top:12px;font-size:12.5px;
   font-weight:600;color:var(--tx);text-decoration:none;min-height:40px}
+/* ── 실적 히어로 ── */
+.ehero{margin:0 16px 14px;background:var(--s1);border-radius:22px;padding:18px 16px}
+.eh-eye{display:flex;align-items:baseline;gap:8px;font-size:11.5px;color:var(--tx3);margin-bottom:12px}
+.eh-eye b{font-size:13px;font-weight:700;color:var(--tx2)}
+.eh-eye .r{margin-left:auto;font-family:var(--mono)}
+.eh-title{font-size:23px;font-weight:800;letter-spacing:-.035em;line-height:1.3}
+.eh-title small{display:block;font-size:13px;font-weight:500;color:var(--tx2);letter-spacing:0;margin-top:7px;line-height:1.55}
+.eh-pre{display:flex;align-items:flex-end;gap:14px;margin-bottom:4px}
+.eh-pre .dd{font-size:40px;font-weight:800;letter-spacing:-.05em;line-height:1;font-family:var(--mono)}
+.eh-pre .s{font-size:12.5px;color:var(--tx2);line-height:1.45}
+.eh-chips{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
+.eh-chips .chip{background:var(--s2);border-radius:18px;padding:13px 14px}
+.eh-chips .chip.main{background:var(--tx)}
+.eh-chips .k{font-size:10.5px;color:var(--tx3);line-height:1.35}
+.eh-chips .v{font-size:24px;font-weight:800;letter-spacing:-.04em;line-height:1.05;margin-top:5px;font-family:var(--mono);color:var(--tx)}
+.eh-chips .v.sm{font-size:19px}
+.eh-chips .s{font-size:11px;color:var(--tx3);font-weight:600;margin-top:3px}
+.eh-chips .chip.main .k,.eh-chips .chip.main .v,.eh-chips .chip.main .s{color:#0B0B0C}
+.eh-detail{margin-top:15px;padding-top:13px;border-top:1px solid var(--line)}
+.eh-detail .dr{display:flex;align-items:baseline;gap:10px;padding:5px 0;font-size:12.5px}
+.eh-detail .dr .k{width:40px;color:var(--tx3);flex:none}
+.eh-detail .dr .v{color:var(--tx2);line-height:1.5}
+.eh-detail .dr .v b{color:var(--tx);font-family:var(--mono);font-weight:700}
+.eh-why{margin-top:12px;font-size:11px;color:var(--tx3);line-height:1.6;background:var(--s2);border-radius:12px;padding:10px 12px}
+.eh-caution{margin-top:11px;font-size:11.5px;color:var(--tx2);line-height:1.5}
+
+/* ── 펼침 큰 차트 ── */
+.bigc{background:var(--bg);border-radius:12px;padding:12px 12px 9px;margin-bottom:12px}
+.bigc-h{display:flex;align-items:baseline;font-size:11px;color:var(--tx3);margin-bottom:8px}
+.bigc-h .r{margin-left:auto;font-family:var(--mono);color:var(--tx2)}
+.bigc-h .r b{color:var(--tx);font-weight:700}
+.bigc-svg{width:100%;height:96px;display:block;overflow:visible}
+.bigc-ax{display:flex;justify-content:space-between;font-size:9.5px;color:var(--tx3);font-family:var(--mono);margin-top:4px}
+.bigc-lg{font-size:9.5px;color:var(--tx3);margin-top:6px}
+
 /* ── 카테고리 칩 (탭 안의 탭) ── */
 .catbar{display:flex;gap:7px;padding:2px 16px 14px;position:sticky;top:52px;z-index:15;background:var(--bg)}
 .catchip{flex:1;min-height:40px;border-radius:14px;background:var(--s2);color:var(--tx2);font-size:13px;font-weight:700}
@@ -359,7 +394,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.04-A</span>
+      <span class="ver">v2026.08.05-C</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -495,8 +530,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.04-A';
-console.log('%c ANDRE99 v2026.08.04-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.05-C';
+console.log('%c ANDRE99 v2026.08.05-C ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -676,6 +711,49 @@ function bn(v){
   return '$'+Math.round(v).toLocaleString();
 }
 function qLabel(r){ return String(r.year).slice(2)+'Q'+r.quarter; }
+
+/* 펼쳤을 때 보는 큰 추이 차트 — 눈금·라벨·밴드 포함 */
+function bigChartHTML(vals, band, title){
+  var v=[], idx=[];
+  vals.forEach(function(x,i){ if(x!=null&&!isNaN(x)){ v.push(x); idx.push(i); } });
+  if(v.length<3) return '';
+  var W=100,H=54, all=v.slice();
+  if(band){ if(band.lo!=null)all.push(band.lo); if(band.hi!=null)all.push(band.hi); }
+  var mn=Math.min.apply(null,all), mx=Math.max.apply(null,all);
+  var pad=(mx-mn)*0.12||1; mn-=pad; mx+=pad;
+  var sp=(mx-mn)||1;
+  var Y=function(x){ return (H-((x-mn)/sp)*H); };
+  var X=function(i){ return (i/(v.length-1))*W; };
+  var pts=v.map(function(x,i){ return X(i).toFixed(2)+','+Y(x).toFixed(2); });
+  var area='M0,'+H+' L'+pts.join(' L')+' L'+W+','+H+' Z';
+
+  var bg='';
+  if(band&&band.lo!=null&&band.hi!=null&&band.hi>band.lo){
+    bg+='<rect x="0" y="'+Y(band.hi).toFixed(2)+'" width="'+W+'" height="'+
+        Math.max(0.5,(Y(band.lo)-Y(band.hi))).toFixed(2)+'" fill="var(--tx2)" opacity=".1"/>';
+  }
+  if(band&&band.mid!=null){
+    bg+='<line x1="0" y1="'+Y(band.mid).toFixed(2)+'" x2="'+W+'" y2="'+Y(band.mid).toFixed(2)+
+        '" stroke="var(--tx3)" stroke-width="0.5" stroke-dasharray="2 2"/>';
+  }
+  var dots=v.map(function(x,i){
+    return '<circle cx="'+X(i).toFixed(2)+'" cy="'+Y(x).toFixed(2)+'" r="'+(i===v.length-1?1.6:1)+
+      '" fill="'+(i===v.length-1?'var(--tx)':'var(--tx2)')+'"/>';
+  }).join('');
+
+  var f=function(x){ return Math.abs(x)>=1e6 ? bn(x) : (Math.abs(x)>=100?Math.round(x):x.toFixed(1)); };
+  return '<div class="bigc">'+
+    '<div class="bigc-h"><span>'+esc(title||'')+' 추이</span>'+
+      '<span class="r">'+f(v[0])+' → <b>'+f(v[v.length-1])+'</b></span></div>'+
+    '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" class="bigc-svg">'+bg+
+      '<path d="'+area+'" fill="var(--tx)" opacity=".07"/>'+
+      '<polyline points="'+pts.join(' ')+'" fill="none" stroke="var(--tx)" stroke-width="1.3" '+
+      'stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+dots+'</svg>'+
+    '<div class="bigc-ax"><span>'+f(mx)+'</span><span>'+f(mn)+'</span></div>'+
+    (band?'<div class="bigc-lg">▨ 업종 범위 · ┈ 중앙값 '+
+      (band.mid!=null?(Math.abs(band.mid)>=100?Math.round(band.mid):band.mid.toFixed(1)):'')+'</div>':'')+
+  '</div>';
+}
 
 /* 스파크라인 + 업종 밴드 (band={lo,mid,hi}) */
 function sparkHTML(vals, band, strong){
@@ -895,7 +973,9 @@ function screenCardHTML(d){
       var spk = (x.hist && x.hist.filter(function(v){return v!=null;}).length>=3)
         ? sparkHTML(x.hist, x.band, x.s==='p')
         : '<div class="spk none"><div class="nodata">'+(d._finLoading?'…':'추이 없음')+'</div></div>';
-      var body = x.table ? '<div class="exp" id="exp'+i+'" hidden>'+x.table+'</div>' : '';
+      var big = (x.hist && x.hist.filter(function(v){return v!=null;}).length>=3)
+        ? bigChartHTML(x.hist, x.band, x.n) : '';
+      var body = x.table ? '<div class="exp" id="exp'+i+'" hidden>'+big+x.table+'</div>' : '';
       return '<div class="sr'+(x.table?' tap':'')+'" data-row="'+i+'">'+
         '<span class="st '+x.s+'">'+lbl[x.s]+'</span>'+
         '<div class="sbody"><div class="t">'+x.n+(x.table?'<span class="chev" id="chev'+i+'">⌄</span>':'')+'</div>'+
@@ -1123,6 +1203,105 @@ function renderStockEarn(d){
   box.innerHTML=out;
 }
 
+/* 판독 문구 사전 — 같은 상황엔 항상 같은 문장 */
+var VERDICT={
+  title:function(sp){
+    if(sp==null)  return '실적을 발표했습니다';
+    if(sp>10)     return '예상을 크게 넘겼습니다';
+    if(sp>2)      return '예상을 넘겼습니다';
+    if(sp>=-2)    return '예상과 거의 같았습니다';
+    if(sp>=-10)   return '예상에 못 미쳤습니다';
+    return '예상에 크게 못 미쳤습니다';
+  },
+  caution:'실적이 좋아도 주가는 다르게 움직일 수 있습니다.'
+};
+function pctChg(now,prev){
+  if(now==null||prev==null||!prev) return null;
+  return (now-prev)/Math.abs(prev)*100;
+}
+function sgn(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(1)+'%'); }
+
+/* 실적 히어로 — 왼쪽 전분기 / 오른쪽 이번 분기 */
+function earnHeroHTML(d){
+  var hist=(d.earnings_history||[]).slice()
+    .sort(function(a,b){ return new Date(b.period||0)-new Date(a.period||0); });
+  var nx=d.next_earning||null;
+  var QF=Array.isArray(d.fin_quarters)?d.fin_quarters:[];
+  var qL=function(x){ return (x&&x.year)?String(x.year).slice(2)+'Q'+x.quarter:'—'; };
+
+  // 발표 전 (D-7 이내)
+  if(nx&&nx.days_until!=null&&nx.days_until>=0&&nx.days_until<=7){
+    var beat=hist.slice(0,4).filter(function(x){return x.eps_surprise>0;}).length;
+    return '<div class="ehero">'+
+      '<div class="eh-eye"><b>다음 실적 발표</b><span class="r">'+esc(d.symbol||'')+'</span></div>'+
+      '<div class="eh-pre"><span class="dd">D-'+nx.days_until+'</span>'+
+        '<span class="s">'+esc(nx.date||'')+'<br>발표 예정</span></div>'+
+      '<div class="eh-chips">'+
+        '<div class="chip"><div class="k">예상 EPS</div><div class="v">'+
+          (nx.eps_estimate!=null?'$'+Number(nx.eps_estimate).toFixed(2):'—')+'</div></div>'+
+        '<div class="chip"><div class="k">예상 매출</div><div class="v sm">'+
+          (nx.revenue_estimate!=null?bn(nx.revenue_estimate):'—')+'</div></div>'+
+      '</div>'+
+      (hist.length?'<div class="eh-detail"><div class="dr"><span class="k">전적</span>'+
+        '<span class="v">최근 '+Math.min(4,hist.length)+'번 중 <b>'+beat+'번</b> 예상을 넘겼습니다</span></div></div>':'')+
+      '<div class="eh-why">발표 뒤에는 이 자리에 실제 결과가 표시됩니다.</div></div>';
+  }
+
+  if(!hist.length) return '';
+  var cur=hist[0], prev=hist[1]||null;
+  var yoy=null;
+  for(var i=0;i<hist.length;i++){
+    if(hist[i].quarter===cur.quarter && hist[i].year===cur.year-1){ yoy=hist[i]; break; }
+  }
+  var sp=cur.eps_surprise_pct!=null?Number(cur.eps_surprise_pct):null;
+  var epsQoQ=prev?pctChg(cur.eps_actual,prev.eps_actual):null;
+  var epsYoY=yoy?pctChg(cur.eps_actual,yoy.eps_actual):null;
+
+  // 매출·순이익 (FTS)
+  var qCur=QF.length?QF[QF.length-1]:null, qPrev=QF.length>1?QF[QF.length-2]:null;
+  var revQoQ=(qCur&&qPrev)?pctChg(qCur.revenue,qPrev.revenue):null;
+  var netQoQ=(qCur&&qPrev)?pctChg(qCur.net_income,qPrev.net_income):null;
+
+  var detail='';
+  if(qPrev&&qCur&&qPrev.net_income!=null&&qCur.net_income!=null){
+    if(qPrev.net_income<0&&qCur.net_income>0) detail='적자에서 흑자로 돌아섰습니다.';
+    else if(qPrev.net_income>0&&qCur.net_income<0) detail='흑자에서 적자로 돌아섰습니다.';
+    else if(qPrev.net_income<0&&qCur.net_income<0) detail='아직 적자입니다.';
+  }
+  if(!detail&&revQoQ!=null&&netQoQ!=null){
+    detail = (revQoQ>=0&&netQoQ>=0)?'매출과 이익이 모두 늘었습니다.'
+           :(revQoQ>=0?'매출은 늘었지만 이익은 줄었습니다.'
+           :(netQoQ>=0?'매출은 줄었지만 이익은 늘었습니다.':'매출과 이익이 모두 줄었습니다.'));
+  }
+
+  var rows='<div class="dr"><span class="k">성장</span><span class="v">'+
+    '전분기 대비 <b class="'+(epsQoQ!=null?dirCls(epsQoQ):'')+'">'+sgn(epsQoQ)+'</b>'+
+    ' · 작년 대비 <b class="'+(epsYoY!=null?dirCls(epsYoY):'')+'">'+sgn(epsYoY)+'</b></span></div>'+
+    '<div class="dr"><span class="k">EPS</span><span class="v">'+
+    (cur.eps_estimate!=null?'예상 <b>$'+Number(cur.eps_estimate).toFixed(2)+'</b> → ':'')+
+    '실제 <b>$'+Number(cur.eps_actual).toFixed(2)+'</b>'+
+    (sp!=null?' <span class="'+dirCls(sp)+'">'+sgn(sp)+(sp>=0?' 상회':' 하회')+'</span>':'')+'</span></div>';
+  if(qCur&&qCur.revenue!=null){
+    rows+='<div class="dr"><span class="k">매출</span><span class="v"><b>'+bn(qCur.revenue)+'</b>'+
+      (qPrev&&qPrev.revenue!=null?' · 전분기 '+bn(qPrev.revenue):'')+'</span></div>';
+  }
+
+  return '<div class="ehero">'+
+    '<div class="eh-eye"><b>'+qL(cur)+' 실적</b><span>'+esc(cur.period||'')+'</span>'+
+      '<span class="r">'+esc(d.symbol||'')+'</span></div>'+
+    '<div class="eh-title">'+VERDICT.title(sp)+(detail?'<small>'+detail+'</small>':'')+'</div>'+
+    '<div class="eh-chips">'+
+      '<div class="chip"><div class="k">전분기 '+qL(prev)+'</div>'+
+        '<div class="v">'+(prev&&prev.eps_actual!=null?'$'+Number(prev.eps_actual).toFixed(2):'—')+'</div>'+
+        '<div class="s">EPS</div></div>'+
+      '<div class="chip main"><div class="k">이번 분기 '+qL(cur)+'</div>'+
+        '<div class="v">'+(cur.eps_actual!=null?'$'+Number(cur.eps_actual).toFixed(2):'—')+'</div>'+
+        '<div class="s">'+(epsQoQ!=null?(epsQoQ>=0?'▲ ':'▼ ')+Math.abs(epsQoQ).toFixed(1)+'%':'EPS')+'</div></div>'+
+    '</div>'+
+    '<div class="eh-detail">'+rows+'</div>'+
+    '<div class="eh-caution">ⓘ '+VERDICT.caution+'</div></div>';
+}
+
 function renderEarn(d){
   var hist=(d.earnings_history||[]).slice(0,8), nx=d.next_earning||null;
   var tk=$('earnTk'); if(tk) tk.textContent = d.symbol ? d.symbol+' · 최근 '+hist.length+'분기' : '';
@@ -1222,9 +1401,9 @@ function renderEarn(d){
   if(hasEst<n) refs.push('예상치가 없는 분기는 실제값만 표시했습니다.');
 
   // ── 조립 ──
-  var html='';
+  var html=earnHeroHTML(d);
 
-  if(nx&&nx.days_until!=null){
+  if(nx&&nx.days_until!=null&&!(nx.days_until>=0&&nx.days_until<=7)){
     html+='<div class="dcard"><div class="dd-big n">D-'+nx.days_until+'</div>'+
       '<div class="dd-tx"><div class="t">다음 실적 발표</div><div class="s">'+(nx.date||'')+
       (nx.eps_estimate?' · 컨센서스 EPS $'+nx.eps_estimate:'')+'</div></div></div>';
@@ -1531,7 +1710,7 @@ function renderCalList(){
       var more=items.length>shown.length
         ? '<button class="moreb" id="calMore">'+Math.min(15,items.length-shown.length)+'개 더 보기</button>':'';
       $('calBody').innerHTML=head+'<div class="rows">'+shown.map(function(x){return calRow(x,CAL_DATE);}).join('')+'</div>'+more+
-        '<p class="foot">찾는 종목이 없으면 위에서 검색하세요. 이번 주 전체에서 찾습니다.</p>';
+        '<p class="foot">규모순 상위 항목만 표시합니다. 찾는 종목이 없으면 <b>종목 탭</b>에서 티커로 검색하세요.</p>';
       var mb=$('calMore');
       if(mb) mb.addEventListener('click',function(){ CAL_SHOW+=15; renderCalList(); fetchNames(); });
     }
