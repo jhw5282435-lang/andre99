@@ -273,6 +273,22 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .bigc-ax{display:flex;justify-content:space-between;font-size:9.5px;color:var(--tx3);font-family:var(--mono);margin-top:4px}
 .bigc-lg{font-size:9.5px;color:var(--tx3);margin-top:6px}
 
+/* ── 스크린 탭 (두 지표 전환) ── */
+.scrtab{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px 0}
+.stb{background:var(--s2);border-radius:18px;padding:13px 14px;text-align:left;
+  display:flex;flex-direction:column;gap:2px}
+.stb .n{font-size:12px;color:var(--tx3);font-weight:600}
+.stb .v{font-size:26px;font-weight:800;font-family:var(--mono);letter-spacing:-.03em;color:var(--tx);line-height:1.15}
+.stb .v em{font-style:normal;font-size:14px;color:var(--tx3);font-weight:600}
+.stb .q{font-size:10.5px;color:var(--tx3)}
+.stb.on{background:var(--tx)}
+.stb.on .n,.stb.on .v,.stb.on .v em,.stb.on .q{color:#0B0B0C}
+.impv{flex:none;font-size:11.5px;font-family:var(--mono);color:var(--tx2);text-align:right;
+  max-width:100px;padding-top:2px}
+.shareRow2{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px 0}
+.sbtn{min-height:44px;border-radius:14px;background:var(--s2);color:var(--tx);
+  font-size:13px;font-weight:700}
+
 /* ── 두 점수 (재무 건전성 · 실적 개선도) ── */
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 16px}
 .dsc{background:var(--s2);border-radius:20px;padding:15px 14px}
@@ -432,7 +448,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.06-D</span>
+      <span class="ver">v2026.08.07-E</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -568,8 +584,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.06-D';
-console.log('%c ANDRE99 v2026.08.06-D ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.07-E';
+console.log('%c ANDRE99 v2026.08.07-E ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -995,7 +1011,7 @@ function krwBlock(d){
   return line;
 }
 
-var LAST_ROWS=null, CUR_CAT='screen';
+var LAST_ROWS=null, CUR_CAT='screen', SCR_TAB='fund';
 
 /* 실적 개선도 — 워커 5항목 + 종목조회 3항목을 합쳐 완성 */
 function improvementFull(d){
@@ -1035,67 +1051,47 @@ function improvementFull(d){
   };
 }
 
-/* 두 점수 카드 — 절대 합산하지 않는다 */
-function dualScoreHTML(d, rows){
-  var p = rows.filter(function(x){return x.s==='p';}).length;
-  var pt = rows.filter(function(x){return x.s!=='m';}).length;
-  var im = improvementFull(d);
+function screenCardHTML(d){
+  var rows=screenRows(d); LAST_ROWS=rows;
+  var cnt={p:0,f:0,m:0}; rows.forEach(function(x){cnt[x.s]++;});
+  var lbl={p:'통과',f:'걸림',m:'측정'};
+  var im=improvementFull(d);
+  var p=rows.filter(function(x){return x.s==='p';}).length;
+  var pt=rows.filter(function(x){return x.s!=='m';}).length;
+  var loading = d._finLoading ? '<span class="finload">재무 불러오는 중…</span>' : '';
 
-  var notch=function(sc,tot,n){
-    var s='';
-    for(var i=0;i<n;i++) s+='<i class="'+(i<sc?'on':(i<tot?'':'na'))+'"></i>';
-    return '<div class="dnotch">'+s+'</div>';
-  };
-
-  // 사분면: 재무 60% 이상 / 개선 50% 이상
+  // 사분면
   var hp = pt>0 && p/pt>=0.6, hf = im.total>0 && im.score/im.total>=0.5;
-  var typ, dsc;
+  var typ,dsc;
   if(hp&&hf){ typ='우량 가속'; dsc='튼튼하고 최근 좋아졌습니다.'; }
   else if(hp){ typ='완성형'; dsc='튼튼하지만 변화 신호는 적습니다.'; }
   else if(hf){ typ='개선 중'; dsc='아직 약하지만 최근 좋아졌습니다.'; }
   else { typ='정체'; dsc='약하고 변화 신호도 적습니다.'; }
   var qi=function(k){ return '<i class="'+(k?'here':'')+'"></i>'; };
 
-  return '<div class="duo">'+
-    '<div class="dsc"><div class="lab">재무 건전성</div>'+
-      '<div class="big">'+p+'<small>/'+pt+'</small></div>'+
-      '<div class="q">지금 튼튼한가</div>'+notch(p,pt,10)+'</div>'+
-    '<div class="dsc"><div class="lab">실적 개선도</div>'+
-      '<div class="big">'+(im.ready?im.score:'–')+'<small>/'+(im.ready?im.total:'8')+'</small></div>'+
-      '<div class="q">최근 좋아졌는가</div>'+notch(im.score,im.total,8)+'</div>'+
-  '</div>'+
-  '<div class="dtype">'+
-    '<span class="qd">'+qi(!hp&&hf)+qi(hp&&hf)+qi(!hp&&!hf)+qi(hp&&!hf)+'</span>'+
-    '<span class="tx"><div class="t">'+typ+'</div><div class="s">'+dsc+'</div></span>'+
-    '<button class="dinfo" id="dInfo">ⓘ</button></div>'+
-  '<div class="dnosum" id="dNosum" hidden>'+
-    '<b>두 점수는 더하지 않습니다.</b> 재무 건전성은 지금까지의 성적, 실적 개선도는 최근 변화의 방향입니다. '+
-    '성적이 낮은 채로 변화만 좋을 수도 있습니다.<br><br>'+
-    '<b>실적 개선도 판정 기준</b>'+
-    '<div class="drules">'+im.items.map(function(x){
-      return '<div class="drow"><span class="dot '+(x.ok===null?'na':(x.ok?'on':'off'))+'"></span>'+
-        '<span class="rn">'+x.n+'</span>'+
-        '<span class="rv">'+(x.v?esc(x.v):'해당없음')+'</span>'+
-        '<div class="rr">'+esc(x.rule)+'</div></div>';
-    }).join('')+'</div>'+
-    (im.basis?'<div class="dbasis">'+esc(im.basis)+'</div>':'')+
-    '<div class="dbasis">이미 일어난 변화를 측정합니다. 앞으로를 예측하지 않습니다.</div>'+
-  '</div>';
-}
-
-function screenCardHTML(d){
-  var rows=screenRows(d); LAST_ROWS=rows;
-  var cnt={p:0,f:0,m:0}; rows.forEach(function(x){cnt[x.s]++;});
-  var lbl={p:'통과',f:'걸림',m:'측정'};
-  var loading = d._finLoading ? '<span class="finload">재무 불러오는 중…</span>' : '';
-  return '<div class="sec-h"><h2>안드레 판정</h2>'+loading+
+  // ── 상단: 두 점수 요약 (항상 노출) ──
+  var head='<div class="sec-h"><h2>안드레 판정</h2>'+loading+
     '<button class="note" id="wAdd" style="min-height:32px">＋ 관심</button></div>'+
-    dualScoreHTML(d, rows)+
-    '<div class="scr" style="margin-top:12px">'+
-    '<div class="scr-sum2">재무 건전성 항목</div>'+
+    '<div class="dtype">'+
+      '<span class="qd">'+qi(!hp&&hf)+qi(hp&&hf)+qi(!hp&&!hf)+qi(hp&&!hf)+'</span>'+
+      '<span class="tx"><div class="t">'+typ+'</div><div class="s">'+dsc+'</div></span>'+
+    '</div>';
+
+  // ── 탭 버튼 (두 스크린 전환) ──
+  var tabs='<div class="scrtab">'+
+    '<button class="stb'+(SCR_TAB==='fund'?' on':'')+'" data-scr="fund">'+
+      '<span class="n">재무 건전성</span><span class="v">'+p+'<em>/'+pt+'</em></span>'+
+      '<span class="q">지금 튼튼한가</span></button>'+
+    '<button class="stb'+(SCR_TAB==='imp'?' on':'')+'" data-scr="imp">'+
+      '<span class="n">실적 개선도</span><span class="v">'+(im.ready?im.score:'–')+'<em>/'+(im.ready?im.total:'8')+'</em></span>'+
+      '<span class="q">최근 좋아졌는가</span></button>'+
+  '</div>';
+
+  // ── 재무 건전성 본문 ──
+  var fundBody='<div class="scr">'+
     '<div class="notch">'+rows.map(function(x){return '<i class="'+(x.s==='m'?'':x.s)+'"></i>';}).join('')+'</div>'+
     '<div class="scr-sum">'+cnt.p+' 통과 <small>· '+cnt.f+' 걸림 · '+cnt.m+' 측정중</small></div>'+
-    '<div class="scr-desc">스크린은 체로 거른다는 뜻입니다. 지금 데이터를 10가지 기준에 통과시킨 결과이며, 예측이 아닙니다.</div>'+
+    '<div class="scr-desc">지금 이 회사가 튼튼한지를 10가지 기준으로 걸렀습니다. 예측이 아닙니다.</div>'+
     rows.map(function(x,i){
       var spk = (x.hist && x.hist.filter(function(v){return v!=null;}).length>=3)
         ? sparkHTML(x.hist, x.band, x.s==='p')
@@ -1115,6 +1111,34 @@ function screenCardHTML(d){
         (sx.short.short_ratio!=null?' · 커버 '+Number(sx.short.short_ratio).toFixed(1)+'일':'')+
         ' — 하락에 거는 물량이자 급등의 재료도 되기 때문에, 통과·걸림으로 세지 않고 참고 정보로만 둡니다.</div>';
     })()+'</div>';
+
+  // ── 실적 개선도 본문 ──
+  var impBody='<div class="scr">'+
+    '<div class="notch">'+im.items.map(function(x){
+      return '<i class="'+(x.ok===null?'':(x.ok?'p':'f'))+'"></i>'; }).join('')+'</div>'+
+    '<div class="scr-sum">'+im.score+' 신호 <small>· '+(im.total-im.score)+' 없음'+
+      (im.items.length-im.total>0?' · '+(im.items.length-im.total)+' 해당없음':'')+'</small></div>'+
+    '<div class="scr-desc">최근 몇 분기 동안 좋아진 항목을 셉니다. <b>이미 일어난 변화</b>이며 앞으로를 예측하지 않습니다.</div>'+
+    im.items.map(function(x){
+      var st = x.ok===null?'m':(x.ok?'p':'f');
+      var sl = x.ok===null?'해당':(x.ok?'신호':'없음');
+      return '<div class="sr"><span class="st '+st+'">'+sl+'</span>'+
+        '<div class="sbody"><div class="t">'+x.n+'</div>'+
+        '<div class="ev">'+esc(x.rule)+'</div></div>'+
+        '<div class="impv">'+(x.v?esc(x.v):'—')+'</div></div>';
+    }).join('')+
+    (im.basis?'<div class="neutral">'+esc(im.basis)+'</div>':'')+
+    '</div>';
+
+  return head+tabs+
+    '<div id="scrFund"'+(SCR_TAB==='fund'?'':' hidden')+'>'+fundBody+'</div>'+
+    '<div id="scrImp"'+(SCR_TAB==='imp'?'':' hidden')+'>'+impBody+'</div>'+
+    '<div class="dnosum"><b>두 점수는 더하지 않습니다.</b> 재무 건전성은 지금까지의 성적, '+
+      '실적 개선도는 최근 변화의 방향입니다. 성적이 낮은 채로 변화만 좋을 수도 있습니다.</div>'+
+    '<div class="shareRow2">'+
+      '<button class="sbtn" id="cardFund">▪ 재무 카드</button>'+
+      '<button class="sbtn" id="cardImp">▪ 개선 카드</button>'+
+    '</div>';
 }
 
 function bindScreenCard(sym){
@@ -1128,6 +1152,20 @@ function bindScreenCard(sym){
     });
   });
   var wa=$('wAdd'); if(wa) wa.addEventListener('click',function(){ addWatch(sym); });
+  document.querySelectorAll('.stb').forEach(function(b){
+    b.addEventListener('click',function(){
+      SCR_TAB=b.dataset.scr;
+      document.querySelectorAll('.stb').forEach(function(x){ x.classList.toggle('on', x.dataset.scr===SCR_TAB); });
+      var f=$('scrFund'), i=$('scrImp');
+      if(f&&i){
+        if(SCR_TAB==='fund'){ f.removeAttribute('hidden'); i.setAttribute('hidden',''); }
+        else { i.removeAttribute('hidden'); f.setAttribute('hidden',''); }
+      }
+    });
+  });
+  var cf=$('cardFund'), ci=$('cardImp');
+  if(cf) cf.addEventListener('click',function(){ makeScreenCard(LAST,'fund'); });
+  if(ci) ci.addEventListener('click',function(){ makeScreenCard(LAST,'imp'); });
   var di=$('dInfo'), dn=$('dNosum');
   if(di&&dn) di.addEventListener('click',function(){
     if(dn.hasAttribute('hidden')) dn.removeAttribute('hidden'); else dn.setAttribute('hidden','');
@@ -1862,6 +1900,81 @@ function fetchNames(){
     .then(function(r){return r.json()})
     .then(function(j){ if(j&&j.names){ for(var k in j.names) CAL_NAMES[k]=j.names[k]; renderCalList(); } })
     .catch(function(){});
+}
+
+/* ── 스크린·실적 세로 카드 ── */
+function makeScreenCard(d, kind){
+  if(!d) return;
+  var W=1080, H=1350, c=document.createElement('canvas');
+  c.width=W; c.height=H;
+  var g=c.getContext('2d');
+  g.fillStyle='#0B0B0C'; g.fillRect(0,0,W,H);
+
+  var PAD=76, y=0;
+  var F=function(sz,w){ g.font=(w||700)+' '+sz+'px "Pretendard Variable",Pretendard,-apple-system,sans-serif'; };
+  var T=function(t,x,yy,col,al){ g.fillStyle=col||'#F3F3F4'; g.textAlign=al||'left'; g.fillText(t,x,yy); };
+
+  // 로고
+  try{ drawLogo(g, PAD, 66, 46); }catch(e){}
+  F(26,600); T('안드레99', PAD+62, 100, '#A0A0A5');
+
+  // 종목
+  y=210;
+  F(84,800); T(d.symbol||'', PAD, y);
+  F(30,500); T((d.name||'').slice(0,34), PAD, y+46, '#A0A0A5');
+
+  // 가격
+  y=340;
+  F(60,800); T('$'+fx(d.price), PAD, y);
+  var up=(d.chg_day||0)>=0;
+  F(32,700); T((up?'+':'')+(d.chg_day!=null?Number(d.chg_day).toFixed(2):'0')+'%',
+    PAD+g.measureText('$'+fx(d.price)).width+250, y, up?'#FF4D4F':'#2F80ED');
+
+  var rows=screenRows(d);
+  var im=improvementFull(d);
+  var p=rows.filter(function(x){return x.s==='p';}).length;
+  var pt=rows.filter(function(x){return x.s!=='m';}).length;
+
+  // 제목
+  y=450;
+  g.fillStyle='#151516'; rr(g,PAD,y,W-PAD*2,120,26); g.fill();
+  F(30,600); T(kind==='fund'?'재무 건전성':'실적 개선도', PAD+36, y+50, '#A0A0A5');
+  F(72,800);
+  var sc = kind==='fund' ? p+'/'+pt : im.score+'/'+im.total;
+  T(sc, PAD+36, y+104);
+  F(26,500); T(kind==='fund'?'지금 튼튼한가':'최근 좋아졌는가', W-PAD-36, y+104, '#6B6B70','right');
+
+  // 항목
+  y=620;
+  var items = kind==='fund'
+    ? rows.map(function(x){ return {n:x.n, s:x.s, v:(x.e||'').split('·')[0].trim()}; })
+    : im.items.map(function(x){ return {n:x.n, s:(x.ok===null?'m':(x.ok?'p':'f')), v:x.v||'해당없음'}; });
+
+  items.slice(0,10).forEach(function(it){
+    g.fillStyle = it.s==='p' ? '#F3F3F4' : (it.s==='f' ? '#2F80ED' : '#3A3A3E');
+    g.beginPath(); g.arc(PAD+12, y+2, 10, 0, Math.PI*2); g.fill();
+    F(32,600); T(it.n, PAD+46, y+12);
+    F(28,500); T(String(it.v).slice(0,22), W-PAD, y+12, '#A0A0A5','right');
+    g.strokeStyle='#242427'; g.lineWidth=1;
+    g.beginPath(); g.moveTo(PAD,y+38); g.lineTo(W-PAD,y+38); g.stroke();
+    y+=66;
+  });
+
+  // 꼬리말
+  F(24,500);
+  T(kind==='fund'?'지금 데이터를 10가지 기준에 통과시킨 결과입니다.'
+                 :'최근 분기 동안 좋아진 항목입니다. 예측이 아닙니다.', PAD, H-120, '#6B6B70');
+  T('andre99 · '+new Date().toLocaleDateString('ko-KR'), PAD, H-76, '#6B6B70');
+
+  c.toBlob(function(b){
+    var f=new File([b], (d.symbol||'andre99')+'_'+kind+'.png', {type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){
+      navigator.share({files:[f]}).catch(function(){});
+    }else{
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(b); a.download=f.name; a.click();
+    }
+  },'image/png');
 }
 
 /* ── 관심 종목 ── */
