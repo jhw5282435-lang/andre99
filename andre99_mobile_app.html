@@ -437,6 +437,46 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   .nav-in{max-width:1080px}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
 }
+
+/* ══ 기술적 분석 탭 (2026.08.10) ══ */
+.subbar{display:flex;gap:6px;margin:0 0 10px}
+.subchip{flex:1;min-height:36px;border-radius:12px;background:var(--s2);color:var(--tx2);font-size:12.5px;font-weight:700;border:1px solid transparent}
+.subchip.on{background:var(--s3,#1a1a1c);color:var(--tx);border-color:var(--tx3,#3a3a3d)}
+.tfs,.inds,.rgs{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0}
+.tfchip,.indchip,.rgchip{min-height:30px;padding:0 10px;border-radius:9px;background:var(--s2);color:var(--tx2);font-size:11.5px;font-weight:600}
+.tfchip.on,.indchip.on,.rgchip.on{background:var(--tx);color:#0B0B0C}
+.indchip.off,.rgchip.off{opacity:.32}
+.rgs{align-items:center}
+.rgs .rglab{font-size:11px;color:var(--tx3,#7a7a7e);margin-right:2px}
+.a99svg{width:100%;height:auto;display:block;background:#0F0F11;border-radius:12px}
+.a99svg .gl{stroke:#26262A;stroke-width:.6}
+.a99svg .gt{fill:#6E6E73;font-size:9px;font-family:inherit}
+.a99svg .cu{stroke:#FF4D4F;fill:#FF4D4F}
+.a99svg .cd{stroke:#2F80ED;fill:#2F80ED}
+.a99svg .wk{stroke-width:1}
+.a99svg .bd{stroke-width:0}
+.a99svg .vb{opacity:.42}
+.a99svg .ln{fill:none;stroke-width:1.2}
+.a99svg .ma1{stroke:#E8E8EA}.a99svg .ma2{stroke:#9A9AA0}.a99svg .ma3{stroke:#6E6E73}.a99svg .ma4{stroke:#F0B429}
+.a99svg .ic1{stroke:#4ECDC4;stroke-width:1}.a99svg .ic2{stroke:#C06AF0;stroke-width:1}
+.a99svg .cldU{fill:#FF4D4F;opacity:.10;stroke:none}
+.a99svg .cldD{fill:#2F80ED;opacity:.10;stroke:none}
+.a99svg .rgm{stroke:#F0B429;stroke-width:1.2}
+.a99svg .rgb{stroke:#F0B429;stroke-width:.9;stroke-dasharray:4 3;opacity:.75}
+.a99svg .tls{stroke:#FF4D4F;stroke-width:1.1;stroke-dasharray:5 3}
+.a99svg .tlr{stroke:#2F80ED;stroke-width:1.1;stroke-dasharray:5 3}
+.tnbtn{width:100%;min-height:42px;border-radius:12px;background:var(--s2);color:var(--tx);font-size:13px;font-weight:700;margin-top:10px}
+.tnrow{padding:12px 0;border-bottom:1px solid var(--s2)}
+.tnk{font-size:12px;color:var(--tx2);margin-bottom:4px}
+.tnv{font-size:26px;font-weight:800;line-height:1.15}
+.tnd{font-size:11px;color:var(--tx3,#7a7a7e);margin-top:5px;line-height:1.5}
+.tnl{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px}
+.tnl span{color:var(--tx2)}
+.tnl b{font-weight:700}
+.tnw{margin-top:8px;padding:9px 10px;border-radius:9px;background:rgba(240,180,41,.10);color:#F0B429;font-size:11.5px;line-height:1.55}
+.tnex{margin-top:12px;padding:10px;border-radius:9px;background:var(--s2);font-size:11px;color:var(--tx3,#7a7a7e);line-height:1.7}
+.tnex b{display:block;color:var(--tx2);margin-bottom:5px;font-size:11.5px}
+.tnb{margin-top:12px;font-size:10.5px;color:var(--tx3,#7a7a7e);line-height:1.65}
 </style>
 </head>
 <body>
@@ -454,7 +494,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.07-F</span>
+      <span class="ver">v2026.08.10-G</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -590,8 +630,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.07-F';
-console.log('%c ANDRE99 v2026.08.07-F ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.10-G';
+console.log('%c ANDRE99 v2026.08.10-G ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -1187,6 +1227,240 @@ function bindScreenCard(sym){
 }
 
 /* 섹션 전환 (탭 안의 탭) */
+/* ══ 기술적 분석 탭 (2026.08.10 신설) ══ */
+var CUR_SUB='fund', TECH={}, TECH_TF='d', TECH_SYM='';
+var TECH_ON={cd:1,ma:1,ic:0,rg:0,tl:0,vo:0}, TECH_RG=250;
+
+function setSub(sub){
+  CUR_SUB=sub;
+  ['fund','tech'].forEach(function(s){
+    document.querySelectorAll('.sub-'+s).forEach(function(el){
+      if(CUR_CAT!=='screen'){ el.setAttribute('hidden',''); return; }
+      if(s===sub) el.removeAttribute('hidden'); else el.setAttribute('hidden','');
+    });
+  });
+  document.querySelectorAll('.subchip').forEach(function(b){ b.classList.toggle('on', b.dataset.sub===sub); });
+  document.querySelectorAll('.subbar').forEach(function(b){
+    if(CUR_CAT==='screen') b.removeAttribute('hidden'); else b.setAttribute('hidden','');
+  });
+  if(sub==='tech') loadTech(TECH_SYM, TECH_TF);
+}
+
+function loadTech(sym,tf){
+  if(!sym) return;
+  var key=sym+'|'+tf;
+  var box=$('techBox'); if(!box) return;
+  if(TECH[key]){ drawTech(TECH[key]); return; }
+  box.innerHTML='<div class="tvnote">차트를 불러오는 중…</div>';
+  fetchT(API+'/technical?symbol='+encodeURIComponent(sym)+'&tf='+tf+'&_='+Date.now(), 20000)
+    .then(function(r){return r.json()})
+    .then(function(t){
+      if(!t || t.status!=='ok'){
+        box.innerHTML='<div class="tvnote">'+(t&&t.note?esc(t.note):'데이터를 불러오지 못했습니다')+'</div>';
+        var nb=$('techNums'); if(nb) nb.innerHTML='';
+        return;
+      }
+      TECH[key]=t; drawTech(t);
+    })
+    .catch(function(){ box.innerHTML='<div class="tvnote">데이터를 불러오지 못했습니다</div>'; });
+}
+
+function drawTech(t){
+  var box=$('techBox'); if(box) box.innerHTML=svgChart(t);
+  var nb=$('techNums'); if(nb) nb.innerHTML=techNumsHTML(t);
+  document.querySelectorAll('.rgchip').forEach(function(b){
+    var ok=t.regression && t.regression['p'+b.dataset.rg] && t.regression['p'+b.dataset.rg].ok;
+    b.disabled=!ok; b.classList.toggle('off',!ok);
+    b.classList.toggle('on', ok && Number(b.dataset.rg)===TECH_RG);
+  });
+  document.querySelectorAll('.indchip').forEach(function(b){
+    var k=b.dataset.ind, avail=true;
+    if(k==='ic') avail=!!t.ichimoku;
+    if(k==='rg') avail=!!(t.regression && Object.keys(t.regression).length);
+    if(k==='tl') avail=!!(t.trendline && (t.trendline.support||t.trendline.resistance));
+    b.disabled=!avail; b.classList.toggle('off',!avail);
+    b.classList.toggle('on', avail && !!TECH_ON[k]);
+  });
+}
+
+/* 자체 SVG 캔들차트 */
+function svgChart(t){
+  var C=t.candles||[]; if(C.length<2) return '<div class="tvnote">표시할 캔들이 없습니다</div>';
+  var W=700,H=380,PL=6,PR=54,PT=10,PB=22;
+  var volH = TECH_ON.vo ? 54 : 0;
+  var cH = H-PT-PB-volH;
+  var lo=Infinity,hi=-Infinity;
+  for(var i=0;i<C.length;i++){ if(C[i].l<lo)lo=C[i].l; if(C[i].h>hi)hi=C[i].h; }
+  function scanSeries(a){ if(!a)return; for(var i=0;i<a.length;i++){ var v=a[i]; if(v==null)continue; if(v<lo)lo=v; if(v>hi)hi=v; } }
+  if(TECH_ON.ma && t.ma) for(var k in t.ma) scanSeries(t.ma[k]);
+  if(TECH_ON.ic && t.ichimoku){ scanSeries(t.ichimoku.spanA); scanSeries(t.ichimoku.spanB); scanSeries(t.ichimoku.tenkan); scanSeries(t.ichimoku.kijun); }
+  if(!isFinite(lo)||!isFinite(hi)||hi<=lo) return '<div class="tvnote">가격 범위를 계산할 수 없습니다</div>';
+  var pad=(hi-lo)*0.06; lo-=pad; hi+=pad;
+  var n=C.length, bw=(W-PL-PR)/n;
+  function X(i){ return PL+bw*(i+0.5); }
+  function Y(v){ return PT+cH-((v-lo)/(hi-lo))*cH; }
+  var s='<svg viewBox="0 0 '+W+' '+H+'" class="a99svg" preserveAspectRatio="none">';
+
+  for(var g=0;g<=4;g++){
+    var gv=lo+(hi-lo)*g/4, gy=Y(gv);
+    s+='<line x1="'+PL+'" y1="'+gy.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+gy.toFixed(1)+'" class="gl"/>';
+    s+='<text x="'+(W-PR+4)+'" y="'+(gy+3.5).toFixed(1)+'" class="gt">'+gv.toFixed(gv<10?2:0)+'</text>';
+  }
+
+  if(TECH_ON.ic && t.ichimoku){
+    var A=t.ichimoku.spanA, B=t.ichimoku.spanB, seg=[];
+    for(var i=0;i<n;i++){
+      if(A[i]==null||B[i]==null){ if(seg.length>1) s+=cloud(seg); seg=[]; continue; }
+      seg.push(i);
+    }
+    if(seg.length>1) s+=cloud(seg);
+    function cloud(ix){
+      var up='',dn='';
+      for(var j=0;j<ix.length;j++) up+=(j?'L':'M')+X(ix[j]).toFixed(1)+' '+Y(A[ix[j]]).toFixed(1);
+      for(var j=ix.length-1;j>=0;j--) dn+='L'+X(ix[j]).toFixed(1)+' '+Y(B[ix[j]]).toFixed(1);
+      var upTop=A[ix[ix.length-1]]>=B[ix[ix.length-1]];
+      return '<path d="'+up+dn+'Z" class="'+(upTop?'cldU':'cldD')+'"/>';
+    }
+    s+=line(t.ichimoku.tenkan,'ln ic1')+line(t.ichimoku.kijun,'ln ic2');
+  }
+
+  if(TECH_ON.ma && t.ma){
+    var mk=Object.keys(t.ma), mc=['ma1','ma2','ma3','ma4'];
+    for(var i=0;i<mk.length;i++) s+=line(t.ma[mk[i]],'ln '+(mc[i]||'ma1'));
+  }
+
+  if(TECH_ON.cd){
+    for(var i=0;i<n;i++){
+      var c=C[i], up=c.c>=c.o, cls=up?'cu':'cd', x=X(i), w=Math.max(1.2,bw*0.62);
+      s+='<line x1="'+x.toFixed(1)+'" y1="'+Y(c.h).toFixed(1)+'" x2="'+x.toFixed(1)+'" y2="'+Y(c.l).toFixed(1)+'" class="wk '+cls+'"/>';
+      var y1=Y(Math.max(c.o,c.c)), y2=Y(Math.min(c.o,c.c));
+      s+='<rect x="'+(x-w/2).toFixed(1)+'" y="'+y1.toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+Math.max(0.8,y2-y1).toFixed(1)+'" class="bd '+cls+'"/>';
+    }
+  }
+
+  if(TECH_ON.rg && t.regression){
+    var r=t.regression['p'+TECH_RG];
+    if(r && r.ok){
+      var i0=Math.max(0,n-TECH_RG), i1=n-1;
+      function seg2(a,cls){ return '<line x1="'+X(i0).toFixed(1)+'" y1="'+Y(a[0]).toFixed(1)+'" x2="'+X(i1).toFixed(1)+'" y2="'+Y(a[1]).toFixed(1)+'" class="'+cls+'"/>'; }
+      s+=seg2(r.lower,'rgb')+seg2(r.upper,'rgb')+seg2(r.mid,'rgm');
+    }
+  }
+
+  if(TECH_ON.tl && t.trendline){
+    ['support','resistance'].forEach(function(k){
+      var L=t.trendline[k]; if(!L||L.from.i<0) return;
+      var x1=X(L.from.i), x2=X(n-1), y1=Y(L.from.v), y2=Y(L.at_last);
+      s+='<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" class="tl'+(k==='support'?'s':'r')+'"/>';
+    });
+  }
+
+  if(TECH_ON.vo){
+    var vmax=0; for(var i=0;i<n;i++) if(C[i].v>vmax) vmax=C[i].v;
+    var vy=PT+cH+6;
+    if(vmax>0) for(var i=0;i<n;i++){
+      var vh=(C[i].v/vmax)*(volH-8), w2=Math.max(1,bw*0.62);
+      s+='<rect x="'+(X(i)-w2/2).toFixed(1)+'" y="'+(vy+(volH-8-vh)).toFixed(1)+'" width="'+w2.toFixed(1)+'" height="'+vh.toFixed(1)+'" class="vb '+(C[i].c>=C[i].o?'cu':'cd')+'"/>';
+    }
+  }
+
+  var st=C[0].d, en=C[n-1].d;
+  s+='<text x="'+PL+'" y="'+(H-6)+'" class="gt">'+st+'</text>';
+  s+='<text x="'+(W-PR)+'" y="'+(H-6)+'" class="gt" text-anchor="end">'+en+'</text>';
+  s+='</svg>';
+  return s;
+
+  function line(a,cls){
+    if(!a) return '';
+    var p='',open=false;
+    for(var i=0;i<a.length;i++){
+      if(a[i]==null){ open=false; continue; }
+      p+=(open?'L':'M')+X(i).toFixed(1)+' '+Y(a[i]).toFixed(1); open=true;
+    }
+    return p?'<path d="'+p+'" class="'+cls+'"/>':'';
+  }
+}
+
+/* 이 종목은 얼마나 흔들렸나 */
+function techNumsHTML(t){
+  var o='';
+  if(t.mdd && t.mdd.pct!=null){
+    o+='<div class="tnrow"><div class="tnk">가장 크게 빠졌을 때</div>'+
+       '<div class="tnv n dn">'+t.mdd.pct.toFixed(0)+'%</div>'+
+       '<div class="tnd">'+esc(t.mdd.peak_date||'')+' 고점 → '+esc(t.mdd.trough_date||'')+' 저점'+
+       (t.mdd.recovered ? ' · 회복까지 '+t.mdd.recovery_days+'일' : ' · 아직 회복 전('+t.mdd.days_since_trough+'일째)')+'</div></div>';
+  }
+  if(t.atr && t.atr.pct!=null){
+    o+='<div class="tnrow"><div class="tnk">하루 평균 움직임</div>'+
+       '<div class="tnv n">±'+t.atr.pct.toFixed(1)+'%</div>'+
+       '<div class="tnd">최근 14'+(t.tf==='d'?'일':'주')+' 기준</div></div>';
+  }
+  var v=t.volatility;
+  if(v && v.pct){
+    o+='<div class="tnrow"><div class="tnk">20일 동안 어디까지 움직였나</div>'+
+       '<div class="tnl"><span>10번 중 5번</span><b class="n">'+v.pct.p25.toFixed(1)+'% ~ +'+v.pct.p75.toFixed(1)+'%</b></div>'+
+       '<div class="tnl"><span>10번 중 1번</span><b class="n dn">'+v.pct.p5.toFixed(1)+'% 아래</b></div>'+
+       '<div class="tnl"><span>10번 중 1번</span><b class="n up">+'+v.pct.p95.toFixed(1)+'% 위</b></div>'+
+       '<div class="tnd">관측 '+v.obs.toLocaleString('ko-KR')+'회 · 정규분포 가정 없음</div></div>';
+  }
+  var p=t.proving;
+  if(p){
+    var ml=(p.listed_months!=null)?(Math.floor(p.listed_months/12)+'년 '+(p.listed_months%12)+'개월'):'측정중';
+    o+='<div class="tnrow"><div class="tnk">시험대</div>'+
+       '<div class="tnl"><span>상장 후</span><b>'+ml+'</b></div>'+
+       '<div class="tnl"><span>2022 하락장</span><b>'+(p.bear_2022===null?'측정중':(p.bear_2022?'겪음':'안 겪음'))+'</b></div>'+
+       '<div class="tnl"><span>2020 코로나</span><b>'+(p.covid_2020===null?'측정중':(p.covid_2020?'겪음':'안 겪음 (상장 전)'))+'</b></div>'+
+       ((p.bear_2022===false)?'<div class="tnw">아직 큰 하락장을 겪지 않은 종목입니다. 관측된 진폭이 실제 위험을 나타내지 못할 수 있습니다.</div>':'')+
+       '</div>';
+  }
+  if(t.excluded && t.excluded.length){
+    o+='<div class="tnex"><b>이 화면에 없는 것</b>'+t.excluded.map(function(x){return '<div>· '+esc(x)+'</div>';}).join('')+'</div>';
+  }
+  var b=t.basis||{};
+  o+='<div class="tnb">기준: 야후 일봉 '+(b.years_requested||5)+'년 · 수정주가(adjclose) · 미국동부시간<br>'+
+     esc(b.first||'')+' ~ '+esc(b.last||'')+' · 관측 '+(b.daily_count||0).toLocaleString('ko-KR')+'일<br>'+
+     '과거 기록입니다. 앞으로를 예측하지 않습니다.</div>';
+  return o;
+}
+
+function bindTech(){
+  document.querySelectorAll('.subchip').forEach(function(b){
+    b.addEventListener('click',function(){ setSub(b.dataset.sub); });
+  });
+  document.querySelectorAll('.tfchip').forEach(function(b){
+    b.addEventListener('click',function(){
+      if(b.disabled) return;
+      TECH_TF=b.dataset.tf;
+      document.querySelectorAll('.tfchip').forEach(function(x){ x.classList.toggle('on', x.dataset.tf===TECH_TF); });
+      loadTech(TECH_SYM,TECH_TF);
+    });
+  });
+  document.querySelectorAll('.indchip').forEach(function(b){
+    b.addEventListener('click',function(){
+      if(b.disabled) return;
+      var k=b.dataset.ind; TECH_ON[k]=TECH_ON[k]?0:1;
+      b.classList.toggle('on',!!TECH_ON[k]);
+      var t=TECH[TECH_SYM+'|'+TECH_TF]; if(t) { var bx=$('techBox'); if(bx) bx.innerHTML=svgChart(t); }
+    });
+  });
+  document.querySelectorAll('.rgchip').forEach(function(b){
+    b.addEventListener('click',function(){
+      if(b.disabled) return;
+      TECH_RG=Number(b.dataset.rg); TECH_ON.rg=1;
+      document.querySelectorAll('.rgchip').forEach(function(x){ x.classList.toggle('on', Number(x.dataset.rg)===TECH_RG); });
+      document.querySelectorAll('.indchip').forEach(function(x){ if(x.dataset.ind==='rg') x.classList.add('on'); });
+      var t=TECH[TECH_SYM+'|'+TECH_TF]; if(t){ var bx=$('techBox'); if(bx) bx.innerHTML=svgChart(t); }
+    });
+  });
+  var tg=$('tnToggle');
+  if(tg) tg.addEventListener('click',function(){
+    var w=$('techNumsWrap'); if(!w) return;
+    var open=w.hasAttribute('hidden');
+    if(open) w.removeAttribute('hidden'); else w.setAttribute('hidden','');
+    tg.textContent=(open?'▴ ':'▾ ')+'이 종목은 얼마나 흔들렸나';
+  });
+}
+
 function setCat(cat){
   CUR_CAT=cat;
   ['screen','info','earn'].forEach(function(c){
@@ -1195,6 +1469,7 @@ function setCat(cat){
     });
   });
   document.querySelectorAll('.catchip').forEach(function(b){ b.classList.toggle('on', b.dataset.cat===cat); });
+  setSub(CUR_SUB);
   window.scrollTo(0,0);
 }
 
@@ -1256,12 +1531,39 @@ function loadStock(sym){
       '<div class="chg n '+dirCls(d.chg_day)+'">'+(d.chg_day_abs!=null?(d.chg_day>=0?'+':'')+'$'+Math.abs(d.chg_day_abs).toFixed(2)+' ':'')+pct(d.chg_day)+'</div>'+
       krwBlock(d)+'</div>';
 
-    html+='<div class="sec cat-screen" id="scrWrap">'+screenCardHTML(d)+'</div>';
+    html+='<div class="sec cat-screen sub-fund" id="scrWrap">'+screenCardHTML(d)+'</div>';
 
 
+
+
+    // ── 기술적 분석 (자체 SVG) ──
+    html+='<div class="sec cat-screen sub-tech" hidden><div class="sec-h"><h2>주가 차트</h2><span class="note">야후 · 수정주가</span></div>'+
+      '<div class="tfs">'+
+        '<button class="tfchip on" data-tf="d">일봉</button>'+
+        '<button class="tfchip" data-tf="w">주봉</button>'+
+        '<button class="tfchip" data-tf="m">월봉</button>'+
+      '</div>'+
+      '<div id="techBox"><div class="tvnote">차트를 불러오는 중…</div></div>'+
+      '<div class="inds">'+
+        '<button class="indchip on" data-ind="cd">캔들</button>'+
+        '<button class="indchip on" data-ind="ma">이동평균</button>'+
+        '<button class="indchip" data-ind="ic">일목균형표</button>'+
+        '<button class="indchip" data-ind="rg">회귀채널</button>'+
+        '<button class="indchip" data-ind="tl">추세선</button>'+
+        '<button class="indchip" data-ind="vo">거래량</button>'+
+      '</div>'+
+      '<div class="rgs"><span class="rglab">회귀채널 기간</span>'+
+        '<button class="rgchip" data-rg="60">60</button>'+
+        '<button class="rgchip" data-rg="120">120</button>'+
+        '<button class="rgchip on" data-rg="250">250</button>'+
+      '</div>'+
+      '<button class="tnbtn" id="tnToggle">▾ 이 종목은 얼마나 흔들렸나</button>'+
+      '<div id="techNumsWrap" hidden><div id="techNums"></div></div>'+
+      (ADMIN ? '<div class="admbar"><button class="sbtn" id="cardTech">▮ 이 탭 카드 만들기</button><span class="note">운영자</span></div>' : '')+
+    '</div>';
 
     // ── 주가 차트 (TradingView) ──
-    html+='<div class="sec cat-screen"><div class="sec-h"><h2>주가 차트</h2>'+
+    html+='<div class="sec cat-screen sub-tech"><div class="sec-h"><h2>주가 차트</h2>'+
       '<a class="note tvlink" href="https://www.tradingview.com/symbols/'+encodeURIComponent(d.symbol||sym)+'/" target="_blank" rel="noopener">TradingView</a></div>'+
       '<div class="tvwrap">'+
         '<div class="ivs">'+
@@ -1275,7 +1577,7 @@ function loadStock(sym){
 
     var mi=function(k,v){ return '<div><div class="k">'+k+'</div><div class="v n">'+(v==null||v===''?'—':v)+'</div></div>'; };
     var w52=(d.week52_pos!=null)?Math.round(d.week52_pos)+'%':null;
-    html+='<div class="sec cat-screen"><div class="sec-h"><h2>핵심 지표</h2><span class="note">TTM 기준</span></div><div class="mg">'+
+    html+='<div class="sec cat-screen sub-fund"><div class="sec-h"><h2>핵심 지표</h2><span class="note">TTM 기준</span></div><div class="mg">'+
       mi('PER', d.per?Number(d.per).toFixed(1)+'배':null)+
       mi('PBR', d.pbr?Number(d.pbr).toFixed(1)+'배':null)+
       mi('PSR', d.psr?Number(d.psr).toFixed(1)+'배':null)+
@@ -1324,10 +1626,13 @@ function loadStock(sym){
     html='<div class="catbar">'+
       '<button class="catchip on" data-cat="screen">스크린</button>'+
       '<button class="catchip" data-cat="info">기업개요</button>'+
-      '<button class="catchip" data-cat="earn">실적</button></div>'+html;
+      '<button class="catchip" data-cat="earn">실적</button></div>'+
+      '<div class="subbar"><button class="subchip on" data-sub="fund">기본적 분석</button>'+
+      '<button class="subchip" data-sub="tech">기술적 분석</button></div>'+html;
 
     $('stockBody').innerHTML=html;
-    setCat('screen');
+    TECH_SYM=sym; TECH={}; CUR_SUB='fund'; TECH_TF='d';
+    setCat('screen'); bindTech();
     document.querySelectorAll('.catchip').forEach(function(b){
       b.addEventListener('click',function(){ setCat(b.dataset.cat); });
     });
