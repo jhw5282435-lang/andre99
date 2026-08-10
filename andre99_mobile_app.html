@@ -459,6 +459,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .a99svg .ln{fill:none;stroke-width:1.2}
 .a99svg .ma1{stroke:#E8E8EA}.a99svg .ma2{stroke:#9A9AA0}.a99svg .ma3{stroke:#6E6E73}.a99svg .ma4{stroke:#F0B429}
 .a99svg .ic1{stroke:#4ECDC4;stroke-width:1}.a99svg .ic2{stroke:#C06AF0;stroke-width:1}
+.a99svg .ic3{stroke:#8A8A90;stroke-width:.9;opacity:.8}
 .a99svg .cldU{fill:#FF4D4F;opacity:.10;stroke:none}
 .a99svg .cldD{fill:#2F80ED;opacity:.10;stroke:none}
 .a99svg .rgm{stroke:#F0B429;stroke-width:1.2}
@@ -477,6 +478,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .tnex{margin-top:12px;padding:10px;border-radius:9px;background:var(--s2);font-size:11px;color:var(--tx3,#7a7a7e);line-height:1.7}
 .tnex b{display:block;color:var(--tx2);margin-bottom:5px;font-size:11.5px}
 .tnb{margin-top:12px;font-size:10.5px;color:var(--tx3,#7a7a7e);line-height:1.65}
+
+/* ══ 주요 지표 자동 흐름 · 2026.08.10 ══ */
+#macroChips{overflow:hidden;position:relative;-webkit-mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent)}
+.mqtrack{display:flex;gap:8px;width:max-content;animation:a99mq 52s linear infinite}
+#macroChips:hover .mqtrack,#macroChips:active .mqtrack{animation-play-state:paused}
+@keyframes a99mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.mqtrack{animation:none;overflow-x:auto}}
+.trbtn{display:inline-block;margin:0 0 10px;padding:7px 12px;border-radius:9px;background:var(--s2);color:var(--tx);font-size:12px;font-weight:700;text-decoration:none}
 </style>
 </head>
 <body>
@@ -494,7 +503,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.10-G</span>
+      <span class="ver">v2026.08.10-I</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -630,8 +639,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.10-G';
-console.log('%c ANDRE99 v2026.08.10-G ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.10-I';
+console.log('%c ANDRE99 v2026.08.10-I ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -780,10 +789,12 @@ function loadMarket(){
         +'<br><span class="fearsrc">변동성지수(VIX)로 계산한 근사값입니다. VIX 18을 중립(50)으로 봅니다.</span>';
     }
 
-    $('macroChips').innerHTML=(d.macro||[]).map(function(x){
+    var mcs=(d.macro||[]).map(function(x){
       return '<div class="chip"><div class="k">'+x.name+'</div><div class="v n">'+fx(x.price,x.price>1000?0:2)+
         '<span class="c '+dirCls(x.chg_pct)+'">'+pct(x.chg_pct)+'</span></div></div>';
     }).join('');
+    /* 자동 흐름: 같은 목록을 두 벌 이어 붙여 끊김 없이 순환 */
+    $('macroChips').innerHTML = mcs ? '<div class="mqtrack">'+mcs+mcs+'</div>' : '';
 
     var g=d.gainers||[];
     $('gainRows').innerHTML = g.length ? g.map(function(x,i){
@@ -1229,21 +1240,27 @@ function bindScreenCard(sym){
 /* 섹션 전환 (탭 안의 탭) */
 /* ══ 기술적 분석 탭 (2026.08.10 신설) ══ */
 var CUR_SUB='fund', TECH={}, TECH_TF='d', TECH_SYM='';
-var TECH_ON={cd:1,ma:1,ic:0,rg:0,tl:0,vo:0}, TECH_RG=250;
+var TECH_ON={cd:1,ma:0,ic:0,rg:0,tl:0,vo:0}, TECH_RG=250;
 
+function sbcPct(d){
+  var q=(d&&d.fin_quarters)||[]; if(!q.length) return null;
+  var last=q[q.length-1];
+  if(!last||last.sbc==null||!last.revenue) return null;
+  return (last.sbc/last.revenue*100).toFixed(1)+'%';
+}
 function setSub(sub){
   CUR_SUB=sub;
+  var onScreen = (CUR_CAT==='screen');
   ['fund','tech'].forEach(function(s){
     document.querySelectorAll('.sub-'+s).forEach(function(el){
-      if(CUR_CAT!=='screen'){ el.setAttribute('hidden',''); return; }
-      if(s===sub) el.removeAttribute('hidden'); else el.setAttribute('hidden','');
+      if(!onScreen || s!==sub) el.setAttribute('hidden',''); else el.removeAttribute('hidden');
     });
   });
   document.querySelectorAll('.subchip').forEach(function(b){ b.classList.toggle('on', b.dataset.sub===sub); });
   document.querySelectorAll('.subbar').forEach(function(b){
-    if(CUR_CAT==='screen') b.removeAttribute('hidden'); else b.setAttribute('hidden','');
+    if(onScreen) b.style.display='flex'; else b.style.display='none';
   });
-  if(sub==='tech') loadTech(TECH_SYM, TECH_TF);
+  if(onScreen && sub==='tech') loadTech(TECH_SYM, TECH_TF);
 }
 
 function loadTech(sym,tf){
@@ -1289,15 +1306,16 @@ function svgChart(t){
   var W=700,H=380,PL=6,PR=54,PT=10,PB=22;
   var volH = TECH_ON.vo ? 54 : 0;
   var cH = H-PT-PB-volH;
+  /* 세로축은 캔들만 기준(B안). 지표를 켜도 캔들 크기가 변하지 않는다. */
   var lo=Infinity,hi=-Infinity;
   for(var i=0;i<C.length;i++){ if(C[i].l<lo)lo=C[i].l; if(C[i].h>hi)hi=C[i].h; }
-  function scanSeries(a){ if(!a)return; for(var i=0;i<a.length;i++){ var v=a[i]; if(v==null)continue; if(v<lo)lo=v; if(v>hi)hi=v; } }
-  if(TECH_ON.ma && t.ma) for(var k in t.ma) scanSeries(t.ma[k]);
-  if(TECH_ON.ic && t.ichimoku){ scanSeries(t.ichimoku.spanA); scanSeries(t.ichimoku.spanB); scanSeries(t.ichimoku.tenkan); scanSeries(t.ichimoku.kijun); }
   if(!isFinite(lo)||!isFinite(hi)||hi<=lo) return '<div class="tvnote">가격 범위를 계산할 수 없습니다</div>';
   var pad=(hi-lo)*0.06; lo-=pad; hi+=pad;
-  var n=C.length, bw=(W-PL-PR)/n;
+  /* 일목 켜면 오른쪽에 미래 26봉 여백 확보 */
+  var SH = (TECH_ON.ic && t.ichimoku) ? (t.ichimoku.shift||26) : 0;
+  var n=C.length, slots=n+SH, bw=(W-PL-PR)/slots;
   function X(i){ return PL+bw*(i+0.5); }
+  function clampY(v){ return Math.max(PT-40, Math.min(PT+cH+40, v)); }
   function Y(v){ return PT+cH-((v-lo)/(hi-lo))*cH; }
   var s='<svg viewBox="0 0 '+W+' '+H+'" class="a99svg" preserveAspectRatio="none">';
 
@@ -1308,20 +1326,38 @@ function svgChart(t){
   }
 
   if(TECH_ON.ic && t.ichimoku){
-    var A=t.ichimoku.spanA, B=t.ichimoku.spanB, seg=[];
-    for(var i=0;i<n;i++){
-      if(A[i]==null||B[i]==null){ if(seg.length>1) s+=cloud(seg); seg=[]; continue; }
-      seg.push(i);
+    var IC=t.ichimoku, SF=IC.shift||26;
+    /* 선행스팬을 SF봉 앞으로 민다. 화면 구간 + 미래 SF봉 */
+    var A=[], B=[];
+    for(var i=0;i<slots;i++){ A.push(null); B.push(null); }
+    for(var i=0;i<n;i++){ var d2=i+SF; if(d2<slots){ A[d2]=IC.spanA[i]; B[d2]=IC.spanB[i]; } }
+    /* 화면 왼쪽 SF봉은 이전 값이 없으므로 비워둔다 */
+    s+=cloudPath(A,B);
+    /* 후행스팬: 종가를 SF봉 뒤로 */
+    var CK=[];
+    for(var i=0;i<slots;i++) CK.push(null);
+    for(var i=0;i<n;i++){ var d3=i-SF; if(d3>=0) CK[d3]=IC.chikou[i]; }
+    s+=line(CK,'ln ic3');
+    s+=line(IC.tenkan,'ln ic1')+line(IC.kijun,'ln ic2');
+  }
+  function cloudPath(A,B){
+    var out='', seg=[], prev=null;
+    for(var i=0;i<A.length;i++){
+      var ok = (A[i]!=null && B[i]!=null);
+      var sign = ok ? (A[i]>=B[i] ? 1 : -1) : 0;
+      if(!ok){ if(seg.length>1) out+=poly(seg,prev); seg=[]; prev=null; continue; }
+      if(prev!==null && sign!==prev){ seg.push(i); out+=poly(seg,prev); seg=[i]; }
+      else seg.push(i);
+      prev=sign;
     }
-    if(seg.length>1) s+=cloud(seg);
-    function cloud(ix){
+    if(seg.length>1) out+=poly(seg,prev);
+    return out;
+    function poly(ix,sg){
       var up='',dn='';
       for(var j=0;j<ix.length;j++) up+=(j?'L':'M')+X(ix[j]).toFixed(1)+' '+Y(A[ix[j]]).toFixed(1);
       for(var j=ix.length-1;j>=0;j--) dn+='L'+X(ix[j]).toFixed(1)+' '+Y(B[ix[j]]).toFixed(1);
-      var upTop=A[ix[ix.length-1]]>=B[ix[ix.length-1]];
-      return '<path d="'+up+dn+'Z" class="'+(upTop?'cldU':'cldD')+'"/>';
+      return '<path d="'+up+dn+'Z" class="'+(sg>0?'cldU':'cldD')+'"/>';
     }
-    s+=line(t.ichimoku.tenkan,'ln ic1')+line(t.ichimoku.kijun,'ln ic2');
   }
 
   if(TECH_ON.ma && t.ma){
@@ -1452,6 +1488,14 @@ function bindTech(){
       var t=TECH[TECH_SYM+'|'+TECH_TF]; if(t){ var bx=$('techBox'); if(bx) bx.innerHTML=svgChart(t); }
     });
   });
+  var ct=$('cardTech');
+  if(ct) ct.addEventListener('click',function(){
+    var t=TECH[TECH_SYM+'|'+TECH_TF];
+    if(!t){ alert('차트를 먼저 불러와 주세요'); return; }
+    if(typeof makeCard==='function'){ makeCard('tech', t); return; }
+    var w=$('techNumsWrap'); if(w && w.hasAttribute('hidden')){ var b=$('tnToggle'); if(b) b.click(); }
+    alert('카드 영역을 펼쳤습니다. 화면을 캡처해 주세요.');
+  });
   var tg=$('tnToggle');
   if(tg) tg.addEventListener('click',function(){
     var w=$('techNumsWrap'); if(!w) return;
@@ -1546,7 +1590,7 @@ function loadStock(sym){
       '<div id="techBox"><div class="tvnote">차트를 불러오는 중…</div></div>'+
       '<div class="inds">'+
         '<button class="indchip on" data-ind="cd">캔들</button>'+
-        '<button class="indchip on" data-ind="ma">이동평균</button>'+
+        '<button class="indchip" data-ind="ma">이동평균</button>'+
         '<button class="indchip" data-ind="ic">일목균형표</button>'+
         '<button class="indchip" data-ind="rg">회귀채널</button>'+
         '<button class="indchip" data-ind="tl">추세선</button>'+
@@ -1585,6 +1629,10 @@ function loadStock(sym){
       mi('시가총액', d.market_cap)+
       mi('배당수익률', d.dividend_yield?Number(d.dividend_yield).toFixed(2)+'%':'없음')+
       mi('베타', d.beta!=null?Number(d.beta).toFixed(2):null)+
+      mi('ROE', d.roe!=null?Number(d.roe).toFixed(1)+'%':null)+
+      mi('영업이익률', d.op_margin!=null?Number(d.op_margin).toFixed(1)+'%':null)+
+      mi('부채비율', d.debt_to_equity!=null?Number(d.debt_to_equity).toFixed(0)+'%':null)+
+      mi('주식보상 비중', sbcPct(d))+
       mi('52주 위치', w52)+
       '</div></div>';
 
@@ -1602,7 +1650,8 @@ function loadStock(sym){
       html+='<div class="sec cat-info"><div class="sec-h"><h2>기업 개요</h2>'+
         (co.source?'<span class="note">Yahoo Finance</span>':'')+'</div><div class="ovw">';
       if(co.summary){
-        html+='<p class="ovw-s" id="ovwSum">'+esc(co.summary)+'</p>'+
+        html+='<a class="trbtn" target="_blank" rel="noopener" href="https://translate.google.com/?sl=en&tl=ko&op=translate&text='+encodeURIComponent(co.summary.slice(0,1800))+'">🌐 한국어로 보기</a>'+
+          '<p class="ovw-s" id="ovwSum">'+esc(co.summary)+'</p>'+
               '<button class="ovw-m" id="ovwMore">더 보기</button>';
       }
       if(facts.length){
@@ -1625,8 +1674,8 @@ function loadStock(sym){
 
     html='<div class="catbar">'+
       '<button class="catchip on" data-cat="screen">스크린</button>'+
-      '<button class="catchip" data-cat="info">기업개요</button>'+
-      '<button class="catchip" data-cat="earn">실적</button></div>'+
+      '<button class="catchip" data-cat="earn">실적</button>'+
+      '<button class="catchip" data-cat="info">기업개요</button></div>'+
       '<div class="subbar"><button class="subchip on" data-sub="fund">기본적 분석</button>'+
       '<button class="subchip" data-sub="tech">기술적 분석</button></div>'+html;
 
