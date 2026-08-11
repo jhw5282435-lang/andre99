@@ -439,8 +439,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 }
 
 /* ══ 기술적 분석 탭 (2026.08.10) ══ */
-.subbar{display:flex;gap:7px;padding:7px 16px 12px;margin:0}
+.subbar{display:flex;gap:6px;padding:7px 16px 12px;margin:0}
+.allbar{display:flex;align-items:center;gap:8px;padding:0 16px 12px}
+.allbar .sbtn{flex:1}
 .subchip{flex:1;min-height:38px;border-radius:12px;background:var(--s2);color:var(--tx2);font-size:12.5px;font-weight:700;border:1px solid transparent;padding:0}
+.ntag.ko{background:#4ECDC4;color:#08080A}
 .subchip.on{background:var(--s3,#1a1a1c);color:var(--tx);border-color:var(--tx3,#3a3a3d)}
 .tfs,.inds,.rgs{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0}
 .tfchip,.indchip,.rgchip{min-height:30px;padding:0 10px;border-radius:9px;background:var(--s2);color:var(--tx2);font-size:11.5px;font-weight:600}
@@ -488,6 +491,26 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #macroChips:hover .mqtrack,#macroChips:active .mqtrack,#macroChips.hold .mqtrack{animation-play-state:paused}
 @keyframes a99mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.mqtrack{animation:none}}
+
+/* ══ 뉴스·공시 · 2026.08.10 ══ */
+.nsh{font-size:14px;font-weight:800;color:var(--tx);margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline}
+.nsub{font-size:11.5px;color:var(--tx3,#7a7a7e);margin:14px 0 8px}
+.fitem{display:block;padding:11px 12px;border-radius:11px;background:var(--s2);margin-bottom:7px;text-decoration:none;position:relative;border-left:3px solid transparent}
+.fitem.lv3{border-left-color:#FF4D4F;background:rgba(255,77,79,.07)}
+.fitem.lv2{border-left-color:#F0B429;background:rgba(240,180,41,.06)}
+.fitem.lv0{background:var(--s2)}
+.ft{display:flex;gap:7px;align-items:center;margin-bottom:4px}
+.fd{font-size:10.5px;color:var(--tx3,#7a7a7e)}
+.fg{font-size:10px;font-weight:700;color:var(--tx2);background:var(--s3,#1a1a1c);padding:1px 6px;border-radius:5px}
+.fk{font-size:13.5px;font-weight:700;color:var(--tx);line-height:1.45}
+.fk.dim{font-weight:500;color:var(--tx2);font-size:12.5px}
+.fa{font-size:10.5px;color:var(--tx3,#7a7a7e);margin-top:3px}
+.nitem{display:block;padding:11px 12px;border-radius:11px;background:var(--s2);margin-bottom:7px;text-decoration:none}
+.ntop{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.ntag{font-size:10px;font-weight:700;color:#0B0B0C;background:var(--tx2);padding:2px 7px;border-radius:5px}
+.nag{font-size:10.5px;color:var(--tx3,#7a7a7e)}
+.ntt{font-size:13px;color:var(--tx);line-height:1.5;font-weight:600}
+.npb{font-size:10.5px;color:var(--tx3,#7a7a7e);margin-top:4px}
 </style>
 </head>
 <body>
@@ -505,7 +528,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.10-K</span>
+      <span class="ver">v2026.08.10-N</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -623,7 +646,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   <div class="ovl-in">
     <canvas id="cardCv" width="1080" height="1080"></canvas>
     <div class="ovl-act">
-      <button class="main" id="cardSave">저장 · 공유</button>
+      <button class="main" id="cardSave">갤러리에 저장</button>
+      <button id="cardShare">공유</button>
       <button id="cardClose">닫기</button>
     </div>
     <div class="ovl-tip" id="cardTip">이미지를 길게 눌러 저장할 수도 있습니다</div>
@@ -641,8 +665,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.10-K';
-console.log('%c ANDRE99 v2026.08.10-K ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.10-N';
+console.log('%c ANDRE99 v2026.08.10-N ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -1205,7 +1229,7 @@ function screenCardHTML(d){
     '<div id="scrImp"'+(SCR_TAB==='imp'?'':' hidden')+'>'+impBody+'</div>'+
     '<div class="dnosum"><b>두 점수는 더하지 않습니다.</b> 재무 건전성은 지금까지의 성적, '+
       '실적 개선도는 최근 변화의 방향입니다. 성적이 낮은 채로 변화만 좋을 수도 있습니다.</div>'+
-    (ADMIN ? '<div class="admbar"><button class="sbtn" id="cardScr">▮ 이 탭 카드 만들기</button>'+
+    (ADMIN ? '<div class="admbar" hidden><button class="sbtn" id="cardScr">▮ 이 탭 카드 만들기</button>'+
       '<span class="admtag">운영자</span></div>' : '');
 }
 
@@ -1253,7 +1277,7 @@ function sbcPct(d){
 function setSub(sub){
   CUR_SUB=sub;
   var onScreen = (CUR_CAT==='screen');
-  ['fund','tech'].forEach(function(s){
+  ['fund','tech','news','filing'].forEach(function(s){
     document.querySelectorAll('.sub-'+s).forEach(function(el){
       if(!onScreen || s!==sub) el.setAttribute('hidden',''); else el.removeAttribute('hidden');
     });
@@ -1263,6 +1287,90 @@ function setSub(sub){
     if(onScreen) b.style.display='flex'; else b.style.display='none';
   });
   if(onScreen && sub==='tech') loadTech(TECH_SYM, TECH_TF);
+  if(onScreen && sub==='news') loadNews(TECH_SYM);
+  if(onScreen && sub==='filing') loadFilings(TECH_SYM);
+}
+
+/* ══ 뉴스 (2026.08.10) ══
+   저작권: 제목 원문 + 링크 + 언론사 + 시각만 표시. 요약·이미지 없음. 번역 안 함.
+   카드 이미지에는 기사 제목을 넣지 않는다. */
+var NEWS={}, FIL={};
+function loadNews(sym){
+  if(!sym) return;
+  var box=$('newsBox'); if(!box) return;
+  if(NEWS[sym]){ drawNews(NEWS[sym]); return; }
+  box.innerHTML='<div class="tvnote">불러오는 중…</div>';
+  fetchT(API+'/news?symbol='+encodeURIComponent(sym)+'&_='+Date.now(), 20000)
+    .then(function(r){return r.json()}).then(function(t){
+      if(!t){ box.innerHTML='<div class="tvnote">불러오지 못했습니다</div>'; return; }
+      NEWS[sym]=t; drawNews(t);
+    }).catch(function(){ box.innerHTML='<div class="tvnote">불러오지 못했습니다</div>'; });
+}
+function loadFilings(sym){
+  if(!sym) return;
+  var box=$('filBox'); if(!box) return;
+  if(FIL[sym]){ drawFilings(FIL[sym]); return; }
+  box.innerHTML='<div class="tvnote">불러오는 중…</div>';
+  fetchT(API+'/filings?symbol='+encodeURIComponent(sym)+'&_='+Date.now(), 20000)
+    .then(function(r){return r.json()}).then(function(t){
+      if(!t){ box.innerHTML='<div class="tvnote">불러오지 못했습니다</div>'; return; }
+      FIL[sym]=t; drawFilings(t);
+    }).catch(function(){ box.innerHTML='<div class="tvnote">불러오지 못했습니다</div>'; });
+}
+function drawFilings(t){
+  var box=$('filBox'); if(!box) return;
+  var o='';
+  var al=t.alerts||[], rt=t.routine||[];
+  if(al.length){
+    o+='<div class="nsh">주의가 필요한 공시</div>'+al.map(function(x){
+      return '<a class="fitem lv'+x.level+'" href="'+esc(x.link)+'" target="_blank" rel="noopener">'+
+        '<div class="ft"><span class="fd">'+esc(x.date)+'</span><span class="fg">'+esc(x.form)+'</span></div>'+
+        '<div class="fk">'+esc(x.ko)+'</div><div class="fa">'+esc(x.ago)+'</div></a>';
+    }).join('');
+  }else if(t.status==='ok'){
+    o+='<div class="nsh">주의가 필요한 공시</div><div class="tvnote">최근 주의 공시가 없습니다</div>';
+  }
+  if(rt.length){
+    o+='<div class="nsub">정기 제출 서류</div>'+rt.map(function(x){
+      return '<a class="fitem lv0" href="'+esc(x.link)+'" target="_blank" rel="noopener">'+
+        '<div class="ft"><span class="fd">'+esc(x.date)+'</span><span class="fg">'+esc(x.form)+'</span></div>'+
+        '<div class="fk dim">'+esc(x.ko)+'</div><div class="fa">'+esc(x.ago)+'</div></a>';
+    }).join('');
+  }
+  if(!al.length && !rt.length) o+='<div class="tvnote">공시를 불러오지 못했습니다 · 측정중</div>';
+  o+='<div class="tnb">출처: SEC EDGAR(미국 증권거래위원회) · 정부 공개자료<br>'+
+     (t.company?esc(t.company)+' · CIK '+esc(t.cik||'')+'<br>':'')+
+     '공시는 정해진 양식이라 한국어로 옮겼습니다. 해석이 아니라 사실 전달입니다.</div>';
+  box.innerHTML=o;
+}
+function drawNews(t){
+  var box=$('newsBox'); if(!box) return;
+  var o='';
+  var ko=t.ko||[], en=t.en||[];
+  if(ko.length){
+    o+='<div class="nsh">한국어 기사 <span class="note">'+(t.ko_name?esc(t.ko_name):esc(t.symbol))+'</span></div>';
+    o+=ko.map(function(x){
+      return '<a class="nitem" href="'+esc(x.link)+'" target="_blank" rel="noopener">'+
+        '<div class="ntop"><span class="ntag ko">한국어</span><span class="nag">'+esc(x.ago)+'</span></div>'+
+        '<div class="ntt">'+esc(x.title)+'</div>'+
+        '<div class="npb">'+esc(x.publisher)+'</div></a>';
+    }).join('');
+  }else{
+    o+='<div class="nsh">한국어 기사</div><div class="tvnote">한국어 기사를 찾지 못했습니다 · 측정중</div>';
+  }
+  o+='<div class="nsh" style="margin-top:22px">원문 기사 <span class="note">영어</span></div>';
+  if(en.length){
+    o+=en.map(function(x){
+      return '<a class="nitem" href="'+esc(x.link)+'" target="_blank" rel="noopener">'+
+        '<div class="ntop"><span class="ntag">'+esc(x.tag)+'</span><span class="nag">'+esc(x.ago)+'</span></div>'+
+        '<div class="ntt">'+esc(x.title)+'</div>'+
+        '<div class="npb">'+esc(x.publisher)+'</div></a>';
+    }).join('');
+  }else{ o+='<div class="tvnote">원문 기사를 불러오지 못했습니다 · 측정중</div>'; }
+  o+='<div class="tnb">제목과 링크만 전달합니다. 요약·본문·사진은 가져오지 않으며 번역하지 않습니다.<br>'+
+     '제목을 누르면 언론사 원문으로 이동합니다.<br>'+
+     '구글 뉴스 · 야후 파이낸스를 통해 수집했습니다.</div>';
+  box.innerHTML=o;
 }
 
 function loadTech(sym,tf){
@@ -1583,6 +1691,14 @@ function loadStock(sym){
 
 
 
+    // ── 뉴스 ──
+    html+='<div class="sec cat-screen sub-news" hidden><div class="sec-h"><h2>뉴스</h2></div>'+
+      '<div id="newsBox"><div class="tvnote">불러오는 중…</div></div></div>';
+
+    // ── 공시 ──
+    html+='<div class="sec cat-screen sub-filing" hidden><div class="sec-h"><h2>공시</h2><span class="note">SEC EDGAR</span></div>'+
+      '<div id="filBox"><div class="tvnote">불러오는 중…</div></div></div>';
+
     // ── 기술적 분석 (자체 SVG) ──
     html+='<div class="sec cat-screen sub-tech" hidden><div class="sec-h"><h2>주가 차트</h2><span class="note">야후 · 수정주가</span></div>'+
       '<div class="tfs">'+
@@ -1606,7 +1722,7 @@ function loadStock(sym){
       '</div>'+
       '<button class="tnbtn" id="tnToggle">▾ 이 종목은 얼마나 흔들렸나</button>'+
       '<div id="techNumsWrap" hidden><div id="techNums"></div></div>'+
-      (ADMIN ? '<div class="admbar"><button class="sbtn" id="cardTech">▮ 이 탭 카드 만들기</button><span class="note">운영자</span></div>' : '')+
+      (ADMIN ? '<div class="admbar" hidden><button class="sbtn" id="cardTech">▮ 이 탭 카드 만들기</button><span class="note">운영자</span></div>' : '')+
     '</div>';
 
     // ── 주가 차트 (TradingView) ──
@@ -1666,7 +1782,7 @@ function loadStock(sym){
         html+='<a class="ovw-w" href="'+esc(ci.website)+'" target="_blank" rel="noopener">공식 홈페이지 →</a>';
       }
       html+='</div>';
-      if(ADMIN) html+='<div class="admbar"><button class="sbtn" id="cardInfo">▮ 이 탭 카드 만들기</button>'+
+      if(ADMIN) html+='<div class="admbar" hidden><button class="sbtn" id="cardInfo">▮ 이 탭 카드 만들기</button>'+
         '<span class="admtag">운영자</span></div>';
       html+='</div>';
     }
@@ -1679,13 +1795,22 @@ function loadStock(sym){
       '<button class="catchip on" data-cat="screen">스크린</button>'+
       '<button class="catchip" data-cat="earn">실적</button>'+
       '<button class="catchip" data-cat="info">기업개요</button></div>'+
-      '<div class="subbar"><button class="subchip on" data-sub="fund">기본적 분석</button>'+
-      '<button class="subchip" data-sub="tech">기술적 분석</button></div>'+html;
+      '<div class="subbar"><button class="subchip on" data-sub="fund">재무</button>'+
+      '<button class="subchip" data-sub="tech">차트</button>'+
+      '<button class="subchip" data-sub="news">뉴스</button>'+
+      '<button class="subchip" data-sub="filing">공시</button></div>'+
+      (ADMIN ? '<div class="allbar"><button class="sbtn" id="cardAll">▮ 카드 전체 저장</button><span class="note">운영자</span></div>' : '')+html;
 
     $('stockBody').innerHTML=html;
     TECH_SYM=sym; TECH={}; CUR_SUB='fund'; TECH_TF='d';
     window.LAST_STOCK=d;
     setCat('screen'); bindTech();
+    var ca=$('cardAll');
+    if(ca) ca.addEventListener('click',function(){
+      var t=TECH[TECH_SYM+'|'+TECH_TF];
+      if(t) d.__tech=t;
+      makeAllCards(d);
+    });
     document.querySelectorAll('.catchip').forEach(function(b){
       b.addEventListener('click',function(){ setCat(b.dataset.cat); });
     });
@@ -1743,7 +1868,7 @@ function renderStockEarn(d){
   document.body.removeChild(tmp);
   if(real) real.id='earnBody';
   box.innerHTML = out + (ADMIN
-    ? '<div class="admbar"><button class="sbtn" id="cardEarn">▮ 이 탭 카드 만들기</button>'+
+    ? '<div class="admbar" hidden><button class="sbtn" id="cardEarn">▮ 이 탭 카드 만들기</button>'+
       '<span class="admtag">운영자</span></div>' : '');
   var ce=$('cardEarn');
   if(ce) ce.addEventListener('click',function(){ makeVCard(LAST,'earn'); });
@@ -2279,25 +2404,28 @@ function makeVCard(d, kind){
     foot='실적이 좋아도 주가는 다르게 움직일 수 있습니다.';
   }
 
-  // ── 제목 박스 (동적 높이) ──
-  y+=90;
-  var boxH = score ? 168 : 120;
+  // ── 제목 박스 (2026-08-10 재설계: 안쪽 여백 44px 고정, 상하 균등) ──
+  y += 84;
+  var BP=44;                                   // 박스 안쪽 여백
+  var boxH = score ? (BP + 40 + 26 + 86 + BP) : (BP + 40 + 18 + 34 + BP);
   g.fillStyle='#151516'; rr(g,PAD,y,W-PAD*2,boxH,28); g.fill();
-  F(32,600); T(title, PAD+40, y+62, '#A0A0A5');
-  if(score){ F(80,800,true); T(score, PAD+40, y+140); }
-  /* 2026-08-10 수정: score가 있으면 sub를 우측에만 1회 그린다.
-     기존에는 같은 좌표(PAD+40, y+140)에 score와 sub를 겹쳐 그렸다. */
+
+  var ty = y + BP + 34;                        // 제목 베이스라인
+  F(34,600); T(clip(title, W-PAD*2-BP*2), PAD+BP, ty, '#A0A0A5');
+
   if(score){
-    var scW=g.measureText(score).width;
-    F(28,500);
-    T(clip(sub, W-PAD*2-80-scW-40), W-PAD-40, y+140, '#6B6B70', 'right');
+    var sy = ty + 26 + 66;                     // 점수 베이스라인
+    F(86,800,true); T(score, PAD+BP, sy);
+    var scW = g.measureText(score).width;
+    F(30,500);
+    T(clip(sub, W-PAD*2-BP*2-scW-56), W-PAD-BP, sy, '#6B6B70', 'right');
   }else{
-    F(28,500);
-    T(clip(sub, W-PAD*2-80), PAD+40, y+108, '#6B6B70', 'left');
+    F(30,500);
+    T(clip(sub, W-PAD*2-BP*2), PAD+BP, ty + 18 + 26, '#6B6B70', 'left');
   }
 
   // ── 항목 (동적 배치) ──
-  y += boxH + 70;
+  y += boxH + 62;
   var LH = items.length>10 ? 78 : 88;
   items.slice(0,12).forEach(function(it){
     if(it.s){
@@ -2320,15 +2448,55 @@ function makeVCard(d, kind){
   F(27,500); T(clip(foot, W-PAD*2), PAD, y, '#6B6B70');
   F(25,500); T('andre99 · '+new Date().toLocaleDateString('ko-KR')+' 기준 · 투자자문 아님', PAD, y+50, '#4A4A4E');
 
+  var fname=(d.symbol||'andre99')+'_'+kind+'.png';
+  if(BULK){ BULK.push({canvas:c, name:fname}); return; }
+  showCardOvl(c, fname);
+}
+
+/* 카드 미리보기 + 저장/공유 */
+var BULK=null;
+function showCardOvl(c, fname){
+  var ov=$('cardOvl'), cv=$('cardCv');
+  if(!ov||!cv){ dlCanvas(c,fname); return; }
+  cv.width=c.width; cv.height=c.height;
+  cv.getContext('2d').drawImage(c,0,0);
+  ov.classList.add('on');
+  var save=$('cardSave'), sh=$('cardShare'), cl=$('cardClose');
+  if(save) save.onclick=function(){ dlCanvas(c,fname); };
+  if(sh) sh.onclick=function(){ shareCanvas(c,fname); };
+  if(cl) cl.onclick=function(){ ov.classList.remove('on'); };
+}
+function dlCanvas(c,fname){
   c.toBlob(function(b){
-    var f=new File([b], (d.symbol||'andre99')+'_'+kind+'.png', {type:'image/png'});
-    if(navigator.canShare&&navigator.canShare({files:[f]})){
-      navigator.share({files:[f]}).catch(function(){});
-    }else{
-      var a=document.createElement('a');
-      a.href=URL.createObjectURL(b); a.download=f.name; a.click();
-    }
+    var u=URL.createObjectURL(b);
+    var a=document.createElement('a');
+    a.href=u; a.download=fname; document.body.appendChild(a); a.click();
+    setTimeout(function(){ a.remove(); URL.revokeObjectURL(u); },1200);
   },'image/png');
+}
+function shareCanvas(c,fname){
+  c.toBlob(function(b){
+    var f=new File([b],fname,{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})) navigator.share({files:[f]}).catch(function(){});
+    else dlCanvas(c,fname);
+  },'image/png');
+}
+
+/* 전체 카드 한 번에 저장 */
+function makeAllCards(d){
+  if(!d) return;
+  BULK=[];
+  ['fund','imp','earn','info'].forEach(function(k){ try{ makeVCard(d,k); }catch(e){} });
+  if(d.__tech){ try{ makeVCard(d,'tech'); }catch(e){} }
+  var list=BULK; BULK=null;
+  if(!list.length){ alert('만들 수 있는 카드가 없습니다'); return; }
+  var i=0;
+  (function next(){
+    if(i>=list.length) return;
+    dlCanvas(list[i].canvas, list[i].name);
+    i++; setTimeout(next, 700);
+  })();
+  alert(list.length+'장을 저장합니다');
 }
 
 /* ── 관심 종목 ── */
