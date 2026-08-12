@@ -440,8 +440,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 /* ══ 기술적 분석 탭 (2026.08.10) ══ */
 .subbar{display:flex;gap:6px;padding:7px 16px 12px;margin:0}
-.allbar{display:flex;align-items:center;gap:8px;padding:0 16px 12px}
+.allbar{display:flex;align-items:center;gap:8px;padding:12px 16px 0}
 .allbar .sbtn{flex:1}
+.eh-chips.rev{margin-top:8px}
+.eh-chips.rev .v{font-size:22px}
 .subchip{flex:1;min-height:38px;border-radius:12px;background:var(--s2);color:var(--tx2);font-size:12.5px;font-weight:700;border:1px solid transparent;padding:0}
 .ntag.ko{background:#4ECDC4;color:#08080A}
 .subchip.on{background:var(--s3,#1a1a1c);color:var(--tx);border-color:var(--tx3,#3a3a3d)}
@@ -511,6 +513,35 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .nag{font-size:10.5px;color:var(--tx3,#7a7a7e)}
 .ntt{font-size:13px;color:var(--tx);line-height:1.5;font-weight:600}
 .npb{font-size:10.5px;color:var(--tx3,#7a7a7e);margin-top:4px}
+
+/* ══ 카드 저장 버튼 · 선택 창 (2026-08-11) ══ */
+#cardFab{position:fixed;right:16px;bottom:78px;width:52px;height:52px;border-radius:50%;
+  background:var(--tx);color:#0B0B0C;font-size:19px;font-weight:800;z-index:40;display:none;
+  align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.55);border:none}
+#cardFab:active{transform:scale(.94)}
+.ovl-in.pick{max-width:340px;padding:22px 20px}
+.ovl-in.pick h3{margin:0 0 16px;font-size:15px;font-weight:800;color:var(--tx)}
+.pkrow{display:flex;align-items:center;gap:11px;padding:12px 12px;border-radius:11px;
+  background:var(--s2);margin-bottom:7px;cursor:pointer}
+.pkrow input{width:19px;height:19px;accent-color:#FF4D4F;flex:0 0 auto}
+.pkrow span{font-size:13.5px;font-weight:600;color:var(--tx)}
+#pickGo:disabled{opacity:.4}
+
+/* ══ 경제 지표 (2026-08-11) ══ */
+.ec-row{padding:14px 0;border-bottom:1px solid var(--s2)}
+.ec-row:last-of-type{border-bottom:none}
+.ec-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.ec-n{font-size:14px;font-weight:700;color:var(--tx)}
+.ec-v{font-size:22px;font-weight:800;color:var(--tx);white-space:nowrap}
+.ec-c{font-size:12px;font-weight:700;margin-left:8px}
+.ec-d{font-size:11.5px;color:var(--tx2);margin-top:5px;line-height:1.55}
+.ec-a{font-size:10.5px;color:var(--tx3,#7a7a7e);margin-top:4px}
+.ec-sp{margin:10px 0 4px}
+.ec-sp svg{width:100%;height:64px;display:block}
+.ec-sp .spl{fill:none;stroke:#F3F3F4;stroke-width:1.6}
+.ec-sp .sp0{stroke:#FF4D4F;stroke-width:1;stroke-dasharray:4 3;opacity:.7}
+.ec-w{margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(240,180,41,.10);
+  color:#F0B429;font-size:11.5px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -528,7 +559,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.10-N</span>
+      <span class="ver">v2026.08.11-C</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -618,19 +649,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <span class="cnt" id="calCnt"></span>
     </div>
     <div id="calBody"><div class="skel">불러오는 중…</div></div>
+    <div class="allbar" id="calCardBar" hidden><button class="sbtn" id="calCard">▮ 이번 주 카드 만들기</button><span class="note">운영자</span></div>
   </div>
   <div id="earnBody" hidden></div>
 </main>
 
 <!-- ══ 경제 ══ -->
 <main class="page" id="p-eco">
-  <div class="sec">
-    <div class="sec-h"><h2>경제 지표</h2></div>
-    <div class="empty">
-      <h3>연동 준비 중입니다</h3>
-      <p>발표 일정, 예상치·이전치·실제치를 준비하고 있습니다.<br>없는 정보를 채워 넣지 않으려고 비워 두었습니다.</p>
-    </div>
-  </div>
+  <div id="ecoBody"><div class="skel">불러오는 중…</div></div>
 </main>
 
 <!-- ══ 관심 ══ -->
@@ -641,6 +667,20 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   </div>
   <p class="foot">관심 종목은 이 기기에만 저장됩니다.</p>
 </main>
+
+<!-- 카드 선택 저장 (2026-08-11) -->
+<button id="cardFab" title="카드 저장" aria-label="카드 저장">▮</button>
+<div class="ovl" id="pickOvl">
+  <div class="ovl-in pick">
+    <h3>저장할 카드를 고르세요</h3>
+    <div id="pickList"></div>
+    <div class="ovl-act">
+      <button class="main" id="pickGo">저장</button>
+      <button id="pickClose">취소</button>
+    </div>
+    <div class="ovl-tip">고른 카드가 한 장씩 순서대로 저장됩니다</div>
+  </div>
+</div>
 
 <div class="ovl" id="cardOvl">
   <div class="ovl-in">
@@ -665,8 +705,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.10-N';
-console.log('%c ANDRE99 v2026.08.10-N ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.11-C';
+console.log('%c ANDRE99 v2026.08.11-C ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -708,12 +748,15 @@ function show(t){
   document.querySelectorAll('.nb').forEach(function(b){ b.classList.toggle('on',b.dataset.tab===t); });
   window.scrollTo(0,0);
   if(t==='earn'&&!CAL_WEEK){ calInit(); }
+  if(t==='eco'){ loadEco(); }
 }
 document.querySelectorAll('.nb').forEach(function(b){ b.addEventListener('click',function(){ show(b.dataset.tab); }); });
 if($('wkPrev')) $('wkPrev').addEventListener('click',function(){ shiftWeek(-1); });
 if($('wkNext')) $('wkNext').addEventListener('click',function(){ shiftWeek(1); });
 if($('wkNow'))  $('wkNow').addEventListener('click',function(){ CAL_WEEK=null; calInit(); });
 if($('calQ'))   $('calQ').addEventListener('input',function(){ CAL_Q=this.value; renderCalList(); });
+if($('calCard')) $('calCard').addEventListener('click', makeWeekCard);
+if(ADMIN && $('calCardBar')) $('calCardBar').removeAttribute('hidden');
 $('toSearch').addEventListener('click',function(){ show('stock'); setTimeout(function(){$('q').focus();},60); });
 
 /* ── 시장 상태 ── */
@@ -1607,6 +1650,9 @@ function bindTech(){
       makeVCard(window.LAST_STOCK, 'tech');
     }
   });
+  var fb=$('cardFab'); if(fb && !fb.__b){ fb.__b=1; fb.addEventListener('click',openCardPick); }
+  var pg=$('pickGo'); if(pg && !pg.__b){ pg.__b=1; pg.addEventListener('click',runCardPick); }
+  var pc=$('pickClose'); if(pc && !pc.__b){ pc.__b=1; pc.addEventListener('click',function(){ $('pickOvl').classList.remove('on'); }); }
   var tg=$('tnToggle');
   if(tg) tg.addEventListener('click',function(){
     var w=$('techNumsWrap'); if(!w) return;
@@ -1799,18 +1845,13 @@ function loadStock(sym){
       '<button class="subchip" data-sub="tech">차트</button>'+
       '<button class="subchip" data-sub="news">뉴스</button>'+
       '<button class="subchip" data-sub="filing">공시</button></div>'+
-      (ADMIN ? '<div class="allbar"><button class="sbtn" id="cardAll">▮ 카드 전체 저장</button><span class="note">운영자</span></div>' : '')+html;
+      html;
 
     $('stockBody').innerHTML=html;
     TECH_SYM=sym; TECH={}; CUR_SUB='fund'; TECH_TF='d';
     window.LAST_STOCK=d;
     setCat('screen'); bindTech();
-    var ca=$('cardAll');
-    if(ca) ca.addEventListener('click',function(){
-      var t=TECH[TECH_SYM+'|'+TECH_TF];
-      if(t) d.__tech=t;
-      makeAllCards(d);
-    });
+    var fab=$('cardFab'); if(fab) fab.style.display=ADMIN?'flex':'none';
     document.querySelectorAll('.catchip').forEach(function(b){
       b.addEventListener('click',function(){ setCat(b.dataset.cat); });
     });
@@ -1952,9 +1993,16 @@ function earnHeroHTML(d){
     (cur.eps_estimate!=null?'예상 <b>$'+Number(cur.eps_estimate).toFixed(2)+'</b> → ':'')+
     '실제 <b>$'+Number(cur.eps_actual).toFixed(2)+'</b>'+
     (sp!=null?' <span class="'+dirCls(sp)+'">'+sgn(sp)+(sp>=0?' 상회':' 하회')+'</span>':'')+'</span></div>';
+  var revQoQ=null, revYoY=null;
   if(qCur&&qCur.revenue!=null){
-    rows+='<div class="dr"><span class="k">매출</span><span class="v"><b>'+bn(qCur.revenue)+'</b>'+
-      (qPrev&&qPrev.revenue!=null?' · 전분기 '+bn(qPrev.revenue):'')+'</span></div>';
+    if(qPrev&&qPrev.revenue) revQoQ=(qCur.revenue-qPrev.revenue)/Math.abs(qPrev.revenue)*100;
+    var fq=(d.fin_quarters||[]);
+    if(fq.length>=5 && fq[0].revenue) revYoY=(qCur.revenue-fq[0].revenue)/Math.abs(fq[0].revenue)*100;
+    rows+='<div class="dr"><span class="k">매출</span><span class="v">'+
+      '<b>'+bn(qCur.revenue)+'</b>'+
+      (revQoQ!=null?' · 전분기 대비 <b class="'+dirCls(revQoQ)+'">'+sgn(revQoQ)+'</b>':'')+
+      (revYoY!=null?' · 작년 대비 <b class="'+dirCls(revYoY)+'">'+sgn(revYoY)+'</b>':'')+
+      '</span></div>';
   }
 
   return '<div class="ehero">'+
@@ -1969,6 +2017,16 @@ function earnHeroHTML(d){
         '<div class="v">'+(cur.eps_actual!=null?'$'+Number(cur.eps_actual).toFixed(2):'—')+'</div>'+
         '<div class="s">'+(epsQoQ!=null?(epsQoQ>=0?'▲ ':'▼ ')+Math.abs(epsQoQ).toFixed(1)+'%':'EPS')+'</div></div>'+
     '</div>'+
+    /* 매출 칩 (2026-08-11 추가) · 과거 분기 매출 예상치는 야후가 주지 않아 실제값만 비교 */
+    (qCur&&qCur.revenue!=null ?
+      '<div class="eh-chips rev">'+
+        '<div class="chip"><div class="k">전분기 '+qL(prev)+'</div>'+
+          '<div class="v">'+(qPrev&&qPrev.revenue!=null?bn(qPrev.revenue):'—')+'</div>'+
+          '<div class="s">매출</div></div>'+
+        '<div class="chip main"><div class="k">이번 분기 '+qL(cur)+'</div>'+
+          '<div class="v">'+bn(qCur.revenue)+'</div>'+
+          '<div class="s">'+(revQoQ!=null?(revQoQ>=0?'▲ ':'▼ ')+Math.abs(revQoQ).toFixed(1)+'%':'매출')+'</div></div>'+
+      '</div>' : '')+
     '<div class="eh-detail">'+rows+'</div>'+
     '<div class="eh-caution">ⓘ '+VERDICT.caution+'</div></div>';
 }
@@ -2482,21 +2540,236 @@ function shareCanvas(c,fname){
   },'image/png');
 }
 
-/* 전체 카드 한 번에 저장 */
-function makeAllCards(d){
-  if(!d) return;
-  BULK=[];
-  ['fund','imp','earn','info'].forEach(function(k){ try{ makeVCard(d,k); }catch(e){} });
-  if(d.__tech){ try{ makeVCard(d,'tech'); }catch(e){} }
-  var list=BULK; BULK=null;
-  if(!list.length){ alert('만들 수 있는 카드가 없습니다'); return; }
-  var i=0;
-  (function next(){
-    if(i>=list.length) return;
-    dlCanvas(list[i].canvas, list[i].name);
-    i++; setTimeout(next, 700);
-  })();
-  alert(list.length+'장을 저장합니다');
+
+
+/* ══ 경제 지표 (2026-08-11) ══
+   FRED 과거 발표값만 표시한다. 예측·전망은 담지 않는다. */
+var ECO=null, ECO_LOADING=false;
+function loadEco(){
+  if(ECO){ drawEco(ECO); return; }
+  if(ECO_LOADING) return;
+  var box=$('ecoBody'); if(!box) return;
+  ECO_LOADING=true;
+  box.innerHTML='<div class="sec"><div class="skel">불러오는 중…</div></div>';
+  fetchT(API+'/economy?_='+Date.now(), 20000)
+    .then(function(r){return r.json()})
+    .then(function(j){ ECO_LOADING=false;
+      if(!j){ box.innerHTML='<div class="sec"><div class="empty"><h3>불러오지 못했습니다</h3></div></div>'; return; }
+      ECO=j; drawEco(j);
+    })
+    .catch(function(){ ECO_LOADING=false;
+      box.innerHTML='<div class="sec"><div class="empty"><h3>불러오지 못했습니다</h3><p>잠시 후 다시 시도해 주세요.</p></div></div>'; });
+}
+function ecoRow(x){
+  if(!x) return '';
+  var v=x.value, u=x.unit||'';
+  var vs=(v==null)?'측정중':(Number(v).toFixed(Math.abs(v)>=100?0:2)+u);
+  var ch='';
+  if(x.change!=null){
+    var s=(x.change>0?'▲ +':(x.change<0?'▼ ':'')) + Math.abs(x.change).toFixed(2) + (x.change_unit||'');
+    ch='<span class="ec-c '+dirCls(x.change)+'">'+esc(s)+'</span>';
+  }
+  return '<div class="ec-row">'+
+    '<div class="ec-top"><span class="ec-n">'+esc(x.name)+'</span>'+
+      '<span class="ec-v n">'+esc(vs)+ch+'</span></div>'+
+    (x.desc?'<div class="ec-d">'+esc(x.desc)+'</div>':'')+
+    (x.as_of?'<div class="ec-a">'+esc(x.as_of)+' 기준</div>':'')+
+  '</div>';
+}
+function ecoSpark(sp){
+  if(!sp||!sp.points||sp.points.length<4) return '';
+  var P=sp.points, W=300, H=64, PL=2, PR=2, PT=8, PB=8;
+  var lo=sp.min, hi=sp.max;
+  if(lo>0) lo=0; if(hi<0) hi=0;                 /* 0선이 항상 보이게 */
+  var pad=(hi-lo)*0.12||0.1; lo-=pad; hi+=pad;
+  var n=P.length, bw=(W-PL-PR)/(n-1);
+  function X(i){ return PL+bw*i; }
+  function Y(v){ return PT+(H-PT-PB)-((v-lo)/(hi-lo))*(H-PT-PB); }
+  var d='';
+  for(var i=0;i<n;i++) d+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(P[i]).toFixed(1);
+  var zy=Y(0);
+  return '<div class="ec-sp"><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
+    '<line x1="0" y1="'+zy.toFixed(1)+'" x2="'+W+'" y2="'+zy.toFixed(1)+'" class="sp0"/>'+
+    '<path d="'+d+'" class="spl"/></svg>'+
+    '<div class="ec-a">최근 12개월 · '+sp.min.toFixed(2)+'%p ~ '+sp.max.toFixed(2)+'%p'+
+    (sp.zero_crossed?' · 이 기간에 마이너스였던 적이 있습니다':'')+'</div></div>';
+}
+function drawEco(j){
+  var box=$('ecoBody'); if(!box) return;
+  if(j.status==='nokey'){
+    box.innerHTML='<div class="sec"><div class="sec-h"><h2>경제 지표</h2></div>'+
+      '<div class="empty"><h3>연동 준비 중입니다</h3>'+
+      '<p>데이터 연결을 준비하고 있습니다.<br>없는 정보를 채워 넣지 않으려고 비워 두었습니다.</p></div></div>';
+    return;
+  }
+  var R=j.rates||{}, C=j.credit||{}, P=j.prices||{};
+  var o='';
+
+  o+='<div class="sec"><div class="sec-h"><h2>금리</h2><span class="note">FRED</span></div>'+
+     ecoRow(R.DFF)+ecoRow(R.DGS10)+ecoRow(R.DGS2)+ecoRow(R.T10Y2Y);
+  if(R.T10Y2Y){
+    o+=ecoSpark(j.spark);
+    o+='<div class="ec-w">마이너스가 되면 과거에 침체가 뒤따랐습니다. '+
+       '앞으로도 그럴 것이라는 뜻은 아닙니다.</div>';
+  }
+  o+='</div>';
+
+  o+='<div class="sec"><div class="sec-h"><h2>시장이 걱정하는 정도</h2></div>'+
+     ecoRow(C.BAMLH0A0HYM2)+ecoRow(C.VIXCLS)+'</div>';
+
+  o+='<div class="sec"><div class="sec-h"><h2>물가와 일자리</h2></div>'+
+     ecoRow(P.CPIAUCSL)+ecoRow(P.UNRATE)+ecoRow(P.PAYEMS)+'</div>';
+
+  o+='<div class="sec"><div class="tnb">출처: FRED(미국 세인트루이스 연방준비은행)<br>'+
+     '지표마다 발표 주기가 다릅니다. 각 항목의 기준일을 확인해 주세요.<br>'+
+     '과거에 발표된 값이며 앞으로를 예측하지 않습니다.'+
+     ((j.failed&&j.failed.length)?'<br>일부 항목을 불러오지 못했습니다 · 측정중':'')+
+     '</div></div>';
+  box.innerHTML=o;
+}
+
+/* 주간 실적 카드 (2026-08-11)
+   기준: 한국어 이름표(KO_NAME)에 있는 종목만 · 최대 8개 · 없으면 생성 안 함 */
+function makeWeekCard(){
+  var btn=$('calCard'); if(btn){ btn.disabled=true; btn.textContent='만드는 중…'; }
+  function done(){ if(btn){ btn.disabled=false; btn.textContent='▮ 이번 주 카드 만들기'; } }
+  fetchT(API+'/calendar?week='+encodeURIComponent(CAL_WEEK)+'&ko=1&top=20&_='+Date.now(), 20000)
+    .then(function(r){return r.json()})
+    .then(function(j){
+      done();
+      if(!j || j.status!=='ok'){ alert('불러오지 못했습니다'); return; }
+      var rows=[];
+      (j.days||[]).forEach(function(d){
+        (d.items||[]).forEach(function(x){ rows.push({d:d.date, s:x.s, ko:x.ko||x.s, h:x.h, e:x.e, r:x.r}); });
+      });
+      if(!rows.length){ alert('이번 주에는 해당하는 발표가 없습니다'); return; }
+      rows.sort(function(a,b){ return a.d===b.d ? (b.r||0)-(a.r||0) : (a.d<b.d?-1:1); });
+      drawWeekCard(rows.slice(0,8), j.from, j.to);
+    })
+    .catch(function(){ done(); alert('불러오지 못했습니다'); });
+}
+function drawWeekCard(rows, from, to){
+  var W=1080, H=1920;
+  var c=document.createElement('canvas'); c.width=W; c.height=H;
+  var g=c.getContext('2d');
+  var FF='"Pretendard Variable", Pretendard, -apple-system, sans-serif';
+  var MO='"SFMono-Regular", ui-monospace, Menlo, monospace';
+  g.fillStyle='#0B0B0C'; g.fillRect(0,0,W,H);
+  g.textBaseline='alphabetic';
+  var PAD=88, y=0;
+  var F=function(sz,w,mono){ g.font=(w||700)+' '+sz+'px '+(mono?MO:FF); };
+  var T=function(t,x,yy,col,al){ g.fillStyle=col||'#F3F3F4'; g.textAlign=al||'left'; g.fillText(String(t),x,yy); };
+  function rr(ctx,x,yy,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,yy); ctx.arcTo(x+w,yy,x+w,yy+h,r);
+    ctx.arcTo(x+w,yy+h,x,yy+h,r); ctx.arcTo(x,yy+h,x,yy,r); ctx.arcTo(x,yy,x+w,yy,r); ctx.closePath(); }
+  function bnc(v){ if(v==null) return '—';
+    var a=Math.abs(v);
+    if(a>=1e12) return '$'+(v/1e12).toFixed(1)+'T';
+    if(a>=1e9)  return '$'+(v/1e9).toFixed(1)+'B';
+    if(a>=1e6)  return '$'+(v/1e6).toFixed(0)+'M';
+    return '$'+v.toFixed(0); }
+  var DOW=['일','월','화','수','목','금','토'];
+  function dow(ds){ try{ return DOW[new Date(ds+'T00:00:00Z').getUTCDay()]; }catch(e){ return ''; } }
+  function hourKo(h){ h=(h||'').toLowerCase();
+    if(h==='bmo') return '장 열기 전';
+    if(h==='amc') return '장 닫은 뒤';
+    if(h==='dmh') return '장중';
+    return '시각 미정'; }
+
+  y=118;
+  F(30,800); T('ANDRE99', PAD+58, y, '#6B6B70');
+  g.beginPath(); g.arc(PAD+22, y-11, 21, 0, Math.PI*2); g.strokeStyle='#F3F3F4'; g.lineWidth=4; g.stroke();
+
+  y+=110;
+  F(72,800); T('이번 주 실적 발표', PAD, y);
+  y+=52; F(30,500);
+  T(String(from||'').replace(/-/g,'.')+'  ~  '+String(to||'').replace(/-/g,'.'), PAD, y, '#6B6B70');
+
+  y+=76;
+  var rowH=152;
+  rows.forEach(function(x){
+    g.fillStyle='#151516'; rr(g,PAD,y,W-PAD*2,rowH-16,24); g.fill();
+    var iy=y+56;
+    F(30,800); T(dow(x.d), PAD+36, iy, '#6B6B70');
+    F(42,800); T(x.ko, PAD+104, iy);
+    F(26,600); T(hourKo(x.h), W-PAD-36, iy, '#6B6B70', 'right');
+    var jy=y+104;
+    F(28,600,true);
+    T('예상 EPS ', PAD+104, jy, '#6B6B70');
+    var w1=g.measureText('예상 EPS ').width;
+    F(30,800,true); T(x.e!=null?('$'+Number(x.e).toFixed(2)):'—', PAD+104+w1, jy);
+    F(28,600,true); T('예상 매출 '+bnc(x.r), W-PAD-36, jy, '#8A8A90', 'right');
+    y+=rowH;
+  });
+
+  y=H-192;
+  g.fillStyle='#1E1E20'; g.fillRect(PAD,y,W-PAD*2,2);
+  y+=52; F(28,500);
+  T('한국어로 이름을 붙여둔 종목 중 이번 주 발표분입니다.', PAD, y, '#6B6B70');
+  y+=42; T('발표 일정이며 예측이 아닙니다. 출처: 핀허브 실적 캘린더', PAD, y, '#6B6B70');
+  y+=42; F(26,500); T('andre99 · '+new Date().toLocaleDateString('ko-KR')+' 기준 · 투자자문 아님', PAD, y, '#4A4A4E');
+
+  showCardOvl(c, 'andre99_week_'+String(from||'').replace(/-/g,'')+'.png');
+}
+
+/* 카드 선택 저장 (2026-08-11)
+   버튼 하나로 모든 탭 카드를 고르고 한 번에 내려받는다.
+   차트 데이터가 없으면 자동으로 불러온 뒤 목록에 넣는다. */
+var CARD_KINDS=[
+  {k:'fund', n:'재무 건전성', on:true},
+  {k:'imp',  n:'실적 개선도', on:true},
+  {k:'earn', n:'실적',       on:true},
+  {k:'tech', n:'얼마나 흔들렸나', on:true},
+  {k:'info', n:'기업개요',    on:false}
+];
+function openCardPick(){
+  var d=window.LAST_STOCK;
+  if(!d){ alert('종목을 먼저 검색해 주세요'); return; }
+  var ov=$('pickOvl'); if(!ov) return;
+  var box=$('pickList');
+  box.innerHTML=CARD_KINDS.map(function(c){
+    return '<label class="pkrow"><input type="checkbox" data-k="'+c.k+'"'+(c.on?' checked':'')+'>'+
+           '<span>'+c.n+'</span></label>';
+  }).join('');
+  ov.classList.add('on');
+  updPickCount();
+  box.querySelectorAll('input').forEach(function(i){ i.addEventListener('change',updPickCount); });
+}
+function updPickCount(){
+  var n=document.querySelectorAll('#pickList input:checked').length;
+  var b=$('pickGo'); if(b){ b.textContent=n?(n+'장 저장'):'선택 없음'; b.disabled=!n; }
+}
+function runCardPick(){
+  var d=window.LAST_STOCK; if(!d) return;
+  var ks=[];
+  document.querySelectorAll('#pickList input:checked').forEach(function(i){ ks.push(i.dataset.k); });
+  if(!ks.length) return;
+  var ov=$('pickOvl');
+  var go=$('pickGo'); if(go){ go.disabled=true; go.textContent='준비 중…'; }
+
+  function build(){
+    BULK=[];
+    ks.forEach(function(k){ try{ makeVCard(d,k); }catch(e){} });
+    var list=BULK; BULK=null;
+    if(ov) ov.classList.remove('on');
+    if(go){ go.disabled=false; }
+    if(!list.length){ alert('만들 수 있는 카드가 없습니다'); return; }
+    var i=0;
+    (function next(){
+      if(i>=list.length) return;
+      dlCanvas(list[i].canvas, list[i].name);
+      i++; setTimeout(next, 700);
+    })();
+  }
+
+  // 차트 카드를 골랐는데 데이터가 없으면 먼저 불러온다
+  if(ks.indexOf('tech')>=0 && !d.__tech){
+    var t0=TECH[TECH_SYM+'|d'];
+    if(t0){ d.__tech=t0; build(); return; }
+    fetchT(API+'/technical?symbol='+encodeURIComponent(TECH_SYM)+'&tf=d&_='+Date.now(), 20000)
+      .then(function(r){return r.json()})
+      .then(function(t){ if(t&&t.status==='ok'){ TECH[TECH_SYM+'|d']=t; d.__tech=t; } build(); })
+      .catch(build);
+  }else build();
 }
 
 /* ── 관심 종목 ── */
