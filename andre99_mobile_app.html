@@ -629,6 +629,20 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .fl-bar span.p{background:#FF4D4F}
 .fl-bar span.m{background:#2F80ED}
 .fl-v{flex:0 0 58px;text-align:right;font-size:12.5px;font-weight:800}
+.fl-m{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--s2)}
+.fl-m:last-of-type{border-bottom:none}
+.fl-mk{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--tx)}
+.fl-mv{display:flex;align-items:baseline;gap:8px}
+.fl-mv b{font-size:18px;font-weight:800;color:var(--tx)}
+.fl-md{font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px}
+.fl-md.up{background:rgba(255,77,79,.12);color:#FF4D4F}
+.fl-md.dn{background:rgba(47,128,237,.12);color:#2F80ED}
+.fl-md.ft{background:var(--s2);color:var(--tx2)}
+.fl-mc{font-size:11.5px;font-weight:700}
+.fl-sub{font-size:11.5px;font-weight:700;color:var(--tx2);margin:12px 0 4px}
+.fl-more{width:100%;min-height:38px;border-radius:10px;background:var(--s2);color:var(--tx2);font-size:12px;font-weight:700;border:none;margin-top:10px}
+.fl-fold{width:100%;min-height:42px;border-radius:11px;background:var(--s2);color:var(--tx);font-size:12.5px;font-weight:700;border:none}
+#flMap{margin-top:12px}
 </style>
 </head>
 <body>
@@ -657,7 +671,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.13-A</span>
+      <span class="ver">v2026.08.13-B</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -820,8 +834,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.13-A';
-console.log('%c ANDRE99 v2026.08.13-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.13-B';
+console.log('%c ANDRE99 v2026.08.13-B ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -1527,10 +1541,87 @@ function loadFlow(){
     })
     .catch(function(){ box.innerHTML='<div class="tvnote">불러오지 못했습니다 · 측정중</div>'; });
 }
+var FLOW_MORE=false;
+/* 자산 설명 (2026.08.13) */
+var FLOW_INFO={
+  'DFF':{n:'기준금리',b:'연준이 정하는 미국의 기준금리입니다. 모든 대출과 예금 금리의 출발점이 됩니다.'},
+  'TNX':{n:'10년물 금리',b:'미국 정부가 10년간 돈을 빌릴 때 내는 이자율입니다.\n\n주의: 이건 가격이 아니라 이자율입니다. 올랐다고 수익이 난 것이 아닙니다.\n\n이자율이 오르면 이미 발행된 채권의 가격은 반대로 떨어집니다.'},
+  'DXY':{n:'달러',b:'달러가 주요 6개 통화 대비 얼마나 센지 나타내는 지수입니다.\n\n달러가 세지면 원자재와 신흥국 자산이 눌리는 경향이 있었습니다.'},
+  '^GSPC':{n:'S&P 500',b:'미국 대표 기업 500개를 모은 지수입니다. 미국 주식 전체의 기준으로 쓰입니다.'},
+  '^IXIC':{n:'나스닥',b:'기술주가 많이 모인 시장의 지수입니다. 금리 변화에 민감한 편입니다.'},
+  '^RUT':{n:'러셀2000',b:'미국 중소형주 2,000개를 모은 지수입니다.\n\n큰 기업보다 경기와 금리에 민감해서, 경기 회복 신호로 보는 시각이 있습니다.'},
+  'SOXX':{n:'반도체',b:'미국 반도체 기업을 모은 상품입니다. 엔비디아 같은 회사가 들어 있습니다.\n\n나스닥보다 더 크게 오르내리는 경향이 있습니다.'},
+  'GC=F':{n:'금',b:'금 선물 가격입니다.\n\n돈의 가치가 떨어질까 걱정될 때 사람들이 찾는 자산으로 알려져 있습니다.'},
+  'SI=F':{n:'은',b:'은 선물 가격입니다.\n\n금과 비슷하게 움직이지만 산업용으로도 쓰여 경기에 더 민감합니다.'},
+  'CL=F':{n:'WTI 원유',b:'미국 서부 텍사스 원유 가격입니다.\n\n에너지 값은 물가에 직접 영향을 줍니다.'},
+  'HG=F':{n:'구리',b:'구리 선물 가격입니다.\n\n산업 전반에 쓰여 경기를 미리 알려준다고 해서 닥터 코퍼라고 불립니다.'},
+  'BTC-USD':{n:'비트코인',b:'대표적인 암호자산입니다.\n\n최근에는 나스닥과 비슷하게 움직이는 경우가 많았습니다.'},
+  'TLT':{n:'미국 장기채',b:'만기 20년 이상 미국 국채를 모아놓은 상품입니다.\n\n이자율이 오르면 가격이 떨어지고, 내리면 가격이 오릅니다. 10년물 금리와 반대로 움직입니다.'},
+  'HYG':{n:'하이일드 회사채',b:'신용도가 낮은 회사가 발행한 채권을 모은 상품입니다.\n\n사람들이 위험을 감수할 기분일 때 오르고, 불안할 때 내리는 경향이 있었습니다.'}
+};
+function flowInfo(id){
+  var f=FLOW_INFO[id]; if(!f) return;
+  $('ecoMdT').textContent=f.n;
+  $('ecoMdE').textContent='';
+  $('ecoMdB').textContent=f.b;
+  $('ecoMdEff').innerHTML='';
+  $('ecoMd').classList.add('on');
+}
+function flowDirKo(d){
+  if(d==='up') return '오르는 중';
+  if(d==='down') return '내리는 중';
+  return '큰 변화 없음';
+}
 function drawFlow(j){
   var box=$('flowBox'); if(!box) return;
   var o='';
-  o+='<div class="fl-sec"><div class="fl-h">보통 이렇게 움직인다고 합니다</div>';
+  var S=j.summary||{};
+  var ms=[S.rate,S.yield10,S.dollar].filter(Boolean);
+  if(ms.length){
+    o+='<div class="fl-sec"><div class="fl-h">지금 시장은</div>';
+    ms.forEach(function(m){
+      var cls=(m.dir==='up')?'up':(m.dir==='down'?'dn':'ft');
+      o+='<div class="fl-m">'+
+        '<div class="fl-mk">'+esc(m.label)+
+          '<button class="ec-i" data-fi="'+esc(m.id)+'" aria-label="설명">i</button></div>'+
+        '<div class="fl-mv">'+
+          '<b class="n">'+(m.level!=null?Number(m.level).toFixed(2)+esc(m.unit_level||''):'—')+'</b>'+
+          '<span class="fl-md '+cls+'">'+esc(flowDirKo(m.dir))+'</span>'+
+          '<span class="fl-mc n '+dirCls(m.value)+'">'+(m.value>=0?'+':'')+Number(m.value).toFixed(2)+esc(m.unit)+'</span>'+
+        '</div></div>';
+    });
+    o+='<div class="fl-warn">최근 '+j.days+'일 변화입니다. 기준금리는 ±0.15%p, 10년물은 ±3%, 달러는 ±2% 안이면 큰 변화 없음으로 봅니다. 우리가 정한 기준입니다.</div></div>';
+  }
+  var it=(j.items||[]).slice();
+  var mx=1; it.forEach(function(x){ if(Math.abs(x.pct)>mx) mx=Math.abs(x.pct); });
+  function row(x){
+    var w=Math.abs(x.pct)/mx*100;
+    return '<div class="fl-row">'+
+      '<div class="fl-n">'+esc(x.name)+
+        '<button class="ec-i" data-fi="'+esc(x.symbol)+'" aria-label="설명">i</button></div>'+
+      '<div class="fl-bar"><span class="'+(x.pct>=0?'p':'m')+'" style="width:'+w.toFixed(1)+'%"></span></div>'+
+      '<div class="fl-v n '+dirCls(x.pct)+'">'+(x.pct>=0?'+':'')+x.pct.toFixed(1)+'%</div>'+
+    '</div>';
+  }
+  o+='<div class="fl-sec"><div class="fl-h">그러면 실제로는 어땠나</div>'+
+     '<div class="fl-days">'+
+       [30,90,180,365].map(function(d){
+         return '<button class="fl-d'+(d===FLOW_DAYS?' on':'')+'" data-d="'+d+'">'+
+           (d<365?(d+'일'):'1년')+'</button>';
+       }).join('')+'</div>';
+  if(FLOW_MORE){
+    o+=it.map(row).join('');
+  }else{
+    var up=it.slice(0,3), dn=it.slice(-3).reverse();
+    o+='<div class="fl-sub">가장 많이 오른 것</div>'+up.map(row).join('');
+    o+='<div class="fl-sub">가장 많이 내린 것</div>'+dn.map(row).join('');
+  }
+  o+='<button class="fl-more" id="flMore">'+(FLOW_MORE?'▴ 접기':'▾ 전체 '+it.length+'개 보기')+'</button>';
+  o+='<div class="tnb">같은 기간의 움직임입니다. 원인과 결과를 뜻하지 않습니다.<br>'+
+     (it.length&&it[0].from?esc(it[0].from)+' ~ '+esc(it[0].to)+' · 종가 기준<br>':'')+
+     '출처: 야후 파이낸스 · 기준금리는 FRED</div></div>';
+  o+='<div class="fl-sec"><button class="fl-fold" id="flFold">▾ 보통은 이렇게 움직인다고 합니다</button>'+
+     '<div id="flMap" hidden>';
   FLOW_MAP.forEach(function(g){
     o+='<div class="fl-map"><div class="fl-mt">'+esc(g.t)+'</div>';
     g.li.forEach(function(p){
@@ -1538,34 +1629,24 @@ function drawFlow(j){
     });
     o+='</div>';
   });
-  o+='<div class="fl-warn">교과서적 설명입니다. 실제로는 다른 요인이 겹쳐 반대로 움직이는 경우도 많습니다.</div></div>';
-  var it=j.items||[];
-  var mx=1; it.forEach(function(x){ if(Math.abs(x.pct)>mx) mx=Math.abs(x.pct); });
-  o+='<div class="fl-sec"><div class="fl-h">그러면 실제로는 어땠나</div>'+
-     '<div class="fl-days">'+
-       [30,90,180,365].map(function(d){
-         return '<button class="fl-d'+(d===FLOW_DAYS?' on':'')+'" data-d="'+d+'">'+
-           (d<365?(d+'일'):'1년')+'</button>';
-       }).join('')+
-     '</div>';
-  it.forEach(function(x){
-    var w=Math.abs(x.pct)/mx*100;
-    o+='<div class="fl-row">'+
-      '<div class="fl-n">'+esc(x.name)+(x.is_rate?'<span class="fl-g">금리</span>':'')+'</div>'+
-      '<div class="fl-bar"><span class="'+(x.pct>=0?'p':'m')+'" style="width:'+w.toFixed(1)+'%"></span></div>'+
-      '<div class="fl-v n '+dirCls(x.pct)+'">'+(x.pct>=0?'+':'')+x.pct.toFixed(1)+'%</div>'+
-    '</div>';
-  });
-  o+='<div class="tnb">같은 기간의 움직임입니다. 원인과 결과를 뜻하지 않습니다.<br>'+
-     (it.length&&it[0].from?esc(it[0].from)+' ~ '+esc(it[0].to)+' · 종가 기준<br>':'')+
-     '10년물 금리는 가격이 아니라 이자율의 변화입니다.<br>'+
-     '출처: 야후 파이낸스</div></div>';
+  o+='<div class="fl-warn">교과서적 설명입니다. 실제로는 다른 요인이 겹쳐 반대로 움직이는 경우도 많습니다.</div></div></div>';
   box.innerHTML=o;
   box.querySelectorAll('.fl-d').forEach(function(b){
     b.addEventListener('click',function(){ FLOW_DAYS=Number(b.dataset.d); loadFlow(); });
   });
+  box.querySelectorAll('.ec-i').forEach(function(b){
+    b.addEventListener('click',function(){ flowInfo(b.dataset.fi); });
+  });
+  var mb=$('flMore');
+  if(mb) mb.addEventListener('click',function(){ FLOW_MORE=!FLOW_MORE; drawFlow(j); });
+  var fb=$('flFold');
+  if(fb) fb.addEventListener('click',function(){
+    var m=$('flMap'); if(!m) return;
+    var open=m.hasAttribute('hidden');
+    if(open) m.removeAttribute('hidden'); else m.setAttribute('hidden','');
+    fb.textContent=(open?'▴ ':'▾ ')+'보통은 이렇게 움직인다고 합니다';
+  });
 }
-
 var XB={};
 function loadXbrl(sym){
   if(!sym) return;
