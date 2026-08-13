@@ -528,12 +528,39 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 #pickGo:disabled{opacity:.4}
 
 /* ══ 경제 지표 (2026-08-11) ══ */
-.ec-row{padding:14px 0;border-bottom:1px solid var(--s2)}
+.ec-row{padding:14px 16px;border-bottom:1px solid var(--s2)}
 .ec-row:last-of-type{border-bottom:none}
-.ec-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-.ec-n{font-size:14px;font-weight:700;color:var(--tx)}
-.ec-v{font-size:22px;font-weight:800;color:var(--tx);white-space:nowrap}
-.ec-c{font-size:12px;font-weight:700;margin-left:8px}
+.ec-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.ec-n{font-size:14px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:6px;flex:0 1 auto;min-width:0}
+.ec-ab{font-size:10px;font-weight:700;color:var(--tx2);background:var(--s2);padding:2px 6px;border-radius:5px;letter-spacing:.3px}
+.ec-i{width:18px;height:18px;border-radius:50%;background:var(--s2);color:var(--tx2);font-size:11px;
+  font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;border:none;padding:0}
+.ec-v{font-size:21px;font-weight:800;color:var(--tx);white-space:nowrap;flex:0 0 auto;text-align:right}
+.ec-c{font-size:12px;font-weight:700;margin-left:7px;white-space:nowrap}
+.ec-tabs{display:flex;gap:6px;padding:8px 16px 12px}
+.ec-tab{flex:1;min-height:38px;border-radius:12px;background:var(--s2);color:var(--tx2);
+  font-size:12.5px;font-weight:700;border:1px solid transparent;padding:0}
+.ec-tab.on{background:var(--tx);color:#0B0B0C}
+.ec-sec{padding:0}
+.ec-md{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:60;display:none;
+  align-items:center;justify-content:center;padding:24px}
+.ec-md.on{display:flex}
+.ec-md-in{background:var(--s1);border-radius:18px;padding:22px 20px;max-width:340px;width:100%}
+.ec-md-t{font-size:16px;font-weight:800;color:var(--tx);margin-bottom:3px}
+.ec-md-e{font-size:11.5px;color:var(--tx3,#7a7a7e);margin-bottom:14px}
+.ec-md-b{font-size:13px;color:var(--tx);line-height:1.7;white-space:pre-line}
+.ec-md-in{max-height:82vh;overflow-y:auto}
+.ec-md-eff{margin-top:16px}
+.ec-eff{padding:11px 12px;border-radius:10px;margin-bottom:7px}
+.ec-eff.up{background:rgba(255,77,79,.08)}
+.ec-eff.dn{background:rgba(47,128,237,.08)}
+.ec-eff b{display:block;font-size:12px;font-weight:800;margin-bottom:5px}
+.ec-eff.up b{color:#FF4D4F}
+.ec-eff.dn b{color:#2F80ED}
+.ec-eff p{margin:0;font-size:12.5px;color:var(--tx2);line-height:1.65}
+.ec-eff-w{margin-top:9px;font-size:11px;color:var(--tx3,#7a7a7e);line-height:1.6}
+.ec-md-c{width:100%;min-height:42px;border-radius:11px;background:var(--s2);color:var(--tx);
+  font-size:13px;font-weight:700;margin-top:16px}
 .ec-d{font-size:11.5px;color:var(--tx2);margin-top:5px;line-height:1.55}
 .ec-a{font-size:10.5px;color:var(--tx3,#7a7a7e);margin-top:4px}
 .ec-sp{margin:10px 0 4px}
@@ -542,9 +569,80 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .ec-sp .sp0{stroke:#FF4D4F;stroke-width:1;stroke-dasharray:4 3;opacity:.7}
 .ec-w{margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(240,180,41,.10);
   color:#F0B429;font-size:11.5px;line-height:1.6}
+
+/* ══ 진입 로딩 화면 (2026-08-12) ══ */
+#splash{position:fixed;inset:0;z-index:200;background:#0B0B0C;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:0;
+  transition:opacity .45s ease, visibility .45s ease}
+#splash.gone{opacity:0;visibility:hidden;pointer-events:none}
+.sp-mark{position:relative;width:82px;height:82px;display:flex;align-items:center;justify-content:center}
+.sp-mark svg{width:62px;height:62px;animation:spIn .9s cubic-bezier(.2,.8,.2,1) both}
+.sp-ring{position:absolute;inset:0;border-radius:50%;
+  border:2px solid rgba(243,243,244,.10);border-top-color:rgba(243,243,244,.62);
+  animation:spSpin 1.15s linear infinite}
+@keyframes spIn{
+  0%{opacity:0;transform:scale(.72) rotate(-32deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes spSpin{to{transform:rotate(360deg)}}
+.sp-name{margin-top:22px;font-size:15px;font-weight:800;letter-spacing:3.4px;color:#F3F3F4;
+  animation:spUp .7s .18s ease both}
+.sp-line{margin-top:12px;font-size:13px;color:#8A8A90;animation:spUp .7s .34s ease both}
+.sp-foot{position:absolute;bottom:44px;font-size:11px;color:#4A4A4E;
+  animation:spUp .7s .5s ease both}
+@keyframes spUp{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .sp-mark svg,.sp-name,.sp-line,.sp-foot{animation:none}
+  .sp-ring{animation-duration:2.4s}}
+
+/* ══ 장기 재무 (SEC XBRL) · 2026.08.13 ══ */
+.xbrow{padding:14px 0;border-bottom:1px solid var(--s2)}
+.xbrow:last-of-type{border-bottom:none}
+.xbh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.xbh b{font-size:13.5px;font-weight:700;color:var(--tx)}
+.xbh .n{font-size:16px;font-weight:800;color:var(--tx)}
+.xbsvg{width:100%;height:150px;display:block;background:#0F0F11;border-radius:10px}
+.xbsvg .xb0{stroke:#3A3A3D;stroke-width:1}
+.xbsvg .xbb.p{fill:#F3F3F4}
+.xbsvg .xbb.m{fill:#2F80ED}
+.xbsvg .xbt{fill:#6E6E73;font-size:9px;font-family:inherit}
+.xba{font-size:10.5px;color:var(--tx3,#7a7a7e);margin-top:6px}
+
+/* ══ 시장 흐름 · 2026.08.13 ══ */
+.fl-sec{padding:14px 16px 18px;border-bottom:1px solid var(--s2)}
+.fl-h{font-size:14px;font-weight:800;color:var(--tx);margin-bottom:12px}
+.fl-map{background:var(--s2);border-radius:12px;padding:12px 13px;margin-bottom:8px}
+.fl-mt{font-size:12.5px;font-weight:800;color:var(--tx);margin-bottom:8px}
+.fl-ml{display:flex;justify-content:space-between;padding:4px 0;font-size:12px}
+.fl-ml span{color:var(--tx2)}
+.fl-ml b{color:var(--tx);font-weight:600}
+.fl-warn{margin-top:10px;font-size:11px;color:var(--tx3,#7a7a7e);line-height:1.6}
+.fl-days{display:flex;gap:6px;margin-bottom:14px}
+.fl-d{flex:1;min-height:32px;border-radius:9px;background:var(--s2);color:var(--tx2);
+  font-size:11.5px;font-weight:700;border:none;padding:0}
+.fl-d.on{background:var(--tx);color:#0B0B0C}
+.fl-row{display:flex;align-items:center;gap:9px;padding:7px 0}
+.fl-n{flex:0 0 84px;font-size:12px;font-weight:600;color:var(--tx)}
+.fl-g{display:inline-block;margin-left:4px;font-size:9px;font-weight:700;color:var(--tx3,#7a7a7e);
+  background:var(--s2);padding:1px 4px;border-radius:4px}
+.fl-bar{flex:1;height:16px;background:var(--s2);border-radius:5px;overflow:hidden;display:flex}
+.fl-bar span{height:100%;border-radius:5px}
+.fl-bar span.p{background:#FF4D4F}
+.fl-bar span.m{background:#2F80ED}
+.fl-v{flex:0 0 58px;text-align:right;font-size:12.5px;font-weight:800}
 </style>
 </head>
 <body>
+
+<!-- 진입 로딩 화면 (2026-08-12) · 헤더 로고와 동일한 마크 사용 -->
+<div id="splash">
+  <div class="sp-mark">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><g fill="#F3F3F4"><path d="M16.00 11.30L16.26 11.28L16.52 11.27L16.79 11.29L17.05 11.32L17.31 11.36L17.57 11.43L17.83 11.51L18.08 11.60L18.33 11.71L18.57 11.84L18.80 11.97L19.03 12.13L19.24 12.29L19.45 12.47L19.65 12.66L19.83 12.86L20.01 13.07L20.17 13.29L20.32 13.52L20.45 13.76L20.58 14.01L20.69 14.26L20.78 14.52L20.86 14.79L20.92 15.06L20.97 15.33L21.00 15.61L21.02 15.88L21.02 16.16L21.01 16.44L20.98 16.71L20.93 16.99L20.87 17.26L20.80 17.53L20.70 17.79L20.60 18.05L20.48 18.30L20.34 18.54L20.20 18.78L20.03 19.00L19.86 19.22L19.67 19.43L19.48 19.62L19.27 19.81L19.05 19.98L18.83 20.14L18.59 20.28L18.35 20.42L18.10 20.53L17.84 20.64L17.58 20.73L17.32 20.80L17.05 20.86L16.78 20.90L16.50 20.93L16.23 20.94L15.96 20.94L15.68 20.92L15.41 20.88L15.15 20.83L14.89 20.76L14.63 20.68L14.38 20.59L14.13 20.48L13.89 20.35L13.66 20.21L13.44 20.06L13.24 19.90L13.04 19.72L12.86 19.53L12.69 19.33L12.94 19.08L13.13 19.22L13.33 19.35L13.53 19.48L13.74 19.59L13.95 19.69L14.17 19.79L14.38 19.87L14.61 19.94L14.83 19.99L15.05 20.04L15.28 20.07L15.51 20.10L15.74 20.11L15.96 20.11L16.19 20.09L16.42 20.07L16.64 20.03L16.86 19.98L17.07 19.92L17.29 19.85L17.50 19.77L17.70 19.67L17.90 19.57L18.09 19.45L18.27 19.33L18.45 19.19L18.62 19.05L18.78 18.90L18.94 18.74L19.08 18.57L19.22 18.40L19.34 18.21L19.46 18.03L19.57 17.83L19.66 17.63L19.75 17.43L19.82 17.22L19.88 17.00L19.93 16.79L19.97 16.57L20.00 16.35L20.01 16.13L20.02 15.91L20.01 15.68L19.99 15.46L19.96 15.24L19.92 15.02L19.86 14.81L19.79 14.59L19.72 14.38L19.63 14.18L19.53 13.98L19.41 13.78L19.29 13.59L19.16 13.41L19.02 13.23L18.87 13.06L18.71 12.90L18.54 12.75L18.36 12.60L18.18 12.47L17.99 12.34L17.79 12.23L17.58 12.12L17.37 12.02L17.15 11.94L16.93 11.86L16.70 11.80L16.47 11.74L16.24 11.69L16.00 11.66Z"/><path d="M23.06 13.71L23.24 14.08L23.39 14.47L23.51 14.87L23.60 15.29L23.66 15.70L23.70 16.13L23.71 16.55L23.70 16.98L23.65 17.41L23.59 17.83L23.50 18.26L23.38 18.67L23.24 19.08L23.07 19.48L22.88 19.87L22.67 20.25L22.43 20.62L22.18 20.98L21.90 21.31L21.60 21.64L21.29 21.94L20.96 22.23L20.61 22.49L20.24 22.74L19.87 22.97L19.48 23.17L19.08 23.35L18.67 23.50L18.25 23.64L17.82 23.74L17.39 23.82L16.96 23.88L16.52 23.91L16.08 23.92L15.65 23.90L15.21 23.86L14.79 23.79L14.36 23.69L13.94 23.57L13.54 23.43L13.14 23.26L12.75 23.07L12.38 22.86L12.02 22.63L11.68 22.37L11.35 22.10L11.05 21.81L10.76 21.50L10.50 21.17L10.27 20.82L10.07 20.46L10.53 20.11L10.82 20.36L11.11 20.60L11.40 20.83L11.70 21.04L12.01 21.24L12.32 21.43L12.64 21.60L12.97 21.75L13.30 21.88L13.64 22.00L13.98 22.10L14.32 22.19L14.67 22.25L15.02 22.30L15.37 22.33L15.72 22.34L16.07 22.34L16.42 22.31L16.76 22.27L17.11 22.21L17.44 22.14L17.78 22.04L18.11 21.93L18.43 21.81L18.75 21.66L19.05 21.50L19.35 21.33L19.64 21.13L19.92 20.93L20.19 20.71L20.45 20.48L20.69 20.23L20.93 19.97L21.15 19.70L21.35 19.42L21.54 19.12L21.72 18.82L21.88 18.50L22.03 18.18L22.16 17.85L22.27 17.52L22.37 17.17L22.45 16.82L22.51 16.47L22.56 16.11L22.59 15.75L22.60 15.38L22.60 15.01L22.58 14.64L22.55 14.27L22.51 13.89Z"/><path d="M21.96 24.20L21.54 24.58L21.10 24.92L20.63 25.24L20.14 25.52L19.63 25.78L19.10 26.00L18.56 26.19L18.01 26.35L17.44 26.47L16.87 26.57L16.29 26.63L15.71 26.65L15.13 26.65L14.55 26.60L13.97 26.53L13.39 26.42L12.82 26.28L12.26 26.11L11.70 25.90L11.16 25.67L10.64 25.40L10.13 25.10L9.63 24.77L9.16 24.42L8.70 24.04L8.27 23.63L7.86 23.20L7.48 22.75L7.12 22.28L6.79 21.79L6.48 21.27L6.21 20.75L5.97 20.20L5.76 19.65L5.58 19.08L5.43 18.51L5.31 17.93L5.23 17.34L5.18 16.75L5.17 16.16L5.19 15.57L5.24 14.98L5.33 14.40L5.44 13.82L5.60 13.25L5.78 12.69L5.99 12.15L6.24 11.61L6.51 11.10L6.81 10.60L7.14 10.12L7.50 9.66L7.88 9.23L8.29 8.82L8.71 8.43L9.16 8.07L9.63 7.74L10.12 7.45L10.62 7.18L11.13 6.95L11.66 6.76L12.20 6.61L12.50 7.34L12.07 7.61L11.64 7.90L11.24 8.19L10.85 8.51L10.47 8.84L10.12 9.18L9.78 9.54L9.46 9.91L9.16 10.30L8.89 10.70L8.63 11.11L8.40 11.53L8.19 11.96L8.00 12.40L7.83 12.85L7.69 13.31L7.58 13.77L7.48 14.24L7.41 14.71L7.37 15.18L7.35 15.65L7.36 16.13L7.39 16.60L7.44 17.07L7.52 17.53L7.62 17.99L7.75 18.44L7.90 18.89L8.07 19.32L8.26 19.75L8.48 20.17L8.72 20.57L8.98 20.96L9.26 21.34L9.56 21.70L9.87 22.05L10.21 22.38L10.56 22.69L10.93 22.99L11.31 23.26L11.71 23.52L12.12 23.75L12.54 23.96L12.98 24.16L13.42 24.32L13.88 24.47L14.34 24.59L14.81 24.69L15.28 24.77L15.76 24.82L16.24 24.84L16.73 24.84L17.21 24.82L17.70 24.77L18.18 24.70L18.67 24.60L19.15 24.48L19.62 24.34L20.10 24.17L20.56 23.99L21.03 23.78L21.49 23.56Z"/><path d="M7.99 27.02L7.30 26.68L6.64 26.27L6.02 25.81L5.43 25.30L4.87 24.75L4.35 24.16L3.86 23.53L3.41 22.88L3.00 22.19L2.64 21.48L2.32 20.75L2.04 20.00L1.80 19.23L1.62 18.44L1.48 17.65L1.38 16.84L1.34 16.03L1.34 15.22L1.39 14.41L1.49 13.60L1.64 12.80L1.84 12.01L2.08 11.24L2.36 10.48L2.69 9.73L3.07 9.01L3.48 8.31L3.94 7.64L4.43 7.00L4.96 6.38L5.53 5.80L6.13 5.26L6.75 4.76L7.41 4.29L8.09 3.86L8.80 3.48L9.52 3.15L10.26 2.85L11.02 2.61L11.78 2.41L12.56 2.27L13.34 2.17L14.12 2.13L14.89 2.15L15.66 2.23L16.42 2.38L16.38 3.54L15.70 3.68L15.03 3.84L14.37 4.01L13.73 4.20L13.10 4.42L12.48 4.67L11.88 4.94L11.30 5.23L10.73 5.55L10.19 5.90L9.66 6.27L9.16 6.67L8.67 7.09L8.21 7.53L7.78 7.99L7.36 8.48L6.98 8.98L6.62 9.50L6.28 10.03L5.98 10.58L5.70 11.15L5.45 11.73L5.24 12.32L5.05 12.92L4.89 13.53L4.76 14.14L4.67 14.77L4.60 15.39L4.57 16.03L4.57 16.66L4.60 17.29L4.66 17.93L4.75 18.56L4.88 19.18L5.03 19.81L5.22 20.42L5.44 21.03L5.69 21.63L5.97 22.22L6.28 22.80L6.61 23.37L6.98 23.93L7.37 24.48L7.78 25.02L8.22 25.55L8.67 26.09Z"/></g></svg>
+    <span class="sp-ring"></span>
+  </div>
+  <div class="sp-name">ANDRE99</div>
+  <div class="sp-line" id="spLine">미국 주식을 한국어로 읽습니다</div>
+  <div class="sp-foot">예측하지 않습니다 · 과거 사실만 전합니다</div>
+</div>
 
 <header class="top">
   <div class="top-in">
@@ -559,7 +657,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.11-C</span>
+      <span class="ver">v2026.08.13-A</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -656,8 +754,25 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 <!-- ══ 경제 ══ -->
 <main class="page" id="p-eco">
+  <div class="ec-tabs">
+    <button class="ec-tab on" data-eco="rate">금리·통화</button>
+    <button class="ec-tab" data-eco="risk">투자 심리</button>
+    <button class="ec-tab" data-eco="macro">물가·고용</button>
+    <button class="ec-tab" data-eco="flow">시장 흐름</button>
+  </div>
   <div id="ecoBody"><div class="skel">불러오는 중…</div></div>
+  <div id="flowWrap" hidden><div id="flowBox"><div class="tvnote">불러오는 중…</div></div></div>
 </main>
+
+<div class="ec-md" id="ecoMd">
+  <div class="ec-md-in">
+    <div class="ec-md-t" id="ecoMdT"></div>
+    <div class="ec-md-e" id="ecoMdE"></div>
+    <div class="ec-md-b" id="ecoMdB"></div>
+    <div class="ec-md-eff" id="ecoMdEff"></div>
+    <button class="ec-md-c" id="ecoMdC">닫기</button>
+  </div>
+</div>
 
 <!-- ══ 관심 ══ -->
 <main class="page" id="p-my">
@@ -705,8 +820,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.11-C';
-console.log('%c ANDRE99 v2026.08.11-C ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.13-A';
+console.log('%c ANDRE99 v2026.08.13-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -756,6 +871,19 @@ if($('wkNext')) $('wkNext').addEventListener('click',function(){ shiftWeek(1); }
 if($('wkNow'))  $('wkNow').addEventListener('click',function(){ CAL_WEEK=null; calInit(); });
 if($('calQ'))   $('calQ').addEventListener('input',function(){ CAL_Q=this.value; renderCalList(); });
 if($('calCard')) $('calCard').addEventListener('click', makeWeekCard);
+document.querySelectorAll('.ec-tab').forEach(function(b){
+  b.addEventListener('click',function(){
+    ECO_TAB=b.dataset.eco;
+    document.querySelectorAll('.ec-tab').forEach(function(x){ x.classList.toggle('on', x.dataset.eco===ECO_TAB); });
+    var isFlow=(ECO_TAB==='flow');
+    if(isFlow){ $('ecoBody').setAttribute('hidden',''); $('flowWrap').removeAttribute('hidden'); loadFlow(); }
+    else { $('flowWrap').setAttribute('hidden',''); $('ecoBody').removeAttribute('hidden');
+           if(ECO) drawEco(ECO); else loadEco(); }
+    window.scrollTo(0,0);
+  });
+});
+if($('ecoMdC')) $('ecoMdC').addEventListener('click',function(){ $('ecoMd').classList.remove('on'); });
+if($('ecoMd')) $('ecoMd').addEventListener('click',function(e){ if(e.target===this) this.classList.remove('on'); });
 if(ADMIN && $('calCardBar')) $('calCardBar').removeAttribute('hidden');
 $('toSearch').addEventListener('click',function(){ show('stock'); setTimeout(function(){$('q').focus();},60); });
 
@@ -1308,6 +1436,35 @@ function bindScreenCard(sym){
 
 /* 섹션 전환 (탭 안의 탭) */
 /* ══ 기술적 분석 탭 (2026.08.10 신설) ══ */
+
+/* 로딩 화면 문구 · 종료 (2026-08-12) */
+(function(){
+  var LINES=[
+    '미국 주식을 한국어로 읽습니다',
+    '재무제표를 3초 만에 판정합니다',
+    '공시를 한국어로 옮깁니다',
+    '이 종목이 얼마나 흔들렸는지 봅니다'
+  ];
+  var el=document.getElementById('spLine'), i=0, t=null;
+  if(el){
+    t=setInterval(function(){
+      i=(i+1)%LINES.length;
+      el.style.opacity='0';
+      setTimeout(function(){ el.textContent=LINES[i]; el.style.opacity='1'; },220);
+    },1500);
+    el.style.transition='opacity .22s ease';
+  }
+  function hide(){
+    if(t){ clearInterval(t); t=null; }
+    var sp=document.getElementById('splash'); if(!sp) return;
+    sp.classList.add('gone');
+    setTimeout(function(){ if(sp&&sp.parentNode) sp.parentNode.removeChild(sp); },600);
+  }
+  window.__hideSplash=hide;
+  window.addEventListener('load',function(){ setTimeout(hide,700); });
+  setTimeout(hide,4200);   /* 안전장치: 무슨 일이 있어도 4.2초 뒤 사라진다 */
+})();
+
 var CUR_SUB='fund', TECH={}, TECH_TF='d', TECH_SYM='';
 var TECH_ON={cd:1,ma:0,ic:0,rg:0,tl:0,vo:0}, TECH_RG=250;
 
@@ -1329,9 +1486,156 @@ function setSub(sub){
   document.querySelectorAll('.subbar').forEach(function(b){
     if(onScreen) b.style.display='flex'; else b.style.display='none';
   });
-  if(onScreen && sub==='tech') loadTech(TECH_SYM, TECH_TF);
+  if(onScreen && sub==='tech'){ loadTech(TECH_SYM, TECH_TF); loadXbrl(TECH_SYM); }
   if(onScreen && sub==='news') loadNews(TECH_SYM);
   if(onScreen && sub==='filing') loadFilings(TECH_SYM);
+}
+
+
+/* ══ 장기 재무 (SEC XBRL) · 2026.08.13 ══
+   야후 5분기 대비 10년. 미국 정부 공개자료. */
+
+/* ══ 시장 흐름 (2026.08.13) ══
+   교과서적 관계를 먼저 보이고, 같은 기간 실제 움직임을 나란히 놓는다.
+   인과를 주장하지 않는다. */
+var FLOW={}, FLOW_DAYS=90;
+var FLOW_MAP=[
+  {t:'기준금리가 오를 때', li:[
+    ['단기채 금리','올라가는 경향'],
+    ['달러','강해지는 경향'],
+    ['금','눌리는 경향'],
+    ['성장주','부담을 받는 경향']]},
+  {t:'달러가 강해질 때', li:[
+    ['원자재','눌리는 경향'],
+    ['신흥국 주식','부담을 받는 경향'],
+    ['미국 수출기업','실적에 부담']]},
+  {t:'금리가 내릴 때', li:[
+    ['채권 가격','오르는 경향'],
+    ['금','오르는 경향'],
+    ['성장주','유리한 경향']]}
+];
+function loadFlow(){
+  var box=$('flowBox'); if(!box) return;
+  var k='d'+FLOW_DAYS;
+  if(FLOW[k]){ drawFlow(FLOW[k]); return; }
+  box.innerHTML='<div class="tvnote">불러오는 중…</div>';
+  fetchT(API+'/assets?days='+FLOW_DAYS+'&_='+Date.now(), 25000)
+    .then(function(r){return r.json()})
+    .then(function(j){
+      if(!j||j.status!=='ok'){ box.innerHTML='<div class="tvnote">불러오지 못했습니다 · 측정중</div>'; return; }
+      FLOW[k]=j; drawFlow(j);
+    })
+    .catch(function(){ box.innerHTML='<div class="tvnote">불러오지 못했습니다 · 측정중</div>'; });
+}
+function drawFlow(j){
+  var box=$('flowBox'); if(!box) return;
+  var o='';
+  o+='<div class="fl-sec"><div class="fl-h">보통 이렇게 움직인다고 합니다</div>';
+  FLOW_MAP.forEach(function(g){
+    o+='<div class="fl-map"><div class="fl-mt">'+esc(g.t)+'</div>';
+    g.li.forEach(function(p){
+      o+='<div class="fl-ml"><span>'+esc(p[0])+'</span><b>'+esc(p[1])+'</b></div>';
+    });
+    o+='</div>';
+  });
+  o+='<div class="fl-warn">교과서적 설명입니다. 실제로는 다른 요인이 겹쳐 반대로 움직이는 경우도 많습니다.</div></div>';
+  var it=j.items||[];
+  var mx=1; it.forEach(function(x){ if(Math.abs(x.pct)>mx) mx=Math.abs(x.pct); });
+  o+='<div class="fl-sec"><div class="fl-h">그러면 실제로는 어땠나</div>'+
+     '<div class="fl-days">'+
+       [30,90,180,365].map(function(d){
+         return '<button class="fl-d'+(d===FLOW_DAYS?' on':'')+'" data-d="'+d+'">'+
+           (d<365?(d+'일'):'1년')+'</button>';
+       }).join('')+
+     '</div>';
+  it.forEach(function(x){
+    var w=Math.abs(x.pct)/mx*100;
+    o+='<div class="fl-row">'+
+      '<div class="fl-n">'+esc(x.name)+(x.is_rate?'<span class="fl-g">금리</span>':'')+'</div>'+
+      '<div class="fl-bar"><span class="'+(x.pct>=0?'p':'m')+'" style="width:'+w.toFixed(1)+'%"></span></div>'+
+      '<div class="fl-v n '+dirCls(x.pct)+'">'+(x.pct>=0?'+':'')+x.pct.toFixed(1)+'%</div>'+
+    '</div>';
+  });
+  o+='<div class="tnb">같은 기간의 움직임입니다. 원인과 결과를 뜻하지 않습니다.<br>'+
+     (it.length&&it[0].from?esc(it[0].from)+' ~ '+esc(it[0].to)+' · 종가 기준<br>':'')+
+     '10년물 금리는 가격이 아니라 이자율의 변화입니다.<br>'+
+     '출처: 야후 파이낸스</div></div>';
+  box.innerHTML=o;
+  box.querySelectorAll('.fl-d').forEach(function(b){
+    b.addEventListener('click',function(){ FLOW_DAYS=Number(b.dataset.d); loadFlow(); });
+  });
+}
+
+var XB={};
+function loadXbrl(sym){
+  if(!sym) return;
+  var box=$('xbBox'); if(!box) return;
+  if(XB[sym]){ drawXbrl(XB[sym]); return; }
+  box.innerHTML='<div class="tvnote">SEC에서 불러오는 중…</div>';
+  fetchT(API+'/xbrl?symbol='+encodeURIComponent(sym)+'&_='+Date.now(), 25000)
+    .then(function(r){return r.json()})
+    .then(function(j){
+      if(!j || j.status!=='ok'){ box.innerHTML='<div class="tvnote">장기 재무를 불러오지 못했습니다 · 측정중</div>'; return; }
+      XB[sym]=j; drawXbrl(j);
+    })
+    .catch(function(){ box.innerHTML='<div class="tvnote">장기 재무를 불러오지 못했습니다 · 측정중</div>'; });
+}
+function xbBars(arr, label, fmt){
+  if(!arr || arr.length<2) return '';
+  var A=arr.slice(-10);
+  var lo=Infinity, hi=-Infinity;
+  A.forEach(function(x){ if(x.v<lo)lo=x.v; if(x.v>hi)hi=x.v; });
+  if(lo>0) lo=0;
+  if(hi<0) hi=0;
+  var span=(hi-lo)||1;
+  var W=680, H=150, PL=4, PR=4, PB=26, TOP=8;
+  var n=A.length, bw=(W-PL-PR)/n;
+  function Y(v){ return TOP+(H-PB-TOP)-((v-lo)/span)*(H-PB-TOP); }
+  var zy=Y(0);
+  var s='<svg viewBox="0 0 '+W+' '+H+'" class="xbsvg" preserveAspectRatio="none">';
+  s+='<line x1="0" y1="'+zy.toFixed(1)+'" x2="'+W+'" y2="'+zy.toFixed(1)+'" class="xb0"/>';
+  A.forEach(function(x,i){
+    var y=Y(x.v);
+    var top=Math.min(y,zy), hh=Math.max(1.5,Math.abs(zy-y));
+    s+='<rect x="'+(PL+bw*i+bw*0.18).toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+(bw*0.64).toFixed(1)+
+       '" height="'+hh.toFixed(1)+'" class="xbb '+(x.v>=0?'p':'m')+'"/>';
+  });
+  A.forEach(function(x,i){
+    if(n>6 && (i%2)) return;
+    s+='<text x="'+(PL+bw*i+bw*0.5).toFixed(1)+'" y="'+(H-8)+'" class="xbt" text-anchor="middle">'+
+       esc(String(x.d).slice(2,7))+'</text>';
+  });
+  s+='</svg>';
+  return '<div class="xbrow"><div class="xbh"><b>'+esc(label)+'</b>'+
+    '<span class="n">'+fmt(A[A.length-1].v)+'</span></div>'+s+
+    '<div class="xba">최근 '+A.length+'개 구간 · '+esc(A[0].d)+' ~ '+esc(A[A.length-1].d)+'</div></div>';
+}
+function drawXbrl(j){
+  var box=$('xbBox'); if(!box) return;
+  var A=j.annual||{}, T=j.ttm||{};
+  function bn2(v){
+    var a=Math.abs(v);
+    if(a>=1e12) return (v/1e12).toFixed(2)+'조';
+    if(a>=1e9)  return '$'+(v/1e9).toFixed(2)+'B';
+    if(a>=1e6)  return '$'+(v/1e6).toFixed(0)+'M';
+    return '$'+Math.round(v);
+  }
+  function sh(v){ return (v/1e6).toFixed(0)+'백만주'; }
+  var o='';
+  o+=xbBars(A.revenue, '연간 매출', bn2);
+  o+=xbBars(A.net_income, '연간 순이익', bn2);
+  o+=xbBars(A.operating_cashflow, '연간 영업현금흐름', bn2);
+  o+=xbBars(A.shares_diluted, '희석주식수', sh);
+  if(!o) o+=xbBars(T.revenue, '매출 (최근 4분기 합)', bn2);
+  if(!o) o='<div class="tvnote">표시할 장기 재무가 없습니다 · 측정중</div>';
+  var c=j.counts||{};
+  var got=Object.keys(c).map(function(k){ return k+' '+(c[k].annual||0)+'년'; });
+  o+='<div class="tnb">출처: SEC EDGAR XBRL · 미국 증권거래위원회 공개자료<br>'+
+     (j.company?esc(j.company)+' · CIK '+esc(j.cik||'')+'<br>':'')+
+     '기업이 제출한 공식 재무제표입니다. 정정 제출이 있으면 최신값을 씁니다.<br>'+
+     (got.length?'수집: '+esc(got.join(' · '))+'<br>':'')+
+     '과거 기록이며 앞으로를 예측하지 않습니다.</div>';
+  box.innerHTML=o;
 }
 
 /* ══ 뉴스 (2026.08.10) ══
@@ -1736,6 +2040,10 @@ function loadStock(sym){
 
 
 
+
+    // ── 장기 재무 (SEC) ──
+    html+='<div class="sec cat-screen sub-tech" hidden><div class="sec-h"><h2>장기 재무</h2><span class="note">SEC EDGAR</span></div>'+
+      '<div id="xbBox"><div class="tvnote">불러오는 중…</div></div></div>';
 
     // ── 뉴스 ──
     html+='<div class="sec cat-screen sub-news" hidden><div class="sec-h"><h2>뉴스</h2></div>'+
@@ -2560,6 +2868,54 @@ function loadEco(){
     .catch(function(){ ECO_LOADING=false;
       box.innerHTML='<div class="sec"><div class="empty"><h3>불러오지 못했습니다</h3><p>잠시 후 다시 시도해 주세요.</p></div></div>'; });
 }
+var ECO_TAB='rate';
+/* 지표 설명 · 약어 (2026-08-12) */
+var ECO_INFO={
+  DFF:{ab:'FFR', en:'Effective Federal Funds Rate',
+    b:'연준이 정하는 미국의 기준금리입니다.\n\n은행끼리 하루짜리 돈을 빌릴 때 적용되는 금리로, 모든 대출·예금 금리의 출발점이 됩니다.',
+    up:'돈을 빌리기 어려워지고 예금이 매력적으로 보입니다. 과거에는 주식, 특히 성장주가 부담을 받는 경향이 있었습니다.',
+    dn:'돈이 싸집니다. 과거에는 주식과 부동산 같은 위험자산이 오르는 경향이 있었습니다.'},
+  WALCL:{ab:'BS', en:'Fed Balance Sheet · Total Assets',
+    b:'연준이 보유한 자산의 총 규모입니다.\n\n연준이 채권을 사면 시장에 돈이 풀리고 이 숫자가 늘어납니다. 반대로 팔거나 만기까지 두면 줄어듭니다.\n\n매주 목요일에 발표됩니다.',
+    up:'시중에 돈이 풀린다는 뜻입니다. 과거 양적완화 시기에는 주식과 위험자산이 오르는 경향이 있었습니다.',
+    dn:'돈을 거둬들인다는 뜻입니다. 과거 양적긴축 시기에는 변동성이 커지는 경향이 있었습니다. 다만 2023년처럼 줄어드는 중에도 주가가 크게 오른 적이 있습니다.'},
+  M2SL:{ab:'M2', en:'M2 Money Stock',
+    b:'시중에 도는 돈의 양입니다.\n\n현금과 예금, 쉽게 찾을 수 있는 저축을 합한 값입니다.\n\n발표가 약 한 달 늦어 지금 상황을 바로 보여주지는 않습니다.',
+    up:'돈이 늘어난다는 뜻입니다. 과거에는 자산 가격이 오르고 물가도 함께 오르는 경향이 있었습니다.',
+    dn:'돈이 줄어든다는 뜻입니다. 과거에는 물가 압력이 낮아지는 대신 경기가 둔화되는 경향이 있었습니다.'},
+  DGS10:{ab:'10Y', en:'10-Year Treasury Yield',
+    b:'미국 정부가 10년간 돈을 빌릴 때 내는 이자율입니다.\n\n가장 안전한 투자로 여겨지기 때문에, 주식의 가치를 계산할 때 비교 기준이 됩니다.',
+    up:'안전한 채권 수익이 좋아집니다. 과거에는 이익이 먼 미래에 있는 성장주가 특히 부담을 받는 경향이 있었습니다.',
+    dn:'채권 매력이 줄어듭니다. 과거에는 주식으로 돈이 옮겨가는 경향이 있었습니다.'},
+  DGS2:{ab:'2Y', en:'2-Year Treasury Yield',
+    b:'미국 정부가 2년간 돈을 빌릴 때 내는 이자율입니다.\n\n기간이 짧아 연준의 정책 방향을 빠르게 반영합니다.',
+    up:'시장이 금리 인상을 예상한다는 뜻으로 읽힙니다. 과거에는 주식이 눌리는 경향이 있었습니다.',
+    dn:'시장이 금리 인하를 예상한다는 뜻으로 읽힙니다. 과거에는 주식에 우호적인 경향이 있었습니다.'},
+  T10Y2Y:{ab:'10Y-2Y', en:'10-Year minus 2-Year Spread',
+    b:'10년물에서 2년물을 뺀 값입니다.\n\n보통은 오래 빌려줄수록 이자를 더 받으므로 플러스입니다.',
+    up:'정상적인 모습으로 돌아가는 중입니다. 과거에는 경기 회복 국면에서 이런 흐름이 나타나는 경향이 있었습니다.',
+    dn:'0 아래로 내려가면 장기가 단기보다 싼 이상한 상태가 됩니다. 과거에는 1~2년 안에 침체가 뒤따르는 경향이 있었습니다.'},
+  BAMLH0A0HYM2:{ab:'HY', en:'High Yield Option-Adjusted Spread',
+    b:'신용도가 낮은 회사가 돈을 빌릴 때, 미국 국채보다 얼마나 더 높은 이자를 내는지 나타냅니다.',
+    up:'시장이 부도 위험을 더 크게 본다는 뜻입니다. 과거에는 주가 하락과 함께 움직이는 경향이 있었습니다.',
+    dn:'시장이 안심하고 있다는 뜻입니다. 과거에는 위험자산이 오르는 국면에서 낮아지는 경향이 있었습니다.'},
+  VIXCLS:{ab:'VIX', en:'CBOE Volatility Index',
+    b:'앞으로 30일간 주가가 얼마나 출렁일지에 대한 시장의 예상치입니다.\n\n옵션 거래 가격에서 계산되며 흔히 공포지수라 불립니다.\n\n20 아래면 평온한 편, 30을 넘으면 크게 흔들리고 있다는 신호로 봅니다.',
+    up:'불안이 커진다는 뜻입니다. 과거에는 주가가 급락할 때 함께 치솟는 경향이 있었습니다.',
+    dn:'시장이 안정된다는 뜻입니다. 다만 너무 낮으면 방심의 신호로 보는 시각도 있습니다.'},
+  CPIAUCSL:{ab:'CPI', en:'Consumer Price Index',
+    b:'사람들이 사는 물건과 서비스 값이 작년보다 얼마나 올랐는지 나타냅니다.\n\n연준의 목표는 2%입니다.\n\n매달 중순에 발표되며 시장이 크게 반응합니다.',
+    up:'물가가 오른다는 뜻입니다. 과거에는 연준이 금리를 올려 대응하면서 주식이 부담을 받는 경향이 있었습니다.',
+    dn:'물가 압력이 줄어든다는 뜻입니다. 과거에는 금리 인하 기대가 생기면서 주식에 우호적인 경향이 있었습니다.'},
+  UNRATE:{ab:'U-3', en:'Unemployment Rate',
+    b:'일할 의사가 있는데 일자리를 못 찾은 사람의 비율입니다.\n\n연준은 물가와 고용 두 가지를 함께 봅니다.',
+    up:'경기가 식고 있다는 뜻입니다. 과거에는 연준이 금리를 내릴 여지가 생기는 한편, 기업 실적 걱정도 함께 커지는 경향이 있었습니다.',
+    dn:'고용이 좋다는 뜻입니다. 다만 너무 낮으면 임금이 올라 물가를 자극할 수 있다는 걱정이 나옵니다.'},
+  PAYEMS:{ab:'NFP', en:'Nonfarm Payrolls',
+    b:'농업을 제외한 일자리가 지난달보다 얼마나 늘었는지 나타냅니다.\n\n매달 첫 번째 금요일에 발표되며, 경제지표 중 시장이 가장 크게 반응하는 숫자입니다.\n\n마이너스는 일자리가 줄었다는 뜻입니다.',
+    up:'고용이 늘어난다는 뜻입니다. 과거에는 경기 호조 신호로 읽히면서도, 금리 인하가 늦어질 수 있다는 부담이 함께 나타나는 경향이 있었습니다.',
+    dn:'고용이 나빠진다는 뜻입니다. 과거에는 침체 우려가 커지는 경향이 있었습니다.'}
+};
 function ecoRow(x){
   if(!x) return '';
   var v=x.value, u=x.unit||'';
@@ -2569,12 +2925,30 @@ function ecoRow(x){
     var s=(x.change>0?'▲ +':(x.change<0?'▼ ':'')) + Math.abs(x.change).toFixed(2) + (x.change_unit||'');
     ch='<span class="ec-c '+dirCls(x.change)+'">'+esc(s)+'</span>';
   }
+  var inf=ECO_INFO[x.id];
+  var head='<span class="ec-n">'+esc(x.name)+
+    (inf&&inf.ab?'<span class="ec-ab">'+esc(inf.ab)+'</span>':'')+
+    (inf?'<button class="ec-i" data-info="'+esc(x.id)+'" aria-label="설명">i</button>':'')+'</span>';
   return '<div class="ec-row">'+
-    '<div class="ec-top"><span class="ec-n">'+esc(x.name)+'</span>'+
-      '<span class="ec-v n">'+esc(vs)+ch+'</span></div>'+
+    '<div class="ec-top">'+head+'<span class="ec-v n">'+esc(vs)+ch+'</span></div>'+
     (x.desc?'<div class="ec-d">'+esc(x.desc)+'</div>':'')+
     (x.as_of?'<div class="ec-a">'+esc(x.as_of)+' 기준</div>':'')+
   '</div>';
+}
+function ecoOpenInfo(id){
+  var inf=ECO_INFO[id]; if(!inf) return;
+  var all=[].concat(Object.keys((ECO&&ECO.rates)||{}),Object.keys((ECO&&ECO.credit)||{}),Object.keys((ECO&&ECO.prices)||{}));
+  var nm=id;
+  ['rates','credit','prices'].forEach(function(g){ if(ECO&&ECO[g]&&ECO[g][id]) nm=ECO[g][id].name; });
+  $('ecoMdT').textContent=nm+(inf.ab?'  ('+inf.ab+')':'');
+  $('ecoMdE').textContent=inf.en||'';
+  $('ecoMdB').textContent=inf.b||'';
+  var eff='';
+  if(inf.up) eff+='<div class="ec-eff up"><b>▲ 오를 때</b><p>'+esc(inf.up)+'</p></div>';
+  if(inf.dn) eff+='<div class="ec-eff dn"><b>▼ 내릴 때</b><p>'+esc(inf.dn)+'</p></div>';
+  if(eff) eff+='<div class="ec-eff-w">교과서적 설명이며 과거의 경향입니다. 다른 요인이 겹쳐 반대로 움직이는 경우도 많습니다.</div>';
+  $('ecoMdEff').innerHTML=eff;
+  $('ecoMd').classList.add('on');
 }
 function ecoSpark(sp){
   if(!sp||!sp.points||sp.points.length<4) return '';
@@ -2597,28 +2971,31 @@ function ecoSpark(sp){
 function drawEco(j){
   var box=$('ecoBody'); if(!box) return;
   if(j.status==='nokey'){
-    box.innerHTML='<div class="sec"><div class="sec-h"><h2>경제 지표</h2></div>'+
-      '<div class="empty"><h3>연동 준비 중입니다</h3>'+
+    box.innerHTML='<div class="sec"><div class="empty"><h3>연동 준비 중입니다</h3>'+
       '<p>데이터 연결을 준비하고 있습니다.<br>없는 정보를 채워 넣지 않으려고 비워 두었습니다.</p></div></div>';
     return;
   }
   var R=j.rates||{}, C=j.credit||{}, P=j.prices||{};
   var o='';
 
-  o+='<div class="sec"><div class="sec-h"><h2>금리</h2><span class="note">FRED</span></div>'+
-     ecoRow(R.DFF)+ecoRow(R.DGS10)+ecoRow(R.DGS2)+ecoRow(R.T10Y2Y);
-  if(R.T10Y2Y){
-    o+=ecoSpark(j.spark);
-    o+='<div class="ec-w">마이너스가 되면 과거에 침체가 뒤따랐습니다. '+
-       '앞으로도 그럴 것이라는 뜻은 아닙니다.</div>';
+  if(ECO_TAB==='rate'){
+    o+='<div class="sec ec-sec"><div class="sec-h" style="padding:0 16px"><h2>금리 및 통화정책</h2><span class="note">FRED</span></div>'+
+       ecoRow(R.DFF)+ecoRow(R.DGS10)+ecoRow(R.DGS2)+ecoRow(R.T10Y2Y)+ecoRow(R.WALCL)+ecoRow(R.M2SL);
+    if(R.T10Y2Y){
+      o+='<div style="padding:0 16px">'+ecoSpark(j.spark)+
+         '<div class="ec-w">마이너스가 되면 과거에 침체가 뒤따랐습니다. 앞으로도 그럴 것이라는 뜻은 아닙니다.</div></div>';
+    }
+    o+='</div>';
+  }else if(ECO_TAB==='risk'){
+    o+='<div class="sec ec-sec"><div class="sec-h" style="padding:0 16px"><h2>투자 심리</h2><span class="note">FRED</span></div>'+
+       ecoRow(C.BAMLH0A0HYM2)+ecoRow(C.VIXCLS)+
+       '<div style="padding:12px 16px 0"><div class="ec-w" style="background:var(--s2);color:var(--tx2)">'+
+       '두 숫자 모두 시장이 앞으로를 얼마나 불안하게 보는지 나타냅니다. 낮을수록 안심, 높을수록 경계입니다.'+
+       '</div></div></div>';
+  }else{
+    o+='<div class="sec ec-sec"><div class="sec-h" style="padding:0 16px"><h2>물가·고용</h2><span class="note">FRED</span></div>'+
+       ecoRow(P.CPIAUCSL)+ecoRow(P.UNRATE)+ecoRow(P.PAYEMS)+'</div>';
   }
-  o+='</div>';
-
-  o+='<div class="sec"><div class="sec-h"><h2>시장이 걱정하는 정도</h2></div>'+
-     ecoRow(C.BAMLH0A0HYM2)+ecoRow(C.VIXCLS)+'</div>';
-
-  o+='<div class="sec"><div class="sec-h"><h2>물가와 일자리</h2></div>'+
-     ecoRow(P.CPIAUCSL)+ecoRow(P.UNRATE)+ecoRow(P.PAYEMS)+'</div>';
 
   o+='<div class="sec"><div class="tnb">출처: FRED(미국 세인트루이스 연방준비은행)<br>'+
      '지표마다 발표 주기가 다릅니다. 각 항목의 기준일을 확인해 주세요.<br>'+
@@ -2626,6 +3003,9 @@ function drawEco(j){
      ((j.failed&&j.failed.length)?'<br>일부 항목을 불러오지 못했습니다 · 측정중':'')+
      '</div></div>';
   box.innerHTML=o;
+  box.querySelectorAll('.ec-i').forEach(function(b){
+    b.addEventListener('click',function(){ ecoOpenInfo(b.dataset.info); });
+  });
 }
 
 /* 주간 실적 카드 (2026-08-11)
