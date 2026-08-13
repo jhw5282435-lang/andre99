@@ -671,7 +671,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.13-B</span>
+      <span class="ver">v2026.08.13-C</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -834,8 +834,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.13-B';
-console.log('%c ANDRE99 v2026.08.13-B ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.13-C';
+console.log('%c ANDRE99 v2026.08.13-C ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -2984,7 +2984,7 @@ var ECO_INFO={
     b:'앞으로 30일간 주가가 얼마나 출렁일지에 대한 시장의 예상치입니다.\n\n옵션 거래 가격에서 계산되며 흔히 공포지수라 불립니다.\n\n20 아래면 평온한 편, 30을 넘으면 크게 흔들리고 있다는 신호로 봅니다.',
     up:'불안이 커진다는 뜻입니다. 과거에는 주가가 급락할 때 함께 치솟는 경향이 있었습니다.',
     dn:'시장이 안정된다는 뜻입니다. 다만 너무 낮으면 방심의 신호로 보는 시각도 있습니다.'},
-  CPIAUCSL:{ab:'CPI', en:'Consumer Price Index',
+  CPIAUCNS:{ab:'CPI', en:'Consumer Price Index',
     b:'사람들이 사는 물건과 서비스 값이 작년보다 얼마나 올랐는지 나타냅니다.\n\n연준의 목표는 2%입니다.\n\n매달 중순에 발표되며 시장이 크게 반응합니다.',
     up:'물가가 오른다는 뜻입니다. 과거에는 연준이 금리를 올려 대응하면서 주식이 부담을 받는 경향이 있었습니다.',
     dn:'물가 압력이 줄어든다는 뜻입니다. 과거에는 금리 인하 기대가 생기면서 주식에 우호적인 경향이 있었습니다.'},
@@ -3075,7 +3075,7 @@ function drawEco(j){
        '</div></div></div>';
   }else{
     o+='<div class="sec ec-sec"><div class="sec-h" style="padding:0 16px"><h2>물가·고용</h2><span class="note">FRED</span></div>'+
-       ecoRow(P.CPIAUCSL)+ecoRow(P.UNRATE)+ecoRow(P.PAYEMS)+'</div>';
+       ecoRow(P.CPIAUCNS)+ecoRow(P.UNRATE)+ecoRow(P.PAYEMS)+'</div>';
   }
 
   o+='<div class="sec"><div class="tnb">출처: FRED(미국 세인트루이스 연방준비은행)<br>'+
