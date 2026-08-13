@@ -671,7 +671,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.13-C</span>
+      <span class="ver">v2026.08.13-D</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -834,8 +834,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.13-C';
-console.log('%c ANDRE99 v2026.08.13-C ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.13-D';
+console.log('%c ANDRE99 v2026.08.13-D ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -2985,7 +2985,7 @@ var ECO_INFO={
     up:'불안이 커진다는 뜻입니다. 과거에는 주가가 급락할 때 함께 치솟는 경향이 있었습니다.',
     dn:'시장이 안정된다는 뜻입니다. 다만 너무 낮으면 방심의 신호로 보는 시각도 있습니다.'},
   CPIAUCNS:{ab:'CPI', en:'Consumer Price Index',
-    b:'사람들이 사는 물건과 서비스 값이 작년보다 얼마나 올랐는지 나타냅니다.\n\n연준의 목표는 2%입니다.\n\n매달 중순에 발표되며 시장이 크게 반응합니다.',
+    b:'사람들이 사는 물건과 서비스 값이 작년 같은 달보다 얼마나 올랐는지 나타냅니다.\n\n연준의 목표는 2%입니다.\n\n매달 중순에 발표되며 시장이 크게 반응합니다.\n\n계산 기준: FRED가 주는 원계열 지수를 받아, 작년 같은 달 지수와 비교해 우리가 직접 계산했습니다. 발표 기관의 공식 수치와 소수점 아래에서 조금 다를 수 있습니다.',
     up:'물가가 오른다는 뜻입니다. 과거에는 연준이 금리를 올려 대응하면서 주식이 부담을 받는 경향이 있었습니다.',
     dn:'물가 압력이 줄어든다는 뜻입니다. 과거에는 금리 인하 기대가 생기면서 주식에 우호적인 경향이 있었습니다.'},
   UNRATE:{ab:'U-3', en:'Unemployment Rate',
@@ -2993,14 +2993,16 @@ var ECO_INFO={
     up:'경기가 식고 있다는 뜻입니다. 과거에는 연준이 금리를 내릴 여지가 생기는 한편, 기업 실적 걱정도 함께 커지는 경향이 있었습니다.',
     dn:'고용이 좋다는 뜻입니다. 다만 너무 낮으면 임금이 올라 물가를 자극할 수 있다는 걱정이 나옵니다.'},
   PAYEMS:{ab:'NFP', en:'Nonfarm Payrolls',
-    b:'농업을 제외한 일자리가 지난달보다 얼마나 늘었는지 나타냅니다.\n\n매달 첫 번째 금요일에 발표되며, 경제지표 중 시장이 가장 크게 반응하는 숫자입니다.\n\n마이너스는 일자리가 줄었다는 뜻입니다.',
+    b:'농업을 제외한 일자리가 지난달보다 얼마나 늘거나 줄었는지 나타냅니다.\n\n플러스는 일자리가 늘었다는 뜻, 마이너스는 줄었다는 뜻입니다.\n\n매달 첫 번째 금요일에 발표되며, 경제지표 중 시장이 가장 크게 반응하는 숫자입니다.\n\n발표 뒤 지난 두 달치가 함께 수정되는 경우가 많습니다.',
     up:'고용이 늘어난다는 뜻입니다. 과거에는 경기 호조 신호로 읽히면서도, 금리 인하가 늦어질 수 있다는 부담이 함께 나타나는 경향이 있었습니다.',
     dn:'고용이 나빠진다는 뜻입니다. 과거에는 침체 우려가 커지는 경향이 있었습니다.'}
 };
 function ecoRow(x){
   if(!x) return '';
   var v=x.value, u=x.unit||'';
-  var vs=(v==null)?'측정중':(Number(v).toFixed(Math.abs(v)>=100?0:2)+u);
+  /* CPI는 언론 보도 방식에 맞춰 소수 1자리로 표시한다 */
+  var dg=(x.id==='CPIAUCNS')?1:(Math.abs(v)>=100?0:2);
+  var vs=(v==null)?'측정중':(Number(v).toFixed(dg)+u);
   var ch='';
   if(x.change!=null){
     var s=(x.change>0?'▲ +':(x.change<0?'▼ ':'')) + Math.abs(x.change).toFixed(2) + (x.change_unit||'');
