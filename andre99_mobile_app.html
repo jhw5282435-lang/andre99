@@ -643,6 +643,47 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .fl-more{width:100%;min-height:38px;border-radius:10px;background:var(--s2);color:var(--tx2);font-size:12px;font-weight:700;border:none;margin-top:10px}
 .fl-fold{width:100%;min-height:42px;border-radius:11px;background:var(--s2);color:var(--tx);font-size:12.5px;font-weight:700;border:none}
 #flMap{margin-top:12px}
+/* ══ 13F 기관 (2026.08.14) ══ */
+.ins-mgr{display:flex;gap:7px;overflow-x:auto;padding:12px 16px;scrollbar-width:none}
+.ins-mgr::-webkit-scrollbar{display:none}
+.ins-mgr button{flex:0 0 auto;min-height:34px;padding:0 13px;border-radius:10px;border:none;
+  background:var(--s2);color:var(--tx2);font-size:12px;font-weight:700;font-family:inherit}
+.ins-mgr button.on{background:var(--tx);color:#0B0B0C}
+.q-sum{margin:0 16px 14px;padding:13px;border-radius:12px;background:var(--s2)}
+.q-sum .t{font-size:11.5px;color:var(--tx2);margin-bottom:6px}
+.q-sum .v{font-size:18px;font-weight:800;color:var(--tx);line-height:1.35}
+.q-sum .d{font-size:10.5px;color:var(--tx3,#7a7a7e);margin-top:6px;line-height:1.55}
+.q-stat{display:flex;gap:7px;margin:0 16px 16px}
+.q-st{flex:1;padding:11px 6px;border-radius:11px;background:var(--s2);text-align:center}
+.q-st b{display:block;font-size:19px;font-weight:800;line-height:1.2}
+.q-st span{display:block;font-size:10px;color:var(--tx3,#7a7a7e);margin-top:4px}
+.q-st.new b{color:#FF4D4F}
+.q-st.add b{color:#FF8A8C}
+.q-st.cut b{color:#7FB0F2}
+.q-st.out b{color:#2F80ED}
+.g-h{display:flex;align-items:center;gap:7px;padding:14px 16px 8px}
+.g-h b{font-size:13.5px;font-weight:800;color:var(--tx)}
+.g-h .cnt{font-size:11px;color:var(--tx3,#7a7a7e)}
+.g-h .bar{width:3px;height:15px;border-radius:2px}
+.g-h.new .bar{background:#FF4D4F}
+.g-h.add .bar{background:#FF8A8C}
+.g-h.cut .bar{background:#7FB0F2}
+.g-h.out .bar{background:#2F80ED}
+.h-row{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--s2)}
+.h-nm{flex:1;min-width:0}
+.h-nm b{display:block;font-size:13px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.h-nm span{display:block;font-size:10.5px;color:var(--tx3,#7a7a7e);margin-top:2px}
+.h-vl{flex:0 0 auto;text-align:right}
+.h-vl b{display:block;font-size:13px;font-weight:800;color:var(--tx)}
+.h-vl span{display:block;font-size:10.5px;margin-top:2px;font-weight:700}
+.h-vl span.ft{color:var(--tx3,#7a7a7e)}
+.g-rest{padding:8px 16px 0;font-size:11px;color:var(--tx3,#7a7a7e)}
+.h-fold{display:block;width:calc(100% - 32px);margin:14px 16px 0;min-height:42px;border-radius:11px;
+  background:var(--s2);color:var(--tx2);font-size:12px;font-weight:700;border:none;font-family:inherit}
+.legend{margin:14px 16px 0;padding:11px 12px;border-radius:10px;background:rgba(240,180,41,.10);
+  color:#F0B429;font-size:11px;line-height:1.65}
+.ec-grp{padding:16px 16px 6px;font-size:12px;font-weight:800;color:var(--tx2);letter-spacing:.3px}
+.ec-lead{padding:0 16px 10px;font-size:11.5px;color:var(--tx3,#7a7a7e);line-height:1.6}
 </style>
 </head>
 <body>
@@ -671,7 +712,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.13-D</span>
+      <span class="ver">v2026.08.14-A</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -769,13 +810,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 <!-- ══ 경제 ══ -->
 <main class="page" id="p-eco">
   <div class="ec-tabs">
-    <button class="ec-tab on" data-eco="rate">금리·통화</button>
-    <button class="ec-tab" data-eco="risk">투자 심리</button>
-    <button class="ec-tab" data-eco="macro">물가·고용</button>
-    <button class="ec-tab" data-eco="flow">시장 흐름</button>
+    <button class="ec-tab on" data-eco="fed">연준과 경제</button>
+    <button class="ec-tab" data-eco="flow">시장</button>
+    <button class="ec-tab" data-eco="inst">기관</button>
   </div>
   <div id="ecoBody"><div class="skel">불러오는 중…</div></div>
   <div id="flowWrap" hidden><div id="flowBox"><div class="tvnote">불러오는 중…</div></div></div>
+  <div id="instWrap" hidden><div id="instBox"><div class="tvnote">불러오는 중…</div></div></div>
 </main>
 
 <div class="ec-md" id="ecoMd">
@@ -834,8 +875,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.13-D';
-console.log('%c ANDRE99 v2026.08.13-D ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.14-A';
+console.log('%c ANDRE99 v2026.08.14-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -889,10 +930,11 @@ document.querySelectorAll('.ec-tab').forEach(function(b){
   b.addEventListener('click',function(){
     ECO_TAB=b.dataset.eco;
     document.querySelectorAll('.ec-tab').forEach(function(x){ x.classList.toggle('on', x.dataset.eco===ECO_TAB); });
-    var isFlow=(ECO_TAB==='flow');
-    if(isFlow){ $('ecoBody').setAttribute('hidden',''); $('flowWrap').removeAttribute('hidden'); loadFlow(); }
-    else { $('flowWrap').setAttribute('hidden',''); $('ecoBody').removeAttribute('hidden');
-           if(ECO) drawEco(ECO); else loadEco(); }
+    var eb=$('ecoBody'), fw=$('flowWrap'), iw=$('instWrap');
+    eb.setAttribute('hidden',''); fw.setAttribute('hidden',''); iw.setAttribute('hidden','');
+    if(ECO_TAB==='flow'){ fw.removeAttribute('hidden'); loadFlow(); }
+    else if(ECO_TAB==='inst'){ iw.removeAttribute('hidden'); loadInst(); }
+    else { eb.removeAttribute('hidden'); if(ECO) drawEco(ECO); else loadEco(); }
     window.scrollTo(0,0);
   });
 });
@@ -1509,6 +1551,117 @@ function setSub(sub){
 /* ══ 장기 재무 (SEC XBRL) · 2026.08.13 ══
    야후 5분기 대비 10년. 미국 정부 공개자료. */
 
+/* ══ 13F 기관 (2026.08.14) ══
+   "무엇을 갖고 있나"가 아니라 "무엇이 바뀌었나"를 보여준다. */
+var INST=null, INST_CUR='brk', PF={}, PF_SAME=false;
+function loadInst(){
+  var box=$('instBox'); if(!box) return;
+  if(PF[INST_CUR]){ drawPf(PF[INST_CUR]); return; }
+  box.innerHTML='<div class="tvnote">SEC에서 불러오는 중…</div>';
+  fetchT(API+'/portfolio?id='+encodeURIComponent(INST_CUR)+'&_='+Date.now(), 30000)
+    .then(function(r){return r.json()})
+    .then(function(j){
+      if(!j || j.status!=='ok'){
+        box.innerHTML='<div class="tvnote">'+((j&&j.failed&&j.failed[0])?esc(j.failed[0]):'불러오지 못했습니다')+' · 측정중</div>';
+        return;
+      }
+      PF[INST_CUR]=j; drawPf(j);
+    })
+    .catch(function(){ box.innerHTML='<div class="tvnote">불러오지 못했습니다 · 측정중</div>'; });
+}
+function instBar(){
+  var L=[
+    ['brk','버크셔'],['scion','스콧'],['psq','퍼싱스퀘어'],['duq','듀케인'],
+    ['bw','브리지워터'],['ark','ARK'],['cit','시타델'],['gs','골드만삭스'],['sor','소로스']
+  ];
+  return '<div class="ins-mgr">'+L.map(function(x){
+    return '<button class="'+(x[0]===INST_CUR?'on':'')+'" data-inst="'+x[0]+'">'+esc(x[1])+'</button>';
+  }).join('')+'</div>';
+}
+function pfMoney(v){
+  if(v==null) return '—';
+  var a=Math.abs(v);
+  if(a>=1e8) return Math.round(v/1e8)+'억';
+  if(a>=1e4) return Math.round(v/1e4)+'만';
+  return String(Math.round(v));
+}
+function pfRow(x,kind){
+  var vl, cl='';
+  if(kind==='new'){ vl='신규'; cl='up'; }
+  else if(kind==='exited'){ vl='전량 매도'; cl='dn'; }
+  else if(x.change_pct!=null){
+    vl=(x.change_pct>=0?'▲ ':'▼ ')+Math.abs(x.change_pct).toFixed(1)+'%';
+    cl=x.change_pct>=0?'up':'dn';
+  } else { vl='변동 없음'; cl='ft'; }
+  var amt=(kind==='exited')?'—':pfMoney(x.value);
+  return '<div class="h-row">'+
+    '<div class="h-nm"><b>'+esc(x.name)+'</b>'+
+      '<span>'+(x.weight!=null?('비중 '+x.weight.toFixed(1)+'%'):esc(x.cls||''))+'</span></div>'+
+    '<div class="h-vl"><b>'+esc(amt)+'</b><span class="'+cl+'">'+esc(vl)+'</span></div>'+
+  '</div>';
+}
+function pfGroup(list,kind,label){
+  if(!list||!list.length) return '';
+  var show=list.slice(0,8);
+  var o='<div class="g-h '+kind+'"><span class="bar"></span><b>'+esc(label)+'</b>'+
+        '<span class="cnt">'+list.length+'개</span></div>';
+  o+=show.map(function(x){ return pfRow(x,kind); }).join('');
+  if(list.length>8) o+='<div class="g-rest">그 밖에 '+(list.length-8)+'개 더 있습니다</div>';
+  return o;
+}
+function drawPf(j){
+  var box=$('instBox'); if(!box) return;
+  var S=j.summary||{}, G=j.groups||{};
+  var o=instBar();
+
+  o+='<div class="q-sum">'+
+     '<div class="t">'+esc(j.company||j.ko||'')+(j.who?' · '+esc(j.who):'')+'</div>'+
+     '<div class="v">'+esc(j.period_label||'')+'에<br>이렇게 바꿨습니다</div>'+
+     '<div class="d">보유 '+(j.holdings_count||0)+'개 · '+pfMoney(j.total_value)+' 달러 · '+
+       esc(j.filed||'')+' 제출</div></div>';
+
+  if(!j.compared){
+    o+='<div class="legend">직전 분기 자료를 읽지 못해 변화를 비교하지 못했습니다. 이번 분기 보유만 표시합니다.</div>';
+  }else{
+    o+='<div class="q-stat">'+
+      '<div class="q-st new"><b>'+(S['new']||0)+'</b><span>새로 삼</span></div>'+
+      '<div class="q-st add"><b>'+(S.added||0)+'</b><span>더 삼</span></div>'+
+      '<div class="q-st cut"><b>'+(S.cut||0)+'</b><span>줄임</span></div>'+
+      '<div class="q-st out"><b>'+(S.exited||0)+'</b><span>전부 팜</span></div>'+
+    '</div>';
+    o+=pfGroup(G['new'],'new','새로 산 종목');
+    o+=pfGroup(G.added,'add','더 산 종목');
+    o+=pfGroup(G.cut,'cut','줄인 종목');
+    o+=pfGroup(G.exited,'out','전부 판 종목');
+    if(!(S['new']||S.added||S.cut||S.exited)){
+      o+='<div class="tvnote">이번 분기에는 눈에 띄는 변화가 없었습니다</div>';
+    }
+  }
+
+  var same=G.same||[];
+  if(same.length){
+    o+='<button class="h-fold" id="pfFold">'+(PF_SAME?'▴ 접기':'▾ 변화 없는 '+same.length+'개 보기')+'</button>';
+    if(PF_SAME) o+='<div class="pf-same">'+same.slice(0,40).map(function(x){ return pfRow(x,'same'); }).join('')+'</div>';
+  }
+
+  o+='<div class="legend"><b>분기 종료 후 45일 뒤에 공개됩니다.</b><br>'+
+     '지금 보시는 건 '+esc(j.period||'')+' 기준이며, 그 뒤 매매는 반영되지 않았습니다.</div>';
+  o+='<div class="sec"><div class="tnb">'+
+     '공매도·채권·현금·해외주식은 나오지 않습니다.<br>'+
+     '1억 달러 이상 운용하는 기관만 신고 의무가 있습니다.<br>'+
+     'SEC는 이 내용의 정확성을 검증하지 않습니다.<br>'+
+     '과거 기록이며 앞으로를 예측하지 않습니다.</div></div>';
+
+  box.innerHTML=o;
+  box.querySelectorAll('[data-inst]').forEach(function(b){
+    b.addEventListener('click',function(){
+      INST_CUR=b.dataset.inst; PF_SAME=false; loadInst(); window.scrollTo(0,0);
+    });
+  });
+  var fb=$('pfFold');
+  if(fb) fb.addEventListener('click',function(){ PF_SAME=!PF_SAME; drawPf(j); });
+}
+
 /* ══ 시장 흐름 (2026.08.13) ══
    교과서적 관계를 먼저 보이고, 같은 기간 실제 움직임을 나란히 놓는다.
    인과를 주장하지 않는다. */
@@ -1530,6 +1683,7 @@ var FLOW_MAP=[
 ];
 function loadFlow(){
   var box=$('flowBox'); if(!box) return;
+  if(!ECO && !ECO_LOADING) loadEcoSilent();
   var k='d'+FLOW_DAYS;
   if(FLOW[k]){ drawFlow(FLOW[k]); return; }
   box.innerHTML='<div class="tvnote">불러오는 중…</div>';
@@ -1591,6 +1745,10 @@ function drawFlow(j){
         '</div></div>';
     });
     o+='<div class="fl-warn">최근 '+j.days+'일 변화입니다. 기준금리는 ±0.15%p, 10년물은 ±3%, 달러는 ±2% 안이면 큰 변화 없음으로 봅니다. 우리가 정한 기준입니다.</div></div>';
+  }
+  if(ECO && (ECO.credit||{}).BAMLH0A0HYM2){
+    o+='<div class="ec-grp">시장이 걱정하는 정도</div>'+
+       '<div class="sec ec-sec">'+ecoRow(ECO.credit.BAMLH0A0HYM2)+ecoRow(ECO.credit.VIXCLS)+'</div>';
   }
   var it=(j.items||[]).slice();
   var mx=1; it.forEach(function(x){ if(Math.abs(x.pct)>mx) mx=Math.abs(x.pct); });
@@ -2934,6 +3092,15 @@ function shareCanvas(c,fname){
 /* ══ 경제 지표 (2026-08-11) ══
    FRED 과거 발표값만 표시한다. 예측·전망은 담지 않는다. */
 var ECO=null, ECO_LOADING=false;
+function loadEcoSilent(){
+  if(ECO || ECO_LOADING) return;
+  ECO_LOADING=true;
+  fetchT(API+'/economy?_='+Date.now(), 20000)
+    .then(function(r){return r.json()})
+    .then(function(j){ ECO_LOADING=false; if(j){ ECO=j;
+      if(ECO_TAB==='flow'){ var k='d'+FLOW_DAYS; if(FLOW[k]) drawFlow(FLOW[k]); } } })
+    .catch(function(){ ECO_LOADING=false; });
+}
 function loadEco(){
   if(ECO){ drawEco(ECO); return; }
   if(ECO_LOADING) return;
@@ -3058,30 +3225,23 @@ function drawEco(j){
       '<p>데이터 연결을 준비하고 있습니다.<br>없는 정보를 채워 넣지 않으려고 비워 두었습니다.</p></div></div>';
     return;
   }
-  var R=j.rates||{}, C=j.credit||{}, P=j.prices||{};
+  var R=j.rates||{}, P=j.prices||{};
   var o='';
-
-  if(ECO_TAB==='rate'){
-    o+='<div class="sec ec-sec"><div class="sec-h" style="padding:0 16px"><h2>금리 및 통화정책</h2><span class="note">FRED</span></div>'+
-       ecoRow(R.DFF)+ecoRow(R.DGS10)+ecoRow(R.DGS2)+ecoRow(R.T10Y2Y)+ecoRow(R.WALCL)+ecoRow(R.M2SL);
-    if(R.T10Y2Y){
-      o+='<div style="padding:0 16px">'+ecoSpark(j.spark)+
-         '<div class="ec-w">마이너스가 되면 과거에 침체가 뒤따랐습니다. 앞으로도 그럴 것이라는 뜻은 아닙니다.</div></div>';
-    }
-    o+='</div>';
-  }else if(ECO_TAB==='risk'){
-    o+='<div class="sec ec-sec"><div class="sec-h" style="padding:0 16px"><h2>투자 심리</h2><span class="note">FRED</span></div>'+
-       ecoRow(C.BAMLH0A0HYM2)+ecoRow(C.VIXCLS)+
-       '<div style="padding:12px 16px 0"><div class="ec-w" style="background:var(--s2);color:var(--tx2)">'+
-       '두 숫자 모두 시장이 앞으로를 얼마나 불안하게 보는지 나타냅니다. 낮을수록 안심, 높을수록 경계입니다.'+
-       '</div></div></div>';
-  }else{
-    o+='<div class="sec ec-sec"><div class="sec-h" style="padding:0 16px"><h2>물가·고용</h2><span class="note">FRED</span></div>'+
-       ecoRow(P.CPIAUCNS)+ecoRow(P.UNRATE)+ecoRow(P.PAYEMS)+'</div>';
+  o+='<div class="ec-grp">\u2460 연준이 보는 것</div>'+
+     '<div class="ec-lead">연준은 물가와 일자리 두 가지를 보고 금리를 정합니다.</div>'+
+     '<div class="sec ec-sec">'+ecoRow(P.CPIAUCNS)+ecoRow(P.UNRATE)+ecoRow(P.PAYEMS)+'</div>';
+  o+='<div class="ec-grp">\u2461 연준이 정한 것</div>'+
+     '<div class="ec-lead">위 숫자를 보고 결정한 금리입니다.</div>'+
+     '<div class="sec ec-sec">'+ecoRow(R.DFF)+ecoRow(R.DGS10)+ecoRow(R.DGS2)+ecoRow(R.T10Y2Y);
+  if(R.T10Y2Y){
+    o+='<div style="padding:0 16px">'+ecoSpark(j.spark)+
+       '<div class="ec-w">마이너스가 되면 과거에 침체가 뒤따랐습니다. 앞으로도 그럴 것이라는 뜻은 아닙니다.</div></div>';
   }
-
-  o+='<div class="sec"><div class="tnb">출처: FRED(미국 세인트루이스 연방준비은행)<br>'+
-     '지표마다 발표 주기가 다릅니다. 각 항목의 기준일을 확인해 주세요.<br>'+
+  o+='</div>';
+  o+='<div class="ec-grp">\u2462 연준이 푸는 돈</div>'+
+     '<div class="ec-lead">시중에 돈을 얼마나 풀고 있는지입니다.</div>'+
+     '<div class="sec ec-sec">'+ecoRow(R.WALCL)+ecoRow(R.M2SL)+'</div>';
+  o+='<div class="sec"><div class="tnb">지표마다 발표 주기가 다릅니다. 각 항목의 기준일을 확인해 주세요.<br>'+
      '과거에 발표된 값이며 앞으로를 예측하지 않습니다.'+
      ((j.failed&&j.failed.length)?'<br>일부 항목을 불러오지 못했습니다 · 측정중':'')+
      '</div></div>';
