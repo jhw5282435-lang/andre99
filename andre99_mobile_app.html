@@ -439,7 +439,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 }
 
 /* ══ 기술적 분석 탭 (2026.08.10) ══ */
-.subbar{display:flex;gap:6px;padding:7px 16px 12px;margin:0}
+.subbar{display:flex;gap:6px;padding:10px 16px 12px;margin:0}
 .allbar{display:flex;align-items:center;gap:8px;padding:12px 16px 0}
 .allbar .sbtn{flex:1}
 .eh-chips.rev{margin-top:8px}
@@ -537,7 +537,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;border:none;padding:0}
 .ec-v{font-size:21px;font-weight:800;color:var(--tx);white-space:nowrap;flex:0 0 auto;text-align:right}
 .ec-c{font-size:12px;font-weight:700;margin-left:7px;white-space:nowrap}
-.ec-tabs{display:flex;gap:6px;padding:8px 16px 12px}
+.ec-tabs{display:flex;gap:6px;padding:10px 16px 12px}
 .ec-tab{flex:1;min-height:38px;border-radius:12px;background:var(--s2);color:var(--tx2);
   font-size:12.5px;font-weight:700;border:1px solid transparent;padding:0}
 .ec-tab.on{background:var(--tx);color:#0B0B0C}
@@ -650,7 +650,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   background:var(--s2);color:var(--tx2);font-size:12px;font-weight:700;font-family:inherit}
 .ins-mgr button.on{background:var(--tx);color:#0B0B0C}
 .q-sum{margin:0 16px 14px;padding:13px;border-radius:12px;background:var(--s2)}
-.q-sum .t{font-size:11.5px;color:var(--tx2);margin-bottom:6px}
+.q-sum .t{font-size:11.5px;color:var(--tx2);margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .q-sum .v{font-size:18px;font-weight:800;color:var(--tx);line-height:1.35}
 .q-sum .d{font-size:10.5px;color:var(--tx3,#7a7a7e);margin-top:6px;line-height:1.55}
 .q-stat{display:flex;gap:7px;margin:0 16px 16px}
@@ -684,6 +684,16 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   color:#F0B429;font-size:11px;line-height:1.65}
 .ec-grp{padding:16px 16px 6px;font-size:12px;font-weight:800;color:var(--tx2);letter-spacing:.3px}
 .ec-lead{padding:0 16px 10px;font-size:11.5px;color:var(--tx3,#7a7a7e);line-height:1.6}
+
+/* ══ 출처·한계 통합 (2026.08.15) ══ */
+.srcbtn{display:block;width:calc(100% - 32px);margin:6px 16px 0;min-height:42px;border-radius:11px;
+  background:var(--s1);color:var(--tx2);font-size:12px;font-weight:700;border:none;font-family:inherit}
+.srcbox{margin:8px 16px 0;padding:14px;border-radius:12px;background:var(--s1)}
+.srcrow{display:flex;gap:10px;padding:5px 0;font-size:11.5px;line-height:1.55}
+.srcrow b{flex:0 0 74px;color:var(--tx2);font-weight:700}
+.srcrow span{flex:1;color:var(--tx3,#7a7a7e)}
+.srcend{margin-top:12px;padding-top:11px;border-top:1px solid var(--s2);
+  font-size:11px;color:var(--tx3,#7a7a7e);line-height:1.8}
 </style>
 </head>
 <body>
@@ -712,7 +722,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.14-A</span>
+      <span class="ver">v2026.08.15-C</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -761,7 +771,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     <div class="rows" id="gainRows"><div class="skel">불러오는 중…</div></div>
   </div>
 
-  <p class="foot">이 화면은 정보 제공을 위한 것이며 투자 자문이 아닙니다. 데이터는 지연될 수 있습니다.</p>
+  <button class="srcbtn" id="srcBtn">\u25be 안내</button>
+  <div class="srcbox" id="srcBox" hidden>
+    <div class="srcrow"><b>소스</b><span>FRED · SEC EDGAR · Yahoo Finance · Finnhub</span></div>
+    <div class="srcrow"><b>갱신 주기</b><span>주가 15분 지연 · 기관 보유 45일 지연 · 물가·고용 월 1회</span></div>
+    <div class="srcend">투자 자문이 아닙니다. 지나간 사실만 전합니다.</div>
+  </div>
 </main>
 
 <!-- ══ 종목 ══ -->
@@ -875,8 +890,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.14-A';
-console.log('%c ANDRE99 v2026.08.14-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.15-C';
+console.log('%c ANDRE99 v2026.08.15-C ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -921,6 +936,12 @@ function show(t){
   if(t==='eco'){ loadEco(); }
 }
 document.querySelectorAll('.nb').forEach(function(b){ b.addEventListener('click',function(){ show(b.dataset.tab); }); });
+if($('srcBtn')) $('srcBtn').addEventListener('click',function(){
+  var w=$('srcBox'); if(!w) return;
+  var open=w.hasAttribute('hidden');
+  if(open) w.removeAttribute('hidden'); else w.setAttribute('hidden','');
+  this.textContent=(open?'\u25b4 접기':'\u25be 안내');
+});
 if($('wkPrev')) $('wkPrev').addEventListener('click',function(){ shiftWeek(-1); });
 if($('wkNext')) $('wkNext').addEventListener('click',function(){ shiftWeek(1); });
 if($('wkNow'))  $('wkNow').addEventListener('click',function(){ CAL_WEEK=null; calInit(); });
@@ -1006,7 +1027,7 @@ function loadMarket(){
         : '미국 '+(ld.getMonth()+1)+'/'+ld.getDate()+'('+lwk+') 종가 · 코스피는 한국장 종가';
     }
     $('idxGrid').innerHTML=(d.indices||[]).map(function(x){
-      return '<div><div class="k">'+x.name+'</div><div class="v n">'+fx(x.price,x.price>1000?0:2)+
+      return '<div><div class="k">'+esc(x.name)+'</div><div class="v n">'+fx(x.price,x.price>1000?0:2)+
         '</div><div class="c n '+dirCls(x.chg_pct)+'">'+pct(x.chg_pct)+'</div></div>';
     }).join('');
 
@@ -1043,7 +1064,7 @@ function loadMarket(){
     }
 
     var mcs=(d.macro||[]).map(function(x){
-      return '<div class="chip"><div class="k">'+x.name+'</div><div class="v n">'+fx(x.price,x.price>1000?0:2)+
+      return '<div class="chip"><div class="k">'+esc(x.name)+'</div><div class="v n">'+fx(x.price,x.price>1000?0:2)+
         '<span class="c '+dirCls(x.chg_pct)+'">'+pct(x.chg_pct)+'</span></div></div>';
     }).join('');
     /* 자동 흐름: 같은 목록을 두 벌 이어 붙여 끊김 없이 순환 */
@@ -1051,8 +1072,8 @@ function loadMarket(){
 
     var g=d.gainers||[];
     $('gainRows').innerHTML = g.length ? g.map(function(x,i){
-      return '<div class="row" data-sym="'+x.symbol+'"><span class="rk n">'+(i+1)+'</span>'+
-        '<span><span class="tk">'+x.symbol+'</span><div class="ko">'+(x.name||'')+'</div></span>'+
+      return '<div class="row" data-sym="'+esc(x.symbol)+'"><span class="rk n">'+(i+1)+'</span>'+
+        '<span><span class="tk">'+esc(x.symbol)+'</span><div class="ko">'+esc(x.name||'')+'</div></span>'+
         '<span class="rt"><div class="p n">'+fx(x.price)+'</div>'+
         '<div class="c n '+dirCls(x.chg_pct)+'">'+pct(x.chg_pct)+'</div></span></div>';
     }).join('') : '<div class="skel">지금은 목록을 불러오지 못했습니다.</div>';
@@ -1554,6 +1575,33 @@ function setSub(sub){
 /* ══ 13F 기관 (2026.08.14) ══
    "무엇을 갖고 있나"가 아니라 "무엇이 바뀌었나"를 보여준다. */
 var INST=null, INST_CUR='brk', PF={}, PF_SAME=false;
+/* 기관 설명 (2026.08.15) */
+var INST_INFO={
+  brk:{n:'버크셔 해서웨이', w:'워런 버핏',
+    b:'워런 버핏이 이끄는 지주회사입니다.\n\n한 종목을 사면 몇 년씩 들고 가는 것으로 유명합니다. 보유 종목이 30~50개로 적어서 무엇을 사고팔았는지가 뚜렷하게 보입니다.\n\n13F 발표 때 가장 많이 찾아보는 기관입니다.'},
+  psq:{n:'퍼싱스퀘어', w:'빌 애크먼',
+    b:'빌 애크먼이 운영하는 헤지펀드입니다.\n\n10개 안팎의 종목에만 크게 투자하고, 회사 경영에 목소리를 내는 행동주의 방식으로 알려져 있습니다.\n\n종목 수가 적어 한 종목의 변화가 크게 보입니다.'},
+  duq:{n:'듀케인 패밀리오피스', w:'스탠리 드러켄밀러',
+    b:'조지 소로스와 함께 일했던 투자자의 가족 자산 운용 회사입니다.\n\n경제 전체 흐름을 보고 자산을 크게 바꾸는 매크로 방식으로 알려져 있습니다. 분기마다 보유 종목이 많이 달라집니다.'},
+  bw:{n:'브리지워터', w:'레이 달리오',
+    b:'세계에서 가장 큰 헤지펀드 중 하나입니다.\n\n경제 상황에 따라 여러 자산에 나눠 담는 방식을 씁니다. 보유 종목이 수백 개라 개별 판단보다는 전체 흐름을 보는 데 참고합니다.'},
+  ark:{n:'ARK 인베스트', w:'캐시 우드',
+    b:'혁신 기술 기업에 집중 투자하는 운용사입니다.\n\n전기차, 유전자, 우주, 인공지능 같은 분야를 주로 담습니다. 매매가 잦아 분기마다 변화가 큽니다.\n\n국내에서도 관심이 많은 곳입니다.'},
+  cit:{n:'시타델', w:'켄 그리핀',
+    b:'세계 최대 규모의 헤지펀드입니다.\n\n수천 개 종목을 짧게 사고파는 방식이라, 한 종목의 매수가 그 회사에 대한 판단을 뜻하지는 않습니다.\n\n전체 흐름을 참고하는 용도로 보시면 됩니다.'},
+  tp:{n:'써드포인트', w:'댄 로브',
+    b:'댄 로브가 운영하는 헤지펀드입니다.\n\n저평가된 회사를 사서 경영에 관여하는 행동주의 방식으로 알려져 있습니다. 40~60개 종목을 보유합니다.'},
+  sor:{n:'소로스 펀드', w:'조지 소로스',
+    b:'조지 소로스 가문의 자산을 운용하는 회사입니다.\n\n소로스 본인은 은퇴했고 지금은 전문 운용팀이 맡고 있습니다. 매크로 판단에 따라 자산을 크게 바꾸는 편입니다.'}
+};
+function instInfo(id){
+  var f=INST_INFO[id]; if(!f) return;
+  $('ecoMdT').textContent=f.n;
+  $('ecoMdE').textContent=f.w||'';
+  $('ecoMdB').textContent=f.b;
+  $('ecoMdEff').innerHTML='';
+  $('ecoMd').classList.add('on');
+}
 function loadInst(){
   var box=$('instBox'); if(!box) return;
   if(PF[INST_CUR]){ drawPf(PF[INST_CUR]); return; }
@@ -1571,8 +1619,8 @@ function loadInst(){
 }
 function instBar(){
   var L=[
-    ['brk','버크셔'],['scion','스콧'],['psq','퍼싱스퀘어'],['duq','듀케인'],
-    ['bw','브리지워터'],['ark','ARK'],['cit','시타델'],['gs','골드만삭스'],['sor','소로스']
+    ['brk','버크셔'],['psq','퍼싱스퀘어'],['duq','듀케인'],['bw','브리지워터'],
+    ['ark','ARK'],['cit','시타델'],['tp','써드포인트'],['sor','소로스']
   ];
   return '<div class="ins-mgr">'+L.map(function(x){
     return '<button class="'+(x[0]===INST_CUR?'on':'')+'" data-inst="'+x[0]+'">'+esc(x[1])+'</button>';
@@ -1594,9 +1642,12 @@ function pfRow(x,kind){
     cl=x.change_pct>=0?'up':'dn';
   } else { vl='변동 없음'; cl='ft'; }
   var amt=(kind==='exited')?'—':pfMoney(x.value);
+  var sub=[];
+  if(x.cls) sub.push(esc(x.cls));
+  if(x.weight!=null) sub.push('비중 '+x.weight.toFixed(1)+'%');
   return '<div class="h-row">'+
     '<div class="h-nm"><b>'+esc(x.name)+'</b>'+
-      '<span>'+(x.weight!=null?('비중 '+x.weight.toFixed(1)+'%'):esc(x.cls||''))+'</span></div>'+
+      '<span>'+(sub.join(' · ')||'—')+'</span></div>'+
     '<div class="h-vl"><b>'+esc(amt)+'</b><span class="'+cl+'">'+esc(vl)+'</span></div>'+
   '</div>';
 }
@@ -1615,7 +1666,8 @@ function drawPf(j){
   var o=instBar();
 
   o+='<div class="q-sum">'+
-     '<div class="t">'+esc(j.company||j.ko||'')+(j.who?' · '+esc(j.who):'')+'</div>'+
+     '<div class="t">'+esc(j.company||j.ko||'')+(j.who?' · '+esc(j.who):'')+
+       '<button class="ec-i" data-iinfo="'+esc(INST_CUR)+'" aria-label="설명">i</button></div>'+
      '<div class="v">'+esc(j.period_label||'')+'에<br>이렇게 바꿨습니다</div>'+
      '<div class="d">보유 '+(j.holdings_count||0)+'개 · '+pfMoney(j.total_value)+' 달러 · '+
        esc(j.filed||'')+' 제출</div></div>';
@@ -1650,9 +1702,12 @@ function drawPf(j){
      '공매도·채권·현금·해외주식은 나오지 않습니다.<br>'+
      '1억 달러 이상 운용하는 기관만 신고 의무가 있습니다.<br>'+
      'SEC는 이 내용의 정확성을 검증하지 않습니다.<br>'+
-     '과거 기록이며 앞으로를 예측하지 않습니다.</div></div>';
+     '자세한 안내는 홈 맨 아래를 참고해 주세요.</div></div>';
 
   box.innerHTML=o;
+  box.querySelectorAll('[data-iinfo]').forEach(function(b){
+    b.addEventListener('click',function(e){ e.stopPropagation(); instInfo(b.dataset.iinfo); });
+  });
   box.querySelectorAll('[data-inst]').forEach(function(b){
     b.addEventListener('click',function(){
       INST_CUR=b.dataset.inst; PF_SAME=false; loadInst(); window.scrollTo(0,0);
@@ -3242,7 +3297,7 @@ function drawEco(j){
      '<div class="ec-lead">시중에 돈을 얼마나 풀고 있는지입니다.</div>'+
      '<div class="sec ec-sec">'+ecoRow(R.WALCL)+ecoRow(R.M2SL)+'</div>';
   o+='<div class="sec"><div class="tnb">지표마다 발표 주기가 다릅니다. 각 항목의 기준일을 확인해 주세요.<br>'+
-     '과거에 발표된 값이며 앞으로를 예측하지 않습니다.'+
+     '과거에 발표된 값입니다 · 자세한 안내는 홈 맨 아래 참고'+
      ((j.failed&&j.failed.length)?'<br>일부 항목을 불러오지 못했습니다 · 측정중':'')+
      '</div></div>';
   box.innerHTML=o;
