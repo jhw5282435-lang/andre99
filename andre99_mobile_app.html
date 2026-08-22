@@ -728,6 +728,21 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .ta-rev b{font-weight:700}
 .ta-more{display:block;width:calc(100% - 32px);margin:12px 16px 0;min-height:40px;border-radius:11px;
   background:var(--s2);color:var(--tx2);font-size:12px;font-weight:700;border:none;font-family:inherit}
+.ta-days{display:flex;gap:6px;padding:0 16px 10px}
+.ta-d{flex:1;min-height:32px;border-radius:9px;background:var(--s2);color:var(--tx2);
+  font-size:11.5px;font-weight:700;border:none;font-family:inherit}
+.ta-d.on{background:var(--tx);color:#0B0B0C}
+.ta-tabs{display:flex;gap:6px;padding:0 16px 12px}
+.ta-t{flex:1;min-height:38px;border-radius:11px;background:var(--s2);color:var(--tx2);
+  font-size:11.5px;font-weight:700;border:none;font-family:inherit;padding:0 6px}
+.ta-t.on{background:var(--s3,#1a1a1c);color:var(--tx);box-shadow:inset 0 0 0 1px var(--tx3,#3a3a3d)}
+.ta-eps.sm .p,.ta-eps.sm .c{font-size:13px}
+.ta-eps.sm{flex-wrap:wrap;gap:5px}
+.ta-q{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;margin-left:auto}
+.ta-q.g{background:rgba(255,77,79,.12);color:#FF4D4F}
+.ta-q.c{background:var(--s2);color:var(--tx2)}
+.ta-q.w{background:rgba(47,128,237,.12);color:#2F80ED}
+.ta-sub b{font-weight:700}
 </style>
 </head>
 <body>
@@ -756,7 +771,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.19-A</span>
+      <span class="ver">v2026.08.19-B</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -925,8 +940,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.19-A';
-console.log('%c ANDRE99 v2026.08.19-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.19-B';
+console.log('%c ANDRE99 v2026.08.19-B ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -1897,21 +1912,21 @@ function drawFlow(j){
     fb.textContent=(open?'▴ ':'▾ ')+'보통은 이렇게 움직인다고 합니다';
   });
 }
-/* ══ 흑자 전환 목록 (2026.08.19) ══
-   실적 발표 직후 EPS가 적자에서 흑자로 바뀐 회사.
-   직전 분기와 비교한다. 예측이 아니라 발표된 사실이다. */
-var TA=null, TA_LOADING=false, TA_MORE=false;
+/* ══ 흑자 전환 · 적자 축소 (2026.08.19) ══
+   발표된 실적만 다룬다. 앞으로를 예측하지 않는다. */
+var TA=null, TA_LOADING=false, TA_DAYS=30, TA_TAB='turned';
 function loadTA(){
   var box=$('taBox'); if(!box) return;
-  if(TA){ drawTA(TA); return; }
+  var k='d'+TA_DAYS;
+  if(TA && TA.__k===k){ drawTA(TA); return; }
   if(TA_LOADING) return;
   TA_LOADING=true;
-  box.innerHTML='<div class="ta-load">최근 실적 발표를 확인하는 중…</div>';
-  fetchT(API+'/turnaround?days=14&_='+Date.now(), 30000)
+  box.innerHTML='<div class="sec"><div class="ta-load">최근 실적 발표를 확인하는 중…</div></div>';
+  fetchT(API+'/turnaround?days='+TA_DAYS+'&_='+Date.now(), 30000)
     .then(function(r){return r.json()})
     .then(function(j){ TA_LOADING=false;
       if(!j || j.status!=='ok'){ box.innerHTML=''; return; }
-      TA=j; drawTA(j);
+      j.__k=k; TA=j; drawTA(j);
     })
     .catch(function(){ TA_LOADING=false; var b=$('taBox'); if(b) b.innerHTML=''; });
 }
@@ -1922,51 +1937,106 @@ function taMoney(v){
   if(a>=1e6) return '$'+(v/1e6).toFixed(0)+'M';
   return '$'+Math.round(v);
 }
-function taRow(x){
+function taQual(q){
+  if(q==='growth') return '<span class="ta-q g">매출도 늘었습니다</span>';
+  if(q==='costcut') return '<span class="ta-q c">매출은 비슷합니다</span>';
+  if(q==='caution') return '<span class="ta-q w">매출은 줄었습니다</span>';
+  return '';
+}
+function taRowTurned(x){
   var nm = x.name ? esc(x.name) : esc(x.symbol);
-  var sub=[];
-  sub.push(esc(x.symbol));
-  if(x.date) sub.push(esc(x.date));
-  if(x.mcap) sub.push('시총 '+taMoney(x.mcap));
-  var rev='';
+  var meta=[esc(x.symbol)];
+  if(x.date) meta.push(esc(x.date));
+  if(x.mcap) meta.push('시총 '+esc(taMoney(x.mcap)));
+  var foot=[];
   if(x.rev_now!=null){
-    rev='<span class="ta-rev">매출 '+esc(taMoney(x.rev_now))+
-        (x.rev_change_pct!=null?' <b class="'+dirCls(x.rev_change_pct)+'">'+
-          (x.rev_change_pct>=0?'+':'')+x.rev_change_pct.toFixed(0)+'%</b>':'')+'</span>';
+    foot.push('매출 '+esc(taMoney(x.rev_now))+
+      (x.rev_change_pct!=null?' <b class="'+dirCls(x.rev_change_pct)+'">'+
+        (x.rev_change_pct>=0?'+':'')+x.rev_change_pct.toFixed(0)+'%</b>':''));
+  }
+  if(x.surprise_pct!=null && Math.abs(x.surprise_pct)>=5){
+    foot.push('예상보다 <b class="'+dirCls(x.surprise_pct)+'">'+
+      (x.surprise_pct>=0?'+':'')+x.surprise_pct.toFixed(0)+'%</b>');
   }
   return '<div class="ta-row" data-sym="'+esc(x.symbol)+'">'+
-    '<div class="ta-nm"><b>'+nm+'</b><span>'+sub.join(' · ')+'</span></div>'+
+    '<div class="ta-nm"><b>'+nm+'</b><span>'+meta.join(' · ')+'</span></div>'+
     '<div class="ta-eps">'+
       '<span class="p n">'+Number(x.eps_prev).toFixed(2)+'</span>'+
       '<span class="ar">\u2192</span>'+
       '<span class="c n">+'+Number(x.eps_now).toFixed(2)+'</span>'+
+      taQual(x.quality)+
     '</div>'+
-    (rev?'<div class="ta-sub">'+rev+'</div>':'')+
+    (foot.length?'<div class="ta-sub">'+foot.join(' · ')+'</div>':'')+
+  '</div>';
+}
+function taRowShrink(x){
+  var nm = x.name ? esc(x.name) : esc(x.symbol);
+  var meta=[esc(x.symbol)];
+  if(x.date) meta.push(esc(x.date));
+  if(x.mcap) meta.push('시총 '+esc(taMoney(x.mcap)));
+  var tr=(x.eps_track||[]).map(function(v,i){
+    var last=(i===x.eps_track.length-1);
+    return '<span class="'+(last?'c':'p')+' n">'+Number(v).toFixed(2)+'</span>';
+  }).join('<span class="ar">\u2192</span>');
+  var foot=[];
+  if(x.shrink_pct!=null) foot.push('적자폭 '+x.shrink_pct.toFixed(0)+'% 줄었습니다');
+  if(x.rev_change_pct!=null){
+    foot.push('매출 <b class="'+dirCls(x.rev_change_pct)+'">'+
+      (x.rev_change_pct>=0?'+':'')+x.rev_change_pct.toFixed(0)+'%</b>');
+  }
+  return '<div class="ta-row" data-sym="'+esc(x.symbol)+'">'+
+    '<div class="ta-nm"><b>'+nm+'</b><span>'+meta.join(' · ')+'</span></div>'+
+    '<div class="ta-eps sm">'+tr+'</div>'+
+    (foot.length?'<div class="ta-sub">'+foot.join(' · ')+'</div>':'')+
   '</div>';
 }
 function drawTA(j){
   var box=$('taBox'); if(!box) return;
-  var it=j.items||[];
-  if(!it.length){
-    box.innerHTML='<div class="sec"><div class="sec-h"><h2>적자에서 흑자로</h2>'+
-      '<span class="note">최근 '+(j.window?j.window.days:14)+'일</span></div>'+
-      '<div class="ta-load">최근 '+(j.window?j.window.days:14)+'일 사이에 바뀐 회사가 없습니다.<br>'+
-      '실적 발표가 몰리는 시기에 다시 확인해 주세요.</div></div>';
-    return;
+  var tn=j.turned||[], sh=j.shrinking||[];
+  if(!tn.length && !sh.length){
+    box.innerHTML='<div class="sec"><div class="sec-h"><h2>실적 발표 추적</h2></div>'+
+      '<div class="ta-days">'+[14,30,45].map(function(d){
+        return '<button class="ta-d'+(d===TA_DAYS?' on':'')+'" data-d="'+d+'">'+d+'일</button>';
+      }).join('')+'</div>'+
+      '<div class="ta-load">최근 '+j.window.days+'일 사이에 해당하는 회사가 없습니다.<br>'+
+      '기간을 늘리거나 실적 시즌에 다시 확인해 주세요.</div></div>';
+    bindTA(j); return;
   }
-  var show = TA_MORE ? it : it.slice(0,5);
-  var o='<div class="sec"><div class="sec-h"><h2>적자에서 흑자로</h2>'+
-        '<span class="note">최근 '+(j.window?j.window.days:14)+'일</span></div>'+
-        '<div class="ta-lead">직전 분기에 적자였다가 이번 발표에서 흑자를 낸 회사입니다.</div>';
-  o+=show.map(taRow).join('');
-  if(it.length>5){
-    o+='<button class="ta-more" id="taMore">'+
-       (TA_MORE?'\u25b4 접기':'\u25be 전체 '+it.length+'곳 보기')+'</button>';
+  var list = (TA_TAB==='turned') ? tn : sh;
+  var o='<div class="sec"><div class="sec-h"><h2>실적 발표 추적</h2>'+
+        '<span class="note">최근 '+j.window.days+'일</span></div>'+
+        '<div class="ta-days">'+[14,30,45].map(function(d){
+          return '<button class="ta-d'+(d===TA_DAYS?' on':'')+'" data-d="'+d+'">'+d+'일</button>';
+        }).join('')+'</div>'+
+        '<div class="ta-tabs">'+
+          '<button class="ta-t'+(TA_TAB==='turned'?' on':'')+'" data-t="turned">적자에서 흑자로 '+tn.length+'</button>'+
+          '<button class="ta-t'+(TA_TAB==='shrinking'?' on':'')+'" data-t="shrinking">적자가 줄고 있는 '+sh.length+'</button>'+
+        '</div>';
+  if(TA_TAB==='turned'){
+    o+='<div class="ta-lead">직전 분기에 적자였다가 이번 발표에서 흑자를 낸 회사입니다.</div>';
+    o+= tn.length ? tn.map(taRowTurned).join('') : '<div class="ta-load">해당하는 회사가 없습니다.</div>';
+  }else{
+    o+='<div class="ta-lead">아직 적자지만 3분기 연속 적자폭이 줄고 있는 회사입니다.</div>';
+    o+= sh.length ? sh.map(taRowShrink).join('') : '<div class="ta-load">해당하는 회사가 없습니다.</div>';
   }
   o+='<div class="tnb">출처: Finnhub 실적 캘린더 · 주당순이익(EPS) 기준<br>'+
+     '시가총액 1억~100억 달러 구간만 표시합니다.<br>'+
      '발표 당일에는 아직 집계되지 않은 회사가 있습니다.<br>'+
-     '한 분기 흑자가 앞으로도 이어진다는 뜻은 아닙니다.</div></div>';
+     (TA_TAB==='shrinking'
+       ? '적자폭이 줄었다는 사실일 뿐, 흑자 전환을 뜻하지 않습니다.'
+       : '한 분기 흑자가 앞으로도 이어진다는 뜻은 아닙니다.')+
+     '</div></div>';
   box.innerHTML=o;
+  bindTA(j);
+}
+function bindTA(j){
+  var box=$('taBox'); if(!box) return;
+  box.querySelectorAll('.ta-d').forEach(function(b){
+    b.addEventListener('click',function(){ TA_DAYS=Number(b.dataset.d); loadTA(); });
+  });
+  box.querySelectorAll('.ta-t').forEach(function(b){
+    b.addEventListener('click',function(){ TA_TAB=b.dataset.t; if(TA) drawTA(TA); });
+  });
   box.querySelectorAll('.ta-row').forEach(function(r){
     r.addEventListener('click',function(){
       var s=r.dataset.sym; if(!s) return;
@@ -1974,10 +2044,7 @@ function drawTA(j){
       loadStock(s);
     });
   });
-  var mb=$('taMore');
-  if(mb) mb.addEventListener('click',function(){ TA_MORE=!TA_MORE; drawTA(j); });
 }
-
 /* ══ 흑자 전환 추적 (2026.08.15) ══
    순이익 부호가 바뀐 해를 찾고, 같은 기간 주가를 나란히 놓는다.
    인과를 주장하지 않는다. */
@@ -2654,8 +2721,7 @@ function loadStock(sym){
       html+='<div class="sec cat-info"><div class="sec-h"><h2>기업 개요</h2>'+
         (co.source?'<span class="note">Yahoo Finance</span>':'')+'</div><div class="ovw">';
       if(co.summary){
-
-          '<p class="ovw-s" id="ovwSum">'+esc(co.summary)+'</p>'+
+        html+='<p class="ovw-s" id="ovwSum">'+esc(co.summary)+'</p>'+
               '<button class="ovw-m" id="ovwMore">더 보기</button>';
       }
       if(facts.length){
