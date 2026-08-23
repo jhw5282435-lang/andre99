@@ -815,7 +815,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.20-B</span>
+      <span class="ver">v2026.08.23-A</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -991,8 +991,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.20-B';
-console.log('%c ANDRE99 v2026.08.20-B ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.23-A';
+console.log('%c ANDRE99 v2026.08.23-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var $=function(id){return document.getElementById(id)};
 
@@ -1118,7 +1118,7 @@ function heatColor(p){
   return p>=0 ? 'rgba(255,77,79,'+a.toFixed(3)+')' : 'rgba(47,128,237,'+a.toFixed(3)+')';
 }
 function loadMarket(){
-  fetchT(API+'/market', 12000).then(function(r){return r.json()}).then(function(d){
+  fetchT(API+'/market?_='+Date.now(), 20000).then(function(r){return r.json()}).then(function(d){
     if(!d||d.status!=='ok') throw new Error('no data');
     if(d.timestamp){ DATA_TS=new Date(d.timestamp); renderStamp(); }
     (d.macro||[]).forEach(function(x){
