@@ -40,7 +40,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 /* ── 상단바 ── */
 .top{position:sticky;top:0;z-index:30;background:var(--bg);padding:env(safe-area-inset-top) 0 0}
 .top-in{display:flex;align-items:center;gap:9px;height:52px;padding:0 16px}
-.brandmark{flex:none;display:flex;align-items:center;color:var(--tx)}
+.brandmark{flex:none;display:flex;align-items:center;color:var(--tx);
+  cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  padding:4px;margin:-4px}
 .mstat{display:flex;align-items:center;gap:8px;background:var(--s2);border-radius:14px;padding:7px 12px;min-height:36px}
 .mstat b{font-size:13px;font-weight:700}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--up)}
@@ -273,12 +275,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .bigc-ax{display:flex;justify-content:space-between;font-size:9.5px;color:var(--tx3);font-family:var(--mono);margin-top:4px}
 .bigc-lg{font-size:9.5px;color:var(--tx3);margin-top:6px}
 
-/* ── 운영자 전용 카드 버튼 ── */
-.admbar{display:flex;align-items:center;gap:9px;margin:14px 16px 0}
-.admbar .sbtn{flex:1}
-.admtag{flex:none;font-size:10px;color:var(--tx3);border:1px solid var(--line);
-  padding:4px 9px;border-radius:9px}
-
 /* ── 스크린 탭 (두 지표 전환) ── */
 .scrtab{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px 0}
 .stb{background:var(--s2);border-radius:18px;padding:13px 14px;text-align:left;
@@ -440,8 +436,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 /* ══ 기술적 분석 탭 (2026.08.10) ══ */
 .subbar{display:flex;gap:6px;padding:10px 16px 12px;margin:0}
-.allbar{display:flex;align-items:center;gap:8px;padding:12px 16px 0}
-.allbar .sbtn{flex:1}
 .eh-chips.rev{margin-top:8px}
 .eh-chips.rev .v{font-size:22px}
 .subchip{flex:1;min-height:38px;border-radius:12px;background:var(--s2);color:var(--tx2);font-size:12.5px;font-weight:700;border:1px solid transparent;padding:0}
@@ -515,10 +509,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .npb{font-size:10.5px;color:var(--tx3,#7a7a7e);margin-top:4px}
 
 /* ══ 카드 저장 버튼 · 선택 창 (2026-08-11) ══ */
-#cardFab{position:fixed;right:16px;bottom:78px;width:52px;height:52px;border-radius:50%;
-  background:var(--tx);color:#0B0B0C;font-size:19px;font-weight:800;z-index:40;display:none;
-  align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.55);border:none}
-#cardFab:active{transform:scale(.94)}
 .ovl-in.pick{max-width:340px;padding:22px 20px}
 .ovl-in.pick h3{margin:0 0 16px;font-size:15px;font-weight:800;color:var(--tx)}
 .pkrow{display:flex;align-items:center;gap:11px;padding:12px 12px;border-radius:11px;
@@ -526,6 +516,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .pkrow input{width:19px;height:19px;accent-color:#FF4D4F;flex:0 0 auto}
 .pkrow span{font-size:13.5px;font-weight:600;color:var(--tx)}
 #pickGo:disabled{opacity:.4}
+.pknone{padding:18px 12px;border-radius:11px;background:var(--s2);
+  font-size:12.5px;line-height:1.7;color:var(--tx3,#7a7a7e);text-align:center}
 
 /* ══ 경제 지표 (2026-08-11) ══ */
 .ec-row{padding:14px 16px;border-bottom:1px solid var(--s2)}
@@ -563,7 +555,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   font-size:13px;font-weight:700;margin-top:16px}
 .ec-d{font-size:11.5px;color:var(--tx2);margin-top:5px;line-height:1.55}
 .ec-a{font-size:10.5px;color:var(--tx3,#7a7a7e);margin-top:4px}
-.ec-sp{margin:10px 0 4px}
+.ec-gwrap{padding:2px 16px 0}
+.ec-gh{display:flex;align-items:center;gap:7px;padding:10px 0 0}
+.ec-gt{font-size:11.5px;font-weight:700;color:var(--tx2)}
+.ec-x{flex:none;width:17px;height:17px;border-radius:50%;border:1px solid var(--line);
+  background:transparent;color:var(--tx3,#7a7a7e);font-size:10.5px;font-weight:800;
+  line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.ec-x:active{background:var(--s2)}
+.ec-sp{margin:6px 0 4px}
 .ec-sp svg{width:100%;height:64px;display:block}
 .ec-sp .spl{fill:none;stroke:#F3F3F4;stroke-width:1.6}
 .ec-sp .sp0{stroke:#FF4D4F;stroke-width:1;stroke-dasharray:4 3;opacity:.7}
@@ -689,6 +688,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .srcbtn{display:block;width:calc(100% - 32px);margin:6px 16px 0;min-height:42px;border-radius:11px;
   background:var(--s1);color:var(--tx2);font-size:12px;font-weight:700;border:none;font-family:inherit}
 .srcbox{margin:8px 16px 0;padding:14px;border-radius:12px;background:var(--s1)}
+.srchead{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:9.5px;
+  font-weight:700;letter-spacing:1.1px;color:var(--tx3,#7a7a7e);
+  padding-bottom:9px;margin-bottom:5px;border-bottom:1px solid var(--s2)}
 .srcrow{display:flex;gap:10px;padding:5px 0;font-size:11.5px;line-height:1.55}
 .srcrow b{flex:0 0 74px;color:var(--tx2);font-weight:700}
 .srcrow span{flex:1;color:var(--tx3,#7a7a7e)}
@@ -804,7 +806,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 <header class="top">
   <div class="top-in">
-    <span class="brandmark" aria-label="ANDRE99">
+    <span class="brandmark" id="brandTap" aria-label="ANDRE99">
       <svg width="23" height="23" viewBox="0 0 32 32"><g fill="currentColor"><path d="M16.00 11.30L16.26 11.28L16.52 11.27L16.79 11.29L17.05 11.32L17.31 11.36L17.57 11.43L17.83 11.51L18.08 11.60L18.33 11.71L18.57 11.84L18.80 11.97L19.03 12.13L19.24 12.29L19.45 12.47L19.65 12.66L19.83 12.86L20.01 13.07L20.17 13.29L20.32 13.52L20.45 13.76L20.58 14.01L20.69 14.26L20.78 14.52L20.86 14.79L20.92 15.06L20.97 15.33L21.00 15.61L21.02 15.88L21.02 16.16L21.01 16.44L20.98 16.71L20.93 16.99L20.87 17.26L20.80 17.53L20.70 17.79L20.60 18.05L20.48 18.30L20.34 18.54L20.20 18.78L20.03 19.00L19.86 19.22L19.67 19.43L19.48 19.62L19.27 19.81L19.05 19.98L18.83 20.14L18.59 20.28L18.35 20.42L18.10 20.53L17.84 20.64L17.58 20.73L17.32 20.80L17.05 20.86L16.78 20.90L16.50 20.93L16.23 20.94L15.96 20.94L15.68 20.92L15.41 20.88L15.15 20.83L14.89 20.76L14.63 20.68L14.38 20.59L14.13 20.48L13.89 20.35L13.66 20.21L13.44 20.06L13.24 19.90L13.04 19.72L12.86 19.53L12.69 19.33L12.94 19.08L13.13 19.22L13.33 19.35L13.53 19.48L13.74 19.59L13.95 19.69L14.17 19.79L14.38 19.87L14.61 19.94L14.83 19.99L15.05 20.04L15.28 20.07L15.51 20.10L15.74 20.11L15.96 20.11L16.19 20.09L16.42 20.07L16.64 20.03L16.86 19.98L17.07 19.92L17.29 19.85L17.50 19.77L17.70 19.67L17.90 19.57L18.09 19.45L18.27 19.33L18.45 19.19L18.62 19.05L18.78 18.90L18.94 18.74L19.08 18.57L19.22 18.40L19.34 18.21L19.46 18.03L19.57 17.83L19.66 17.63L19.75 17.43L19.82 17.22L19.88 17.00L19.93 16.79L19.97 16.57L20.00 16.35L20.01 16.13L20.02 15.91L20.01 15.68L19.99 15.46L19.96 15.24L19.92 15.02L19.86 14.81L19.79 14.59L19.72 14.38L19.63 14.18L19.53 13.98L19.41 13.78L19.29 13.59L19.16 13.41L19.02 13.23L18.87 13.06L18.71 12.90L18.54 12.75L18.36 12.60L18.18 12.47L17.99 12.34L17.79 12.23L17.58 12.12L17.37 12.02L17.15 11.94L16.93 11.86L16.70 11.80L16.47 11.74L16.24 11.69L16.00 11.66Z"/><path d="M23.06 13.71L23.24 14.08L23.39 14.47L23.51 14.87L23.60 15.29L23.66 15.70L23.70 16.13L23.71 16.55L23.70 16.98L23.65 17.41L23.59 17.83L23.50 18.26L23.38 18.67L23.24 19.08L23.07 19.48L22.88 19.87L22.67 20.25L22.43 20.62L22.18 20.98L21.90 21.31L21.60 21.64L21.29 21.94L20.96 22.23L20.61 22.49L20.24 22.74L19.87 22.97L19.48 23.17L19.08 23.35L18.67 23.50L18.25 23.64L17.82 23.74L17.39 23.82L16.96 23.88L16.52 23.91L16.08 23.92L15.65 23.90L15.21 23.86L14.79 23.79L14.36 23.69L13.94 23.57L13.54 23.43L13.14 23.26L12.75 23.07L12.38 22.86L12.02 22.63L11.68 22.37L11.35 22.10L11.05 21.81L10.76 21.50L10.50 21.17L10.27 20.82L10.07 20.46L10.53 20.11L10.82 20.36L11.11 20.60L11.40 20.83L11.70 21.04L12.01 21.24L12.32 21.43L12.64 21.60L12.97 21.75L13.30 21.88L13.64 22.00L13.98 22.10L14.32 22.19L14.67 22.25L15.02 22.30L15.37 22.33L15.72 22.34L16.07 22.34L16.42 22.31L16.76 22.27L17.11 22.21L17.44 22.14L17.78 22.04L18.11 21.93L18.43 21.81L18.75 21.66L19.05 21.50L19.35 21.33L19.64 21.13L19.92 20.93L20.19 20.71L20.45 20.48L20.69 20.23L20.93 19.97L21.15 19.70L21.35 19.42L21.54 19.12L21.72 18.82L21.88 18.50L22.03 18.18L22.16 17.85L22.27 17.52L22.37 17.17L22.45 16.82L22.51 16.47L22.56 16.11L22.59 15.75L22.60 15.38L22.60 15.01L22.58 14.64L22.55 14.27L22.51 13.89Z"/><path d="M21.96 24.20L21.54 24.58L21.10 24.92L20.63 25.24L20.14 25.52L19.63 25.78L19.10 26.00L18.56 26.19L18.01 26.35L17.44 26.47L16.87 26.57L16.29 26.63L15.71 26.65L15.13 26.65L14.55 26.60L13.97 26.53L13.39 26.42L12.82 26.28L12.26 26.11L11.70 25.90L11.16 25.67L10.64 25.40L10.13 25.10L9.63 24.77L9.16 24.42L8.70 24.04L8.27 23.63L7.86 23.20L7.48 22.75L7.12 22.28L6.79 21.79L6.48 21.27L6.21 20.75L5.97 20.20L5.76 19.65L5.58 19.08L5.43 18.51L5.31 17.93L5.23 17.34L5.18 16.75L5.17 16.16L5.19 15.57L5.24 14.98L5.33 14.40L5.44 13.82L5.60 13.25L5.78 12.69L5.99 12.15L6.24 11.61L6.51 11.10L6.81 10.60L7.14 10.12L7.50 9.66L7.88 9.23L8.29 8.82L8.71 8.43L9.16 8.07L9.63 7.74L10.12 7.45L10.62 7.18L11.13 6.95L11.66 6.76L12.20 6.61L12.50 7.34L12.07 7.61L11.64 7.90L11.24 8.19L10.85 8.51L10.47 8.84L10.12 9.18L9.78 9.54L9.46 9.91L9.16 10.30L8.89 10.70L8.63 11.11L8.40 11.53L8.19 11.96L8.00 12.40L7.83 12.85L7.69 13.31L7.58 13.77L7.48 14.24L7.41 14.71L7.37 15.18L7.35 15.65L7.36 16.13L7.39 16.60L7.44 17.07L7.52 17.53L7.62 17.99L7.75 18.44L7.90 18.89L8.07 19.32L8.26 19.75L8.48 20.17L8.72 20.57L8.98 20.96L9.26 21.34L9.56 21.70L9.87 22.05L10.21 22.38L10.56 22.69L10.93 22.99L11.31 23.26L11.71 23.52L12.12 23.75L12.54 23.96L12.98 24.16L13.42 24.32L13.88 24.47L14.34 24.59L14.81 24.69L15.28 24.77L15.76 24.82L16.24 24.84L16.73 24.84L17.21 24.82L17.70 24.77L18.18 24.70L18.67 24.60L19.15 24.48L19.62 24.34L20.10 24.17L20.56 23.99L21.03 23.78L21.49 23.56Z"/><path d="M7.99 27.02L7.30 26.68L6.64 26.27L6.02 25.81L5.43 25.30L4.87 24.75L4.35 24.16L3.86 23.53L3.41 22.88L3.00 22.19L2.64 21.48L2.32 20.75L2.04 20.00L1.80 19.23L1.62 18.44L1.48 17.65L1.38 16.84L1.34 16.03L1.34 15.22L1.39 14.41L1.49 13.60L1.64 12.80L1.84 12.01L2.08 11.24L2.36 10.48L2.69 9.73L3.07 9.01L3.48 8.31L3.94 7.64L4.43 7.00L4.96 6.38L5.53 5.80L6.13 5.26L6.75 4.76L7.41 4.29L8.09 3.86L8.80 3.48L9.52 3.15L10.26 2.85L11.02 2.61L11.78 2.41L12.56 2.27L13.34 2.17L14.12 2.13L14.89 2.15L15.66 2.23L16.42 2.38L16.38 3.54L15.70 3.68L15.03 3.84L14.37 4.01L13.73 4.20L13.10 4.42L12.48 4.67L11.88 4.94L11.30 5.23L10.73 5.55L10.19 5.90L9.66 6.27L9.16 6.67L8.67 7.09L8.21 7.53L7.78 7.99L7.36 8.48L6.98 8.98L6.62 9.50L6.28 10.03L5.98 10.58L5.70 11.15L5.45 11.73L5.24 12.32L5.05 12.92L4.89 13.53L4.76 14.14L4.67 14.77L4.60 15.39L4.57 16.03L4.57 16.66L4.60 17.29L4.66 17.93L4.75 18.56L4.88 19.18L5.03 19.81L5.22 20.42L5.44 21.03L5.69 21.63L5.97 22.22L6.28 22.80L6.61 23.37L6.98 23.93L7.37 24.48L7.78 25.02L8.22 25.55L8.67 26.09Z"/></g></svg>
     </span>
     <div class="mstat">
@@ -815,7 +817,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.23-A</span>
+      <span class="ver">v2026.08.24-A</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -864,8 +866,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     <div class="rows" id="gainRows"><div class="skel">불러오는 중…</div></div>
   </div>
 
-  <button class="srcbtn" id="srcBtn">\u25be 안내</button>
+  <button class="srcbtn" id="srcBtn">▾ SOURCE &amp; NOTICE</button>
   <div class="srcbox" id="srcBox" hidden>
+    <div class="srchead">ANDRE99 &middot; DATA SOURCE &amp; DISCLAIMER</div>
     <div class="srcrow"><b>소스</b><span>FRED · SEC EDGAR · Yahoo Finance · Finnhub</span></div>
     <div class="srcrow"><b>갱신 주기</b><span>주가 15분 지연 · 기관 보유 45일 지연 · 물가·고용 월 1회</span></div>
     <div class="srcend">투자 자문이 아닙니다. 지나간 사실만 전합니다.</div>
@@ -918,7 +921,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <span class="cnt" id="calCnt"></span>
     </div>
     <div id="calBody"><div class="skel">불러오는 중…</div></div>
-    <div class="allbar" id="calCardBar" hidden><button class="sbtn" id="calCard">▮ 이번 주 카드 만들기</button><span class="note">운영자</span></div>
   </div>
   <div id="earnBody" hidden></div>
 </main>
@@ -955,10 +957,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </main>
 
 <!-- 카드 선택 저장 (2026-08-11) -->
-<button id="cardFab" title="카드 저장" aria-label="카드 저장">▮</button>
 <div class="ovl" id="pickOvl">
   <div class="ovl-in pick">
-    <h3>저장할 카드를 고르세요</h3>
+    <h3 id="pickTitle">저장할 카드를 고르세요</h3>
     <div id="pickList"></div>
     <div class="ovl-act">
       <button class="main" id="pickGo">저장</button>
@@ -991,21 +992,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.23-A';
-console.log('%c ANDRE99 v2026.08.23-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.08.24-A';
+console.log('%c ANDRE99 v2026.08.24-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
+var CUR_PAGE='home';   /* 지금 보고 있는 탭 — 카드 창이 목록을 고를 때 쓴다 */
 var $=function(id){return document.getElementById(id)};
-
-/* 운영자 모드 — ?admin=1 로 켜고 localStorage에 기억. 카드 생성 버튼은 여기서만 보인다.
-   끄려면 ?admin=0 */
-var ADMIN=(function(){
-  try{
-    var q=new URLSearchParams(location.search).get('admin');
-    if(q==='1'){ localStorage.setItem('a99_admin','1'); return true; }
-    if(q==='0'){ localStorage.removeItem('a99_admin'); return false; }
-    return localStorage.getItem('a99_admin')==='1';
-  }catch(e){ return false; }
-})();
 
 /* 응답이 없어도 화면이 영원히 멈추지 않게 시간 제한을 둔다 */
 function fetchT(url, ms){
@@ -1030,6 +1021,7 @@ var dirCls=function(v){return v==null?'ft':(v>0?'up':(v<0?'dn':'ft'))};
 /* ── 탭 ── */
 var TABS=['home','stock','earn','eco','my'];
 function show(t){
+  CUR_PAGE=t;
   TABS.forEach(function(x){ $('p-'+x).classList.toggle('on',x===t); });
   document.querySelectorAll('.nb').forEach(function(b){ b.classList.toggle('on',b.dataset.tab===t); });
   window.scrollTo(0,0);
@@ -1045,13 +1037,12 @@ if($('srcBtn')) $('srcBtn').addEventListener('click',function(){
   var w=$('srcBox'); if(!w) return;
   var open=w.hasAttribute('hidden');
   if(open) w.removeAttribute('hidden'); else w.setAttribute('hidden','');
-  this.textContent=(open?'\u25b4 접기':'\u25be 안내');
+  this.textContent=(open?'▴ CLOSE':'▾ SOURCE & NOTICE');
 });
 if($('wkPrev')) $('wkPrev').addEventListener('click',function(){ shiftWeek(-1); });
 if($('wkNext')) $('wkNext').addEventListener('click',function(){ shiftWeek(1); });
 if($('wkNow'))  $('wkNow').addEventListener('click',function(){ CAL_WEEK=null; calInit(); });
 if($('calQ'))   $('calQ').addEventListener('input',function(){ CAL_Q=this.value; renderCalList(); });
-if($('calCard')) $('calCard').addEventListener('click', makeWeekCard);
 document.querySelectorAll('.ec-tab').forEach(function(b){
   b.addEventListener('click',function(){
     ECO_TAB=b.dataset.eco;
@@ -1066,7 +1057,6 @@ document.querySelectorAll('.ec-tab').forEach(function(b){
 });
 if($('ecoMdC')) $('ecoMdC').addEventListener('click',function(){ $('ecoMd').classList.remove('on'); });
 if($('ecoMd')) $('ecoMd').addEventListener('click',function(e){ if(e.target===this) this.classList.remove('on'); });
-if(ADMIN && $('calCardBar')) $('calCardBar').removeAttribute('hidden');
 $('toSearch').addEventListener('click',function(){ show('stock'); setTimeout(function(){$('q').focus();},60); });
 
 /* ── 시장 상태 ── */
@@ -1582,8 +1572,7 @@ function screenCardHTML(d){
     '<div id="scrImp"'+(SCR_TAB==='imp'?'':' hidden')+'>'+impBody+'</div>'+
     '<div class="dnosum"><b>두 점수는 더하지 않습니다.</b> 재무 건전성은 지금까지의 성적, '+
       '실적 개선도는 최근 변화의 방향입니다. 성적이 낮은 채로 변화만 좋을 수도 있습니다.</div>'+
-    (ADMIN ? '<div class="admbar" hidden><button class="sbtn" id="cardScr">▮ 이 탭 카드 만들기</button>'+
-      '<span class="admtag">운영자</span></div>' : '');
+    '';
 }
 
 function bindScreenCard(sym){
@@ -1608,8 +1597,6 @@ function bindScreenCard(sym){
       }
     });
   });
-  var cs=$('cardScr');
-  if(cs) cs.addEventListener('click',function(){ makeVCard(LAST, SCR_TAB==='imp'?'imp':'fund'); });
   var di=$('dInfo'), dn=$('dNosum');
   if(di&&dn) di.addEventListener('click',function(){
     if(dn.hasAttribute('hidden')) dn.removeAttribute('hidden'); else dn.setAttribute('hidden','');
@@ -2045,7 +2032,7 @@ function drawFK(j){
     : '<div class="ta-load">해당하는 공시가 없습니다.</div>';
   if(list.length>8){
     o+='<button class="fk-more" id="fkMore">'+
-       (FK_MORE?'\u25b4 접기':'\u25be 전체 '+list.length+'곳 보기')+'</button>';
+       (FK_MORE?'▴ 접기':'▾ 전체 '+list.length+'곳 보기')+'</button>';
   }
   o+='<div class="tnb">출처: SEC EDGAR · 최근 제출된 8-K<br>'+
      '제출 즉시 공개되는 자료입니다. 주가 반영 여부는 확인하지 않았습니다.<br>'+
@@ -2204,7 +2191,7 @@ function taRowTurned(x){
     '<div class="ta-nm"><b>'+nm+'</b><span>'+meta.join(' · ')+'</span></div>'+
     '<div class="ta-eps">'+
       '<span class="p n">'+Number(x.eps_prev).toFixed(2)+'</span>'+
-      '<span class="ar">\u2192</span>'+
+      '<span class="ar">→</span>'+
       '<span class="c n">+'+Number(x.eps_now).toFixed(2)+'</span>'+
       taQual(x.quality)+
     '</div>'+
@@ -2219,7 +2206,7 @@ function taRowShrink(x){
   var tr=(x.eps_track||[]).map(function(v,i){
     var last=(i===x.eps_track.length-1);
     return '<span class="'+(last?'c':'p')+' n">'+Number(v).toFixed(2)+'</span>';
-  }).join('<span class="ar">\u2192</span>');
+  }).join('<span class="ar">→</span>');
   var foot=[];
   if(x.shrink_pct!=null) foot.push('적자폭 '+x.shrink_pct.toFixed(0)+'% 줄었습니다');
   if(x.rev_change_pct!=null){
@@ -2342,7 +2329,7 @@ function turnHTML(xb, tech){
     o+='<div class="tn-hero"><div class="k">적자에서 흑자로 바뀐 해</div>'+
        '<div class="v">'+esc(yr(r.at.d))+'년</div>'+
        '<div class="s">'+esc(yr(r.before.d))+'년 '+money(r.before.v)+
-       ' \\u2192 '+esc(yr(r.at.d))+'년 '+money(r.at.v)+'</div></div>';
+       ' → '+esc(yr(r.at.d))+'년 '+money(r.at.v)+'</div></div>';
 
     /* 전환 이후 순이익 흐름 */
     var after=r.rows.slice(r.idx);
@@ -2354,7 +2341,7 @@ function turnHTML(xb, tech){
         o+='<div class="tn-row"><span class="y">'+esc(yr(x.d))+'</span>'+
            '<b class="n '+(x.v>=0?'up':'dn')+'">'+money(x.v)+'</b>'+
            '<span class="c n '+(chg==null?'':(chg>=0?'up':'dn'))+'">'+
-             (chg==null?'':((chg>=0?'\\u25b2 +':'\\u25bc ')+Math.abs(chg).toFixed(0)+'%'))+'</span></div>';
+             (chg==null?'':((chg>=0?'▲ +':'▼ ')+Math.abs(chg).toFixed(0)+'%'))+'</span></div>';
       });
     }
 
@@ -2370,7 +2357,7 @@ function turnHTML(xb, tech){
              '<b class="n">$'+p0.c.toFixed(2)+'</b><span class="c"></span></div>'+
            '<div class="tn-row"><span class="y">'+esc(p1.d)+'</span>'+
              '<b class="n">$'+p1.c.toFixed(2)+'</b>'+
-             '<span class="c n '+(pc>=0?'up':'dn')+'">'+(pc>=0?'\\u25b2 +':'\\u25bc ')+
+             '<span class="c n '+(pc>=0?'up':'dn')+'">'+(pc>=0?'▲ +':'▼ ')+
                Math.abs(pc).toFixed(0)+'%</span></div>';
       }else{
         o+='<div class="tn-note">전환 시점의 주가 자료가 없어 비교하지 못했습니다.</div>';
@@ -2783,18 +2770,6 @@ function bindTech(){
       var t=TECH[TECH_SYM+'|'+TECH_TF]; if(t){ var bx=$('techBox'); if(bx) bx.innerHTML=svgChart(t); }
     });
   });
-  var ct=$('cardTech');
-  if(ct) ct.addEventListener('click',function(){
-    var t=TECH[TECH_SYM+'|'+TECH_TF];
-    if(!t){ alert('차트를 먼저 불러와 주세요'); return; }
-    if(typeof makeVCard==='function' && window.LAST_STOCK){
-      window.LAST_STOCK.__tech = t;
-      makeVCard(window.LAST_STOCK, 'tech');
-    }
-  });
-  var fb=$('cardFab'); if(fb && !fb.__b){ fb.__b=1; fb.addEventListener('click',openCardPick); }
-  var pg=$('pickGo'); if(pg && !pg.__b){ pg.__b=1; pg.addEventListener('click',runCardPick); }
-  var pc=$('pickClose'); if(pc && !pc.__b){ pc.__b=1; pc.addEventListener('click',function(){ $('pickOvl').classList.remove('on'); }); }
   var tg=$('tnToggle');
   if(tg) tg.addEventListener('click',function(){
     var w=$('techNumsWrap'); if(!w) return;
@@ -2914,7 +2889,6 @@ function loadStock(sym){
       '</div>'+
       '<button class="tnbtn" id="tnToggle">▾ 이 종목은 얼마나 흔들렸나</button>'+
       '<div id="techNumsWrap" hidden><div id="techNums"></div></div>'+
-      (ADMIN ? '<div class="admbar" hidden><button class="sbtn" id="cardTech">▮ 이 탭 카드 만들기</button><span class="note">운영자</span></div>' : '')+
     '</div>';
 
     // ── 주가 차트 (TradingView) ──
@@ -2975,8 +2949,6 @@ function loadStock(sym){
         html+='<a class="ovw-w" href="'+esc(ci.website)+'" target="_blank" rel="noopener">공식 홈페이지 →</a>';
       }
       html+='</div>';
-      if(ADMIN) html+='<div class="admbar" hidden><button class="sbtn" id="cardInfo">▮ 이 탭 카드 만들기</button>'+
-        '<span class="admtag">운영자</span></div>';
       html+='</div>';
     }
 
@@ -2998,12 +2970,9 @@ function loadStock(sym){
     TECH_SYM=sym; TECH={}; CUR_SUB='fund'; TECH_TF='d';
     window.LAST_STOCK=d;
     setCat('screen'); bindTech();
-    var fab=$('cardFab'); if(fab) fab.style.display=ADMIN?'flex':'none';
     document.querySelectorAll('.catchip').forEach(function(b){
       b.addEventListener('click',function(){ setCat(b.dataset.cat); });
     });
-    var cinf=$('cardInfo');
-    if(cinf) cinf.addEventListener('click',function(){ makeVCard(LAST,'info'); });
     bindScreenCard(d.symbol||sym);
     loadFinancials(d.symbol||sym);
     loadPeers(d.symbol||sym);
@@ -3055,11 +3024,7 @@ function renderStockEarn(d){
   var out=tmp.innerHTML;
   document.body.removeChild(tmp);
   if(real) real.id='earnBody';
-  box.innerHTML = out + (ADMIN
-    ? '<div class="admbar" hidden><button class="sbtn" id="cardEarn">▮ 이 탭 카드 만들기</button>'+
-      '<span class="admtag">운영자</span></div>' : '');
-  var ce=$('cardEarn');
-  if(ce) ce.addEventListener('click',function(){ makeVCard(LAST,'earn'); });
+  box.innerHTML = out;
 }
 
 /* 판독 문구 사전 — 같은 상황엔 항상 같은 문장 */
@@ -3800,6 +3765,26 @@ function ecoOpenInfo(id){
   $('ecoMdEff').innerHTML=eff;
   $('ecoMd').classList.add('on');
 }
+/* 그래프 읽는 법 — 지표 설명(ⓘ)과 구분해 ! 로 연다 */
+var ECO_GRAPH={
+  spark:{
+    t:'장단기 금리차 그래프',
+    e:'10Y-2Y Spread · Last 12 Months',
+    b:'흰 선이 장단기 금리차입니다. 10년물 금리에서 2년물 금리를 뺀 값이며, 바로 위 행의 숫자와 같은 값을 지난 1년치로 이어 그린 것입니다.\n\n'+
+      '가로로 놓인 빨간 점선은 0입니다. 흰 선이 이 점선보다 위에 있으면 장기 금리가 더 높다는 뜻이고, 아래로 내려가면 반대가 된 것입니다.\n\n'+
+      '왼쪽 끝이 약 1년 전, 오른쪽 끝이 가장 최근입니다.\n\n'+
+      '그래프 바로 아래 숫자는 이 기간에 가장 낮았던 값과 가장 높았던 값입니다.\n\n'+
+      '세로 눈금은 일부러 넣지 않았습니다. 정확한 값이 아니라 방향과 0선과의 거리만 보시라는 뜻입니다.'
+  }
+};
+function ecoOpenGraph(k){
+  var g=ECO_GRAPH[k]; if(!g) return;
+  $('ecoMdT').textContent=g.t;
+  $('ecoMdE').textContent=g.e||'';
+  $('ecoMdB').textContent=g.b||'';
+  $('ecoMdEff').innerHTML='';
+  $('ecoMd').classList.add('on');
+}
 function ecoSpark(sp){
   if(!sp||!sp.points||sp.points.length<4) return '';
   var P=sp.points, W=300, H=64, PL=2, PR=2, PT=8, PB=8;
@@ -3827,18 +3812,21 @@ function drawEco(j){
   }
   var R=j.rates||{}, P=j.prices||{};
   var o='';
-  o+='<div class="ec-grp">\u2460 연준이 보는 것</div>'+
+  o+='<div class="ec-grp">① 연준이 보는 것</div>'+
      '<div class="ec-lead">연준은 물가와 일자리 두 가지를 보고 금리를 정합니다.</div>'+
      '<div class="sec ec-sec">'+ecoRow(P.CPIAUCNS)+ecoRow(P.UNRATE)+ecoRow(P.PAYEMS)+'</div>';
-  o+='<div class="ec-grp">\u2461 연준이 정한 것</div>'+
+  o+='<div class="ec-grp">② 연준이 정한 것</div>'+
      '<div class="ec-lead">위 숫자를 보고 결정한 금리입니다.</div>'+
      '<div class="sec ec-sec">'+ecoRow(R.DFF)+ecoRow(R.DGS10)+ecoRow(R.DGS2)+ecoRow(R.T10Y2Y);
   if(R.T10Y2Y){
-    o+='<div style="padding:0 16px">'+ecoSpark(j.spark)+
+    o+='<div class="ec-gwrap">'+
+       '<div class="ec-gh"><span class="ec-gt">장단기 금리차 · 최근 12개월</span>'+
+         '<button class="ec-x" data-gx="spark" aria-label="그래프 읽는 법">!</button></div>'+
+       ecoSpark(j.spark)+
        '<div class="ec-w">마이너스가 되면 과거에 침체가 뒤따랐습니다. 앞으로도 그럴 것이라는 뜻은 아닙니다.</div></div>';
   }
   o+='</div>';
-  o+='<div class="ec-grp">\u2462 연준이 푸는 돈</div>'+
+  o+='<div class="ec-grp">③ 연준이 푸는 돈</div>'+
      '<div class="ec-lead">시중에 돈을 얼마나 풀고 있는지입니다.</div>'+
      '<div class="sec ec-sec">'+ecoRow(R.WALCL)+ecoRow(R.M2SL)+'</div>';
   o+='<div class="sec"><div class="tnb">지표마다 발표 주기가 다릅니다. 각 항목의 기준일을 확인해 주세요.<br>'+
@@ -3849,13 +3837,15 @@ function drawEco(j){
   box.querySelectorAll('.ec-i').forEach(function(b){
     b.addEventListener('click',function(){ ecoOpenInfo(b.dataset.info); });
   });
+  box.querySelectorAll('.ec-x').forEach(function(b){
+    b.addEventListener('click',function(){ ecoOpenGraph(b.dataset.gx); });
+  });
 }
 
 /* 주간 실적 카드 (2026-08-11)
    기준: 한국어 이름표(KO_NAME)에 있는 종목만 · 최대 8개 · 없으면 생성 안 함 */
 function makeWeekCard(){
-  var btn=$('calCard'); if(btn){ btn.disabled=true; btn.textContent='만드는 중…'; }
-  function done(){ if(btn){ btn.disabled=false; btn.textContent='▮ 이번 주 카드 만들기'; } }
+  function done(){}
   fetchT(API+'/calendar?week='+encodeURIComponent(CAL_WEEK)+'&ko=1&top=20&_='+Date.now(), 20000)
     .then(function(r){return r.json()})
     .then(function(j){
@@ -3944,24 +3934,48 @@ var CARD_KINDS=[
   {k:'tech', n:'얼마나 흔들렸나', on:true},
   {k:'info', n:'기업개요',    on:false}
 ];
+/* 지금 보고 있는 탭에 따라 만들 수 있는 카드가 달라진다.
+   PICK_MODE  stock = 종목 카드 5종 / week = 이번 주 실적 / none = 도안 없음 */
+var PICK_MODE='none';
 function openCardPick(){
-  var d=window.LAST_STOCK;
-  if(!d){ alert('종목을 먼저 검색해 주세요'); return; }
   var ov=$('pickOvl'); if(!ov) return;
-  var box=$('pickList');
-  box.innerHTML=CARD_KINDS.map(function(c){
-    return '<label class="pkrow"><input type="checkbox" data-k="'+c.k+'"'+(c.on?' checked':'')+'>'+
-           '<span>'+c.n+'</span></label>';
-  }).join('');
+  var box=$('pickList'), ttl=$('pickTitle');
+  if(CUR_PAGE==='stock'){
+    if(!window.LAST_STOCK){
+      PICK_MODE='none'; ttl.textContent='종목 카드';
+      box.innerHTML='<div class="pknone">종목을 먼저 검색해 주세요.</div>';
+    }else{
+      PICK_MODE='stock'; ttl.textContent='저장할 카드를 고르세요';
+      box.innerHTML=CARD_KINDS.map(function(c){
+        return '<label class="pkrow"><input type="checkbox" data-k="'+c.k+'"'+(c.on?' checked':'')+'>'+
+               '<span>'+c.n+'</span></label>';
+      }).join('');
+    }
+  }else if(CUR_PAGE==='earn'){
+    PICK_MODE='week'; ttl.textContent='저장할 카드를 고르세요';
+    box.innerHTML='<label class="pkrow"><input type="checkbox" data-k="week" checked>'+
+                  '<span>이번 주 실적</span></label>';
+  }else{
+    PICK_MODE='none';
+    ttl.textContent=(CUR_PAGE==='home'?'홈 카드':(CUR_PAGE==='eco'?'경제 카드':'관심 카드'));
+    box.innerHTML='<div class="pknone">이 탭은 카드 도안이 아직 없습니다.<br>준비 중입니다.</div>';
+  }
   ov.classList.add('on');
   updPickCount();
   box.querySelectorAll('input').forEach(function(i){ i.addEventListener('change',updPickCount); });
 }
 function updPickCount(){
+  var b=$('pickGo'); if(!b) return;
+  if(PICK_MODE==='none'){ b.textContent='만들 수 없음'; b.disabled=true; return; }
   var n=document.querySelectorAll('#pickList input:checked').length;
-  var b=$('pickGo'); if(b){ b.textContent=n?(n+'장 저장'):'선택 없음'; b.disabled=!n; }
+  b.textContent=n?(n+'장 저장'):'선택 없음'; b.disabled=!n;
 }
 function runCardPick(){
+  if(PICK_MODE==='none') return;
+  if(PICK_MODE==='week'){
+    var ovw=$('pickOvl'); if(ovw) ovw.classList.remove('on');
+    makeWeekCard(); return;
+  }
   var d=window.LAST_STOCK; if(!d) return;
   var ks=[];
   document.querySelectorAll('#pickList input:checked').forEach(function(i){ ks.push(i.dataset.k); });
@@ -3994,6 +4008,24 @@ function runCardPick(){
       .catch(build);
   }else build();
 }
+
+/* 운영자 진입 — 헤더 로고를 1.5초 안에 세 번 누르면 카드 창이 열린다.
+   화면에는 아무 표시도 없다. 버튼·주소 파라미터 모두 쓰지 않는다. */
+(function(){
+  var bm=$('brandTap'); if(!bm) return;
+  var taps=[];
+  bm.addEventListener('click',function(){
+    var now=Date.now();
+    taps.push(now);
+    taps=taps.filter(function(t){ return now-t<1500; });
+    if(taps.length>=3){ taps=[]; openCardPick(); }
+  });
+})();
+(function(){
+  var pg=$('pickGo');    if(pg && !pg.__b){ pg.__b=1; pg.addEventListener('click',runCardPick); }
+  var pc=$('pickClose'); if(pc && !pc.__b){ pc.__b=1; pc.addEventListener('click',function(){ $('pickOvl').classList.remove('on'); }); }
+  var ov=$('pickOvl');   if(ov && !ov.__b){ ov.__b=1; ov.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('on'); }); }
+})();
 
 /* ── 관심 종목 ── */
 function getWatch(){ try{ return JSON.parse(localStorage.getItem('a99_watch')||'[]'); }catch(e){ return []; } }
