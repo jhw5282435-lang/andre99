@@ -74,6 +74,19 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .idx .c{font-size:12.5px;font-weight:600;margin-top:3px}
 
 /* ── Breadth ── */
+.mkchips{display:flex;gap:6px;overflow-x:auto;padding:0 16px 3px;margin-bottom:10px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mkchips::-webkit-scrollbar{display:none}
+.mkchip{flex:none;padding:6px 12px;border-radius:9px;font-size:12px;background:var(--s2);
+  color:var(--tx2);border:1px solid var(--line);white-space:nowrap;cursor:pointer}
+.mkchip.on{background:var(--tx);color:#0B0B0C;border-color:var(--tx);font-weight:700}
+.mkgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 16px}
+.mkc{border-radius:10px;padding:11px 10px 10px}
+.mkc .k{font-size:10.5px;color:var(--tx2);line-height:1.2}
+.mkc .v{font-family:var(--mono);font-size:16px;font-weight:800;letter-spacing:-.03em;
+  margin:6px 0 2px;color:var(--tx)}
+.mkc .c{font-family:var(--mono);font-size:11.5px;font-weight:700}
+.mknote{margin:8px 16px 0;font-size:10.5px;color:var(--tx3);line-height:1.65}
 .breadth{margin:12px 16px 0;background:var(--s1);border-radius:20px;padding:16px}
 .bbar{display:flex;height:8px;border-radius:6px;overflow:hidden;background:var(--s3);margin-bottom:11px}
 .bbar i{display:block;height:100%}
@@ -478,16 +491,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .tnex b{display:block;color:var(--tx2);margin-bottom:5px;font-size:11.5px}
 .tnb{margin-top:12px;font-size:10.5px;color:var(--tx3,#7a7a7e);line-height:1.65}
 
-/* ══ 주요 지표 자동 흐름 · 2026.08.10 ══ */
-#macroChips{overflow-x:auto;overflow-y:hidden;position:relative;scrollbar-width:none;-webkit-overflow-scrolling:touch;
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent);
-  mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent)}
-#macroChips::-webkit-scrollbar{display:none}
-.mqtrack{display:flex;gap:8px;width:max-content;animation:a99mq 64s linear infinite}
-#macroChips:hover .mqtrack,#macroChips:active .mqtrack,#macroChips.hold .mqtrack{animation-play-state:paused}
-@keyframes a99mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-@media (prefers-reduced-motion:reduce){.mqtrack{animation:none}}
-
 /* ══ 뉴스·공시 · 2026.08.10 ══ */
 .nsh{font-size:14px;font-weight:800;color:var(--tx);margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline}
 .nsub{font-size:11.5px;color:var(--tx3,#7a7a7e);margin:14px 0 8px}
@@ -817,7 +820,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.08.24-A</span>
+      <span class="ver">v2026.09.05-A</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -829,12 +832,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 <main class="page on" id="p-home">
   <div class="sec">
     <div class="idxhead"><span id="idxNote">불러오는 중</span></div>
-    <div class="idx" id="idxGrid">
-      <div><div class="k">불러오는 중</div><div class="v">—</div></div>
-      <div><div class="k">불러오는 중</div><div class="v">—</div></div>
-      <div><div class="k">불러오는 중</div><div class="v">—</div></div>
-      <div><div class="k">불러오는 중</div><div class="v">—</div></div>
-    </div>
+    <div class="sec-h"><h2>Market 데이터</h2><span class="note">하루 등락</span></div>
+    <div class="mkchips" id="mkChips"></div>
+    <div class="mkgrid" id="mkGrid"><div class="skel">불러오는 중…</div></div>
+    <p class="mknote" id="mkNote"></p>
     <div class="breadth" id="breadth">
       <div class="bbar"><i style="width:100%;background:var(--s3)"></i></div>
       <div class="blegend"><span class="ft">시장 폭 불러오는 중</span></div>
@@ -854,11 +855,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <div class="tscale"><span>공포 0</span><span>중립 50</span><span>탐욕 100</span></div>
       <p id="fearSay">변동성 지수로 계산한 시장 분위기입니다.</p>
     </div>
-  </div>
-
-  <div class="sec">
-    <div class="sec-h"><h2>주요 지표</h2></div>
-    <div class="chips" id="macroChips"></div>
   </div>
 
   <div class="sec">
@@ -992,8 +988,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.08.24-A';
-console.log('%c ANDRE99 v2026.08.24-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.09.05-A';
+console.log('%c ANDRE99 v2026.09.05-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var CUR_PAGE='home';   /* 지금 보고 있는 탭 — 카드 창이 목록을 고를 때 쓴다 */
 var $=function(id){return document.getElementById(id)};
@@ -1107,13 +1103,62 @@ function heatColor(p){
   var a=Math.min(Math.abs(p)/2.5,1)*0.55+0.06;
   return p>=0 ? 'rgba(255,77,79,'+a.toFixed(3)+')' : 'rgba(47,128,237,'+a.toFixed(3)+')';
 }
+/* ══ Market 데이터 · 2026.09.05 ══
+   분류별 히트맵. [전체]는 rep=true 인 대표만 보여준다.
+   색은 같은 분류 안에서만 비교한다. */
+var MKT_DATA = [], MKT_TAB = '전체';
+function mkColor(pct, maxAbs){
+  if(pct==null) return 'var(--s2)';
+  var a = maxAbs ? Math.min(1, Math.abs(pct)/maxAbs) : 0;
+  a = 0.10 + a*0.28;
+  return pct>=0 ? 'rgba(255,77,79,'+a.toFixed(3)+')' : 'rgba(47,128,237,'+a.toFixed(3)+')';
+}
+function renderMarket(tab){
+  MKT_TAB = tab || '전체';
+  var chips = $('mkChips'), grid = $('mkGrid');
+  if(!chips || !grid) return;
+  var tabs = ['전체'].concat(MKT_DATA.map(function(b){ return b.group; }));
+  chips.innerHTML = tabs.map(function(t){
+    return '<button class="mkchip'+(t===MKT_TAB?' on':'')+'" data-mk="'+esc(t)+'">'+esc(t)+'</button>';
+  }).join('');
+
+  var rows = [];
+  if(MKT_TAB==='전체'){
+    MKT_DATA.forEach(function(b){
+      var mx = Math.max.apply(null, (b.items||[]).map(function(x){ return Math.abs(x.chg_pct||0); }).concat([0.01]));
+      (b.items||[]).forEach(function(x){ if(x.rep) rows.push({x:x, mx:mx, g:b.group}); });
+    });
+  } else {
+    var blk = MKT_DATA.filter(function(b){ return b.group===MKT_TAB; })[0];
+    if(blk){
+      var m2 = Math.max.apply(null, (blk.items||[]).map(function(x){ return Math.abs(x.chg_pct||0); }).concat([0.01]));
+      (blk.items||[]).forEach(function(x){ rows.push({x:x, mx:m2, g:blk.group}); });
+    }
+  }
+  grid.innerHTML = rows.length ? rows.map(function(r){
+    var x = r.x, p = x.price;
+    var pv = (p==null) ? '—' : fx(p, Math.abs(p)>=1000 ? 0 : 2);
+    var cv = (x.chg_pct==null) ? '—'
+      : ((x.chg_pct>=0?'+':'')+x.chg_pct.toFixed(2)+(x.unit==='%p'?'%p':'%'));
+    return '<div class="mkc" style="background:'+mkColor(x.chg_pct, r.mx)+'">'+
+      '<div class="k">'+esc(x.name)+'</div>'+
+      '<div class="v">'+pv+(x.unit==='%p'?'%':'')+'</div>'+
+      '<div class="c '+dirCls(x.chg_pct)+'">'+cv+'</div></div>';
+  }).join('') : '<div class="skel">불러오지 못했습니다.</div>';
+
+  chips.querySelectorAll('.mkchip').forEach(function(b){
+    b.addEventListener('click', function(){ renderMarket(b.dataset.mk); });
+  });
+}
+
 function loadMarket(){
   fetchT(API+'/market?_='+Date.now(), 20000).then(function(r){return r.json()}).then(function(d){
     if(!d||d.status!=='ok') throw new Error('no data');
     if(d.timestamp){ DATA_TS=new Date(d.timestamp); renderStamp(); }
-    (d.macro||[]).forEach(function(x){
+    MKT_DATA = d.market||[];
+    MKT_DATA.forEach(function(b){ (b.items||[]).forEach(function(x){
       if(x.symbol==='KRW=X'){ USDKRW=x.price; USDKRW_CHG=x.chg_pct; }
-    });
+    }); });
 
     var idxNote=$('idxNote');
     if(idxNote){
@@ -1121,10 +1166,8 @@ function loadMarket(){
       idxNote.textContent = MKT_OPEN ? '미국장 진행 중 · 코스피는 직전 종가'
         : '미국 '+(ld.getMonth()+1)+'/'+ld.getDate()+'('+lwk+') 종가 · 코스피는 한국장 종가';
     }
-    $('idxGrid').innerHTML=(d.indices||[]).map(function(x){
-      return '<div><div class="k">'+esc(x.name)+'</div><div class="v n">'+fx(x.price,x.price>1000?0:2)+
-        '</div><div class="c n '+dirCls(x.chg_pct)+'">'+pct(x.chg_pct)+'</div></div>';
-    }).join('');
+    renderMarket('전체');
+    if($('mkNote')) $('mkNote').textContent = d.market_note||'';
 
     var b=d.breadth||{};
     var tot=Math.max(1,(b.up||0)+(b.down||0)+(b.flat||0));
@@ -1157,13 +1200,6 @@ function loadMarket(){
                  : '사람들이 겁을 내는 구간입니다. 작은 소식에도 크게 움직일 수 있어요.'))
         +'<br><span class="fearsrc">변동성지수(VIX)로 계산한 근사값입니다. VIX 18을 중립(50)으로 봅니다.</span>';
     }
-
-    var mcs=(d.macro||[]).map(function(x){
-      return '<div class="chip"><div class="k">'+esc(x.name)+'</div><div class="v n">'+fx(x.price,x.price>1000?0:2)+
-        '<span class="c '+dirCls(x.chg_pct)+'">'+pct(x.chg_pct)+'</span></div></div>';
-    }).join('');
-    /* 자동 흐름: 같은 목록을 두 벌 이어 붙여 끊김 없이 순환 */
-    $('macroChips').innerHTML = mcs ? '<div class="mqtrack">'+mcs+mcs+'</div>' : '';
 
     var g=d.gainers||[];
     $('gainRows').innerHTML = g.length ? g.map(function(x,i){
