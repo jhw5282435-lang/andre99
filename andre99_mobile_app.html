@@ -87,6 +87,60 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   margin:6px 0 2px;color:var(--tx)}
 .mkc .c{font-family:var(--mono);font-size:11.5px;font-weight:700}
 .mknote{margin:8px 16px 0;font-size:10.5px;color:var(--tx3);line-height:1.65}
+/* ══ 거래 화면 ══ */
+.tdcard{background:var(--s1);border-radius:14px;padding:16px 15px;margin:0 16px 10px}
+.tdh{display:flex;align-items:baseline;gap:7px;margin-bottom:13px}
+.tdh b{font-size:13.5px;font-weight:700}
+.tdh span{font-size:10.5px;color:var(--tx3);margin-left:auto;font-family:var(--mono)}
+.tdh .tdtag{margin-left:0;border:1px solid var(--line);padding:2px 7px;border-radius:7px}
+.tdmain{font-family:var(--mono);font-size:22px;font-weight:800;letter-spacing:-.035em;line-height:1.15}
+.tdsub{font-family:var(--mono);font-size:12px;color:var(--tx2);margin-top:6px}
+.tdbar{position:relative;height:26px;margin:15px 0 4px;background:var(--s3);border-radius:6px}
+.tdbar .f{position:absolute;top:0;bottom:0;background:#2a4a72;border-radius:6px}
+.tdbar .m{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--tx)}
+.tdbar .n{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--up)}
+.tdax{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--tx3)}
+.tdrv{margin-bottom:14px}
+.tdrvh{display:flex;align-items:baseline;gap:8px;margin-bottom:7px}
+.tdrvh .l{font-size:12.5px;color:var(--tx2);width:48px}
+.tdrvh .n{font-family:var(--mono);font-size:19px;font-weight:800;letter-spacing:-.03em}
+.tdg{position:relative;height:8px;background:var(--s3);border-radius:5px;margin-bottom:4px}
+.tdg i{position:absolute;top:0;bottom:0;left:0;border-radius:5px;background:#3a5f8a;display:block}
+.tdg .one{position:absolute;top:-4px;bottom:-4px;left:50%;width:2px;background:var(--tx2)}
+.tdgl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;color:var(--tx3)}
+.tdrvn{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:5px}
+.tdexp{font-size:11.5px;color:var(--tx3);line-height:1.75;margin-top:12px;
+  padding-top:12px;border-top:1px solid var(--line)}
+.tdexp b{color:var(--tx2)}
+.tdexp code{font-family:var(--mono);font-size:11px;color:var(--tx);background:var(--s3);
+  padding:7px 9px;border-radius:6px;display:block;margin:7px 0 8px;line-height:1.6}
+.tdd{background:var(--s1);border-radius:11px;margin:0 16px 8px;overflow:hidden}
+.tdd summary{list-style:none;cursor:pointer;padding:13px 14px;font-size:13px;font-weight:700;
+  display:flex;align-items:center;gap:8px;min-height:44px;box-sizing:border-box}
+.tdd summary::-webkit-details-marker{display:none}
+.tdd summary::after{content:"▾";margin-left:auto;color:var(--tx3);font-size:11px}
+.tdd[open] summary::after{content:"▴"}
+.tdd summary .s{font-size:11.5px;font-weight:500;color:var(--tx3);font-family:var(--mono)}
+.tdb{padding:0 14px 14px;font-size:12.5px;color:var(--tx2);line-height:1.75}
+.tdb p{margin:0 0 9px}.tdb p:last-child{margin:0}
+.tdb b{color:var(--tx)}
+.tdt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px;margin:4px 0 10px}
+.tdt td,.tdt th{padding:6px 3px;border-bottom:1px solid var(--line);text-align:right;color:var(--tx2)}
+.tdt th{color:var(--tx3);font-weight:600}
+.tdt td:first-child,.tdt th:first-child{text-align:left;font-family:inherit}
+.tdt tr.hi td{color:var(--tx);font-weight:700}
+.tdtug{display:flex;height:22px;border-radius:5px;overflow:hidden;margin:6px 0 10px}
+.tdtug .u{background:#1e7a58;display:flex;align-items:center;padding-left:8px;
+  font-size:11px;font-weight:700;color:#fff;font-family:var(--mono)}
+.tdtug .d{background:#a33;display:flex;align-items:center;justify-content:flex-end;
+  padding-right:8px;font-size:11px;font-weight:700;color:#fff;font-family:var(--mono)}
+/* 관심 탭 위치 표시 */
+.wpos{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:2px}
+.wpos b{font-weight:700}
+.wpos .above{color:var(--up)}.wpos .below{color:var(--dn)}.wpos .inside{color:var(--tx2)}
+.wsum{margin:0 16px 10px;padding:12px 14px;background:var(--s1);border-radius:11px;
+  font-size:12.5px;color:var(--tx2);line-height:1.7}
+.wsum b{color:var(--tx)}
 .breadth{margin:12px 16px 0;background:var(--s1);border-radius:20px;padding:16px}
 .bbar{display:flex;height:8px;border-radius:6px;overflow:hidden;background:var(--s3);margin-bottom:11px}
 .bbar i{display:block;height:100%}
@@ -820,7 +874,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.09.05-A</span>
+      <span class="ver">v2026.09.08-A</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -947,6 +1001,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 <main class="page" id="p-my">
   <div class="sec">
     <div class="sec-h"><h2>관심 종목</h2><span class="note" id="wCount"></span></div>
+    <div class="wsum" id="watchSum" style="display:none"></div>
     <div class="rows" id="watchRows"></div>
   </div>
   <p class="foot">관심 종목은 이 기기에만 저장됩니다.</p>
@@ -988,8 +1043,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.09.05-A';
-console.log('%c ANDRE99 v2026.09.05-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.09.08-A';
+console.log('%c ANDRE99 v2026.09.08-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var CUR_PAGE='home';   /* 지금 보고 있는 탭 — 카드 창이 목록을 고를 때 쓴다 */
 var $=function(id){return document.getElementById(id)};
@@ -2817,13 +2872,14 @@ function bindTech(){
 
 function setCat(cat){
   CUR_CAT=cat;
-  ['screen','info','earn'].forEach(function(c){
+  ['screen','info','earn','trade'].forEach(function(c){
     document.querySelectorAll('.cat-'+c).forEach(function(el){
       if(c===cat) el.removeAttribute('hidden'); else el.setAttribute('hidden','');
     });
   });
   document.querySelectorAll('.catchip').forEach(function(b){ b.classList.toggle('on', b.dataset.cat===cat); });
   setSub(CUR_SUB);
+  if(cat==='trade') loadTrading(TECH_SYM);
   window.scrollTo(0,0);
 }
 
@@ -2988,12 +3044,16 @@ function loadStock(sym){
       html+='</div>';
     }
 
+    html+='<div class="sec cat-trade" id="stTradeWrap" hidden>'+
+      '<div id="stTradeBody"><div class="skel">불러오는 중…</div></div></div>';
+
     html+='<div class="sec cat-earn" id="stEarnWrap"><div class="sec-h"><h2>실적</h2>'+
       '<span class="note" id="stEarnNote"></span></div>'+
       '<div id="stEarnBody"><div class="skel">실적 불러오는 중…</div></div></div>';
 
     html='<div class="catbar">'+
       '<button class="catchip on" data-cat="screen">스크린</button>'+
+      '<button class="catchip" data-cat="trade">거래</button>'+
       '<button class="catchip" data-cat="earn">실적</button>'+
       '<button class="catchip" data-cat="info">기업개요</button></div>'+
       '<div class="subbar"><button class="subchip on" data-sub="fund">재무</button>'+
@@ -4063,6 +4123,118 @@ function runCardPick(){
   var ov=$('pickOvl');   if(ov && !ov.__b){ ov.__b=1; ov.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('on'); }); }
 })();
 
+/* ══ 거래 화면 · 2026.09.08 ══
+   /trading 응답을 그린다. 판정하지 않고 숫자와 기준만 적는다. */
+var TRADE_CACHE = {};
+function tdNum(v, d){ return (v==null) ? '—' : Number(v).toFixed(d==null?2:d); }
+function tdPct(v){ return (v==null) ? '—' : ((v>=0?'+':'')+Number(v).toFixed(2)+'%'); }
+
+function tradeBarHTML(seg, ref, price){
+  if(!seg || !seg.밴드) return '';
+  var lo=seg.밴드[0], hi=seg.밴드[1];
+  var span=Math.max(hi-lo, 0.01)*3;
+  var mid=(lo+hi)/2, l0=mid-span/2;
+  var pos=function(v){ return Math.max(0, Math.min(100, (v-l0)/span*100)); };
+  var pl=pos(lo), pw=Math.max(2, pos(hi)-pos(lo));
+  return '<div class="tdbar">'+
+    '<div class="f" style="left:'+pl.toFixed(1)+'%;width:'+pw.toFixed(1)+'%"></div>'+
+    '<div class="m" style="left:'+pos(seg.POC).toFixed(1)+'%"></div>'+
+    (price!=null?'<div class="n" style="left:'+pos(price).toFixed(1)+'%"></div>':'')+
+    '</div>'+
+    '<div class="tdax"><span>$'+tdNum(l0)+'</span><span>$'+tdNum(l0+span)+'</span></div>';
+}
+
+function renderTrading(d){
+  if(!d || d.오류){
+    return '<div class="sec-h"><h2>거래</h2></div><div class="skel">'+
+      esc((d&&d.오류)||'불러오지 못했습니다')+'</div>';
+  }
+  var w=d.주간, m=d.월간, lw=d.지난주, vol=d.거래량||{}, pc=d.풋콜;
+  var ref=d.기준가, price=d.현재가;
+  var h='';
+
+  h+='<div class="sec-h"><h2>거래</h2><span class="note">'+esc(d.기준||'')+'</span></div>';
+
+  /* ① 거래 구간 */
+  h+='<div class="tdcard"><div class="tdh"><b>이번 주 가장 많이 거래된 구간</b>'+
+     '<span>'+esc((w&&w.시작)||'')+'~'+esc((w&&w.끝)||'')+'</span></div>';
+  if(w){
+    h+='<div class="tdmain">$'+tdNum(w.밴드[0])+' ~ $'+tdNum(w.밴드[1])+'</div>'+
+       '<div class="tdsub">최다 거래 $'+tdNum(w.POC)+' · 현재가 $'+tdNum(price)+'</div>'+
+       tradeBarHTML(w, ref, price)+
+       '<div class="tdexp">5분 단위 거래를 가격대별 40칸으로 나눠, <b>거래대금의 60%</b>가 '+
+       '들어가는 구간입니다. 정규장만 셉니다.</div>';
+  } else { h+='<div class="skel">구간을 계산하지 못했습니다</div>'; }
+  h+='</div>';
+
+  /* ② 거래량 */
+  h+='<div class="tdcard"><div class="tdh"><b>거래량</b><span class="tdtag">RVOL</span>'+
+     '<span>주식 수 기준</span></div>';
+  [['이번 주', vol.주간, '직전 20거래일'], ['이번 달', vol.월간, '직전 60거래일']].forEach(function(r){
+    var v=r[1]; if(!v) return;
+    var w2=Math.max(0, Math.min(100, (v.비율/2)*100));
+    h+='<div class="tdrv"><div class="tdrvh"><span class="l">'+r[0]+'</span>'+
+       '<span class="n">'+tdNum(v.비율)+'</span></div>'+
+       '<div class="tdg"><i style="width:'+w2.toFixed(1)+'%"></i><span class="one"></span></div>'+
+       '<div class="tdgl"><span>0</span><span>1.0</span><span>2.0</span></div>'+
+       '<div class="tdrvn">하루 평균 '+fx(v.구간일평균,0)+'주 · '+r[2]+'은 '+fx(v.기준일평균,0)+'주</div></div>';
+  });
+  h+='<div class="tdexp"><b>RVOL은 지금 거래량이 평소의 몇 배인지입니다.</b>'+
+     '<code>RVOL = 이 기간 하루 평균 ÷ 직전 기간 하루 평균</code>'+
+     '1.0이면 평소와 같고, 2.0이면 두 배입니다.</div></div>';
+
+  /* 2층 */
+  h+='<details class="tdd"><summary>기간별 거래 구간</summary><div class="tdb">'+
+     '<table class="tdt"><tr><th>기간</th><th>구간</th><th>최다</th></tr>'+
+     (w?'<tr class="hi"><td>이번 주</td><td>$'+tdNum(w.밴드[0])+'~$'+tdNum(w.밴드[1])+'</td><td>$'+tdNum(w.POC)+'</td></tr>':'')+
+     (lw?'<tr><td>지난주</td><td>$'+tdNum(lw.밴드[0])+'~$'+tdNum(lw.밴드[1])+'</td><td>$'+tdNum(lw.POC)+'</td></tr>':'')+
+     (m?'<tr><td>지난 한 달</td><td>$'+tdNum(m.밴드[0])+'~$'+tdNum(m.밴드[1])+'</td><td>$'+tdNum(m.POC)+'</td></tr>':'')+
+     '</table>';
+  if(d.자리이동) h+='<p>지난주 최다 거래가 대비 <b>'+(d.자리이동.차이>=0?'+':'')+tdNum(d.자리이동.차이)+
+     '</b> ('+tdPct(d.자리이동.차이퍼센트)+')</p>';
+  if(d.주월차이) h+='<p>주간이 월간보다 <b>'+(d.주월차이.차이>=0?'+':'')+tdNum(d.주월차이.차이)+'</b></p>';
+  h+='</div></details>';
+
+  if(pc && pc.쌓인계약){
+    var c1=pc.쌓인계약, t1=pc.오늘거래;
+    h+='<details class="tdd"><summary>풋/콜 비율 <span class="s">'+
+       tdNum(c1.내린다/Math.max(c1.오른다,0.01))+'</span></summary><div class="tdb">'+
+       '<div class="tdtug"><span class="u" style="width:'+tdNum(c1.오른다,1)+'%">콜 '+tdNum(c1.오른다,1)+'</span>'+
+       '<span class="d" style="width:'+tdNum(c1.내린다,1)+'%">'+tdNum(c1.내린다,1)+' 풋</span></div>'+
+       '<p>쌓인 계약 기준입니다.'+(t1?' 오늘 신규 거래만 보면 콜 '+tdNum(t1.오른다,1)+'%입니다.':'')+'</p>'+
+       '<p>위험을 줄이려고 건 계약이 섞여 있어 시장 심리와 정확히 같지는 않습니다.</p>';
+    if(pc.종류별 && pc.종류별.length){
+      h+='<table class="tdt"><tr><th>만기</th><th>콜</th><th>풋</th></tr>'+
+        pc.종류별.map(function(k){ return '<tr><td>'+esc(k.종류)+' ('+k.만기수+')</td><td>'+
+          tdNum(k.오른다,1)+'%</td><td>'+tdNum(k.내린다,1)+'%</td></tr>'; }).join('')+'</table>';
+    }
+    h+='</div></details>';
+  }
+
+  h+='<details class="tdd"><summary>산출 방식과 검증</summary><div class="tdb">'+
+     '<p><b>거래 구간</b><br>최근 5거래일 5분봉을 가격 범위 40칸으로 나누고, 거래대금이 가장 많은 '+
+     '칸에서 좌우로 확장해 누적 60%를 채운 구간입니다.</p>'+
+     '<p><b>RVOL</b><br>표준 계산식을 주·월 단위로 확장했습니다. 기준 구간에 현재 구간은 넣지 않습니다.</p>'+
+     '<p><b>외부 검증</b><br>2026-08-31 TradingView VRVP와 대조 · 주간 0.3%, 월간 1.3% 차이.</p>'+
+     (d.품질?'<p><b>데이터 품질</b><br>5분봉 커버리지 '+tdNum(d.품질.분봉커버리지,1)+'% · '+esc(d.품질.신뢰||'')+'</p>':'')+
+     '</div></details>';
+
+  h+='<details class="tdd"><summary>제공하지 않는 것</summary><div class="tdb">'+
+     '<p>· 매수·매도 주도 구분 (틱 데이터 필요)</p><p>· 호가창 · 실시간 시세</p>'+
+     '<p>· 향후 방향 예측</p><p>관측 자료이며 매매 권유가 아닙니다.</p></div></details>';
+  return h;
+}
+
+function loadTrading(sym){
+  var box=$('stTradeBody'); if(!box||!sym) return;
+  if(TRADE_CACHE[sym]){ box.innerHTML=renderTrading(TRADE_CACHE[sym]); return; }
+  box.innerHTML='<div class="skel">거래 자료 불러오는 중…</div>';
+  fetchT(API+'/trading?sym='+encodeURIComponent(sym), 20000)
+    .then(function(r){return r.json()})
+    .then(function(j){ TRADE_CACHE[sym]=j; box.innerHTML=renderTrading(j); })
+    .catch(function(){ box.innerHTML='<div class="skel">불러오지 못했습니다</div>'; });
+}
+
 /* ── 관심 종목 ── */
 function getWatch(){ try{ return JSON.parse(localStorage.getItem('a99_watch')||'[]'); }catch(e){ return []; } }
 function setWatch(a){ try{ localStorage.setItem('a99_watch',JSON.stringify(a)); }catch(e){} }
@@ -4079,9 +4251,11 @@ function renderWatch(){
     return;
   }
   $('watchRows').innerHTML=a.map(function(s){
-    return '<div class="row"><span><span class="tk">'+s+'</span></span>'+
+    return '<div class="row" data-w="'+s+'"><span><span class="tk">'+s+'</span>'+
+      '<div class="wpos" data-pos="'+s+'">확인 중…</div></span>'+
       '<span class="rt"><button class="note" data-del="'+s+'" style="color:var(--tx3);min-height:44px">삭제</button></span></div>';
   }).join('');
+  loadWatchPos(a);
   $('watchRows').querySelectorAll('[data-del]').forEach(function(b){
     b.addEventListener('click',function(e){
       e.stopPropagation();
@@ -4091,6 +4265,42 @@ function renderWatch(){
   $('watchRows').querySelectorAll('.row').forEach(function(r){
     r.addEventListener('click',function(){ loadStock(r.querySelector('.tk').textContent); });
   });
+}
+/* 관심 종목의 현재가가 이번 주 거래 구간 어디에 있는지 표시한다.
+   판정하지 않고 위치만 적는다. 푸시 알림 전 단계. */
+function loadWatchPos(list){
+  if(!list || !list.length) return;
+  var done=0, above=0, below=0, inside=0;
+  list.slice(0,20).forEach(function(sym){
+    var draw=function(j){
+      var el=document.querySelector('[data-pos="'+sym+'"]');
+      done++;
+      if(!el) return;
+      if(!j || j.오류 || !j.주간 || !j.주간.밴드){ el.textContent='자료 없음'; return; }
+      var lo=j.주간.밴드[0], hi=j.주간.밴드[1], px=j.현재가, poc=j.주간.POC;
+      if(px==null){ el.textContent='자료 없음'; return; }
+      var cls, txt;
+      if(px>hi){ cls='above'; txt='구간 위'; above++; }
+      else if(px<lo){ cls='below'; txt='구간 아래'; below++; }
+      else { cls='inside'; txt='구간 안'; inside++; }
+      el.innerHTML='<span class="'+cls+'"><b>'+txt+'</b></span> · $'+tdNum(lo)+'~$'+tdNum(hi)+
+        ' · 최다 $'+tdNum(poc);
+      if(done===Math.min(list.length,20)) drawWatchSum(above, below, inside);
+    };
+    if(TRADE_CACHE[sym]){ draw(TRADE_CACHE[sym]); return; }
+    fetchT(API+'/trading?sym='+encodeURIComponent(sym), 20000)
+      .then(function(r){return r.json()})
+      .then(function(j){ TRADE_CACHE[sym]=j; draw(j); })
+      .catch(function(){ draw(null); });
+  });
+}
+function drawWatchSum(a,b,c){
+  var box=$('watchSum'); if(!box) return;
+  var tot=a+b+c; if(!tot){ box.style.display='none'; return; }
+  box.style.display='block';
+  box.innerHTML='이번 주 거래 구간 기준 · <b>위 '+a+'곳</b> · 안 '+c+'곳 · <b>아래 '+b+'곳</b>'+
+    '<div style="font-size:11px;color:var(--tx3);margin-top:5px">'+
+    '최근 5거래일 거래대금 60%가 들어간 구간과 현재가를 비교한 것입니다.</div>';
 }
 renderWatch();
 </script>
