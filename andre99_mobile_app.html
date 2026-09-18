@@ -145,6 +145,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .wpos .above{color:var(--up)}.wpos .below{color:var(--dn)}.wpos .inside{color:var(--tx2)}
 .pushbox{margin:0 16px 18px;padding:14px;background:var(--s1);border-radius:12px}
 .pushbox [hidden]{display:none!important}
+.pdiag{margin-top:10px;padding:9px;background:var(--s3);border-radius:8px;
+  font-family:var(--mono);font-size:10.5px;line-height:1.75;color:var(--tx3);
+  white-space:pre-wrap;word-break:break-all}
+.pdiag:empty{display:none}
+.pdiag b{color:var(--tx2);font-weight:700}
 .pst{font-size:12.5px;color:var(--tx2);margin-bottom:10px;line-height:1.6}
 .pbtn{display:block;width:100%;min-height:46px;border-radius:10px;background:var(--tx);
   color:#0B0B0C;font-size:13.5px;font-weight:700;margin-bottom:8px;cursor:pointer}
@@ -888,7 +893,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.09.14-C</span>
+      <span class="ver" id="verTag">v2026.09.18-B</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -1021,7 +1026,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <textarea class="psub" id="pushSub" readonly hidden
         placeholder="구독 정보"></textarea>
       <button class="pbtn ghost" id="pushCopy" hidden>구독 정보 복사</button>
+      <button class="pbtn ghost" id="pushLocal" hidden>알림 시험 (이 폰에서 직접)</button>
       <p class="pnote" id="pushNote"></p>
+      <div class="pdiag" id="pushDiag"></div>
     </div>
 
     <div class="sec-h"><h2>관심 종목</h2><span class="note" id="wCount"></span></div>
@@ -1067,9 +1074,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.09.18-A';
-console.log('%c ANDRE99 v2026.09.14-C ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.09.18-B';
+console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
+/* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
+try{ document.addEventListener('DOMContentLoaded',function(){
+  var v=document.getElementById('verTag'); if(v) v.textContent=BUILD_VER; }); }catch(e){}
 var CUR_PAGE='home';   /* 지금 보고 있는 탭 — 카드 창이 목록을 고를 때 쓴다 */
 var $=function(id){return document.getElementById(id)};
 
@@ -4340,7 +4350,7 @@ function openPush(){
       pushNote('공개키 확인: <b>'+esc(VAPID_PUBLIC.slice(0,12))+'…</b> ('+VAPID_PUBLIC.length+'자) · 서버에서 받음');
       var b=$('pushBtn'); if(b){ b.hidden=false;
         b.onclick=function(){ subscribePush(reg); }; }
-    });
+    }).then(function(){ pushDiag(reg); });
   }).catch(function(e){
     pushSay('서비스 워커 등록 실패');
     pushNote('sw.js 파일이 앱과 같은 폴더에 있어야 합니다.<br>'+esc(String(e.message||e)));
@@ -4380,6 +4390,66 @@ function showSub(sub){
   }
   pushNote('이 정보는 이 기기·이 브라우저에만 해당합니다.<br>'+
     '시험 주소: <b>'+esc(API)+'/pushtest</b>');
+}
+
+/* ── 진단 · 2026.09.18 ──
+   푸시가 안 뜰 때 "어디서 막혔는가"를 폰에서 바로 보게 한다.
+   알림 시험 버튼은 푸시를 거치지 않고 서비스 워커로 직접 알림을 띄운다.
+   이것도 안 뜨면 원인은 안드로이드·크롬 설정이지 푸시가 아니다. */
+function swVersion(reg){
+  return new Promise(function(res){
+    var sw = reg && (reg.active || reg.waiting || reg.installing);
+    if(!sw || !('MessageChannel' in window)) return res('(확인 불가)');
+    var to = setTimeout(function(){ res('(응답 없음)'); }, 1500);
+    try{
+      var ch = new MessageChannel();
+      ch.port1.onmessage = function(ev){ clearTimeout(to);
+        res((ev.data && ev.data.ver) || '(구버전 — 응답 형식 다름)'); };
+      sw.postMessage({ q:'ver' }, [ch.port2]);
+    }catch(e){ clearTimeout(to); res('(오류)'); }
+  });
+}
+
+function pushDiag(reg){
+  var box=$('pushDiag'); if(!box) return;
+  var standalone = false;
+  try{ standalone = window.matchMedia('(display-mode: standalone)').matches
+    || navigator.standalone===true; }catch(e){}
+  Promise.all([
+    reg.pushManager.getSubscription().catch(function(){ return null; }),
+    swVersion(reg)
+  ]).then(function(r){
+    var sub=r[0], ver=r[1];
+    var sw = reg.active ? '활성' : reg.waiting ? '대기 중' : reg.installing ? '설치 중' : '없음';
+    var L=[];
+    L.push('<b>진단</b>  '+esc(BUILD_VER));
+    L.push('사이트 알림 권한 : '+esc(Notification.permission)+
+      (Notification.permission==='granted'?' ✓':' ← 여기가 문제입니다'));
+    L.push('서비스 워커      : '+esc(sw));
+    L.push('워커 파일        : '+esc(ver));
+    L.push('워커 범위        : '+esc(reg.scope.replace(location.origin,'')));
+    L.push('구독             : '+(sub?('있음 · '+esc(String(sub.endpoint).slice(-12))):'없음'));
+    L.push('실행 형태        : '+(standalone?'홈 화면 앱':'브라우저 탭'));
+    box.innerHTML = L.join('\n');
+
+    var lb=$('pushLocal');
+    if(lb && Notification.permission==='granted'){
+      lb.hidden=false;
+      lb.onclick=function(){
+        lb.textContent='띄우는 중…';
+        reg.showNotification('ANDRE99 · 직접 시험', {
+          body:'이 알림이 보이면 폰 설정은 정상입니다. ('+new Date().toLocaleTimeString('ko-KR')+')',
+          icon:'icon-192.png', badge:'icon-192.png', tag:'a99-local',
+          requireInteraction:true, data:{ url:location.pathname }
+        }).then(function(){
+          lb.textContent='띄웠습니다 — 알림창을 확인하세요';
+          setTimeout(function(){ lb.textContent='알림 시험 (이 폰에서 직접)'; },4000);
+        }).catch(function(e){
+          lb.textContent='실패: '+String(e&&e.message||e).slice(0,40);
+        });
+      };
+    }
+  });
 }
 
 /* ── 관심 종목 ── */
