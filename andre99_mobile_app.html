@@ -144,6 +144,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .wpos b{font-weight:700}
 .wpos .above{color:var(--up)}.wpos .below{color:var(--dn)}.wpos .inside{color:var(--tx2)}
 .pushbox{margin:0 16px 18px;padding:14px;background:var(--s1);border-radius:12px}
+.pushbox [hidden]{display:none!important}
 .pst{font-size:12.5px;color:var(--tx2);margin-bottom:10px;line-height:1.6}
 .pbtn{display:block;width:100%;min-height:46px;border-radius:10px;background:var(--tx);
   color:#0B0B0C;font-size:13.5px;font-weight:700;margin-bottom:8px;cursor:pointer}
@@ -1066,7 +1067,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.09.14-C';
+var BUILD_VER='v2026.09.18-A';
 console.log('%c ANDRE99 v2026.09.14-C ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var CUR_PAGE='home';   /* 지금 보고 있는 탭 — 카드 창이 목록을 고를 때 쓴다 */
@@ -4278,7 +4279,26 @@ function loadTrading(sym){
 /* ══ 푸시 알림 실험 · 2026.09.14 ══
    저장소 없이 "폰에 알림이 뜨는가"만 확인한다.
    구독 정보를 화면에 띄우면, 그걸 복사해 /pushtest 에 붙여넣어 발송한다. */
-var VAPID_PUBLIC = '';   /* ← 조현원 님이 만든 공개키를 여기 넣습니다 */
+/* 공개키는 워커에서 받아온다. 손으로 옮기지 않는다.
+   받은 값은 브라우저에 저장해 두어, 두 번째부터는 즉시 뜬다. */
+var VAPID_PUBLIC = '';
+var VK_KEY = 'a99_vapid_pub';
+
+function vkCached(){ try{ return localStorage.getItem(VK_KEY)||''; }catch(e){ return ''; } }
+function vkSave(k){ try{ localStorage.setItem(VK_KEY,k); }catch(e){} }
+
+function fetchVapidKey(){
+  return fetchT(API+'/pushkey', 8000)
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j && j.공개키 && j.공개키_상태==='정상'){
+        VAPID_PUBLIC=j.공개키; vkSave(j.공개키);
+        return { ok:true, info:j };
+      }
+      return { ok:false, info:j||{} };
+    })
+    .catch(function(e){ return { ok:false, err:String(e&&e.message||e) }; });
+}
 
 function b64ToU8(s){
   var pad='='.repeat((4-s.length%4)%4);
@@ -4296,10 +4316,28 @@ function initPush(){
   if(!('PushManager' in window)){ pushSay('이 브라우저는 푸시를 지원하지 않습니다.'); return; }
   if(location.protocol!=='https:'){ pushSay('https 에서만 알림이 됩니다.'); return; }
 
+  VAPID_PUBLIC = vkCached();
+  pushSay(VAPID_PUBLIC ? '확인 중…' : '서버에서 공개키를 받아오는 중…');
+
+  fetchVapidKey().then(function(r){
+    if(!VAPID_PUBLIC){
+      pushSay('공개키를 받지 못했습니다.');
+      var why = r.err ? ('서버에 닿지 못했습니다 · '+esc(r.err))
+        : (r.info && r.info.안내) ? esc(r.info.안내)
+        : '워커에 /pushkey 라우트가 없습니다. 워커를 다시 배포해 주세요.';
+      pushNote(why+'<br>확인 주소: <b>'+esc(API)+'/pushkey</b>');
+      return;
+    }
+    return openPush();
+  });
+}
+
+function openPush(){
   navigator.serviceWorker.register('sw.js').then(function(reg){
     return reg.pushManager.getSubscription().then(function(sub){
       if(sub){ showSub(sub); pushSay('알림을 받고 있습니다.'); return; }
       pushSay('알림을 받으려면 아래 버튼을 눌러주세요.');
+      pushNote('공개키 확인: <b>'+esc(VAPID_PUBLIC.slice(0,12))+'…</b> ('+VAPID_PUBLIC.length+'자) · 서버에서 받음');
       var b=$('pushBtn'); if(b){ b.hidden=false;
         b.onclick=function(){ subscribePush(reg); }; }
     });
@@ -4310,8 +4348,8 @@ function initPush(){
 }
 
 function subscribePush(reg){
-  if(!VAPID_PUBLIC){ pushSay('공개키가 아직 설정되지 않았습니다.');
-    pushNote('앱 코드의 VAPID_PUBLIC 에 공개키를 넣어야 합니다.'); return; }
+  if(!VAPID_PUBLIC){ pushSay('공개키가 아직 없습니다.');
+    pushNote('서버에서 키를 받지 못했습니다. 잠시 뒤 다시 열어 주세요.'); return; }
   pushSay('권한을 요청하는 중…');
   Notification.requestPermission().then(function(p){
     if(p!=='granted'){ pushSay('알림이 거부되었습니다.');
