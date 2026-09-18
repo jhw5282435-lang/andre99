@@ -91,6 +91,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   vertical-align:middle;letter-spacing:.2px}
 .mknote{margin:8px 16px 0;font-size:10.5px;color:var(--tx3);line-height:1.65}
 /* ══ 거래 화면 ══ */
+.tdwhen{margin:0 16px 10px;font-size:11.5px;color:var(--tx3);line-height:1.7}
+.tdwhen b{color:var(--tx2)}
 .tdcard{background:var(--s1);border-radius:14px;padding:16px 15px;margin:0 16px 10px}
 .tdh{display:flex;align-items:baseline;gap:7px;margin-bottom:13px}
 .tdh b{font-size:13.5px;font-weight:700}
@@ -141,6 +143,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .wpos{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:2px}
 .wpos b{font-weight:700}
 .wpos .above{color:var(--up)}.wpos .below{color:var(--dn)}.wpos .inside{color:var(--tx2)}
+.pushbox{margin:0 16px 18px;padding:14px;background:var(--s1);border-radius:12px}
+.pst{font-size:12.5px;color:var(--tx2);margin-bottom:10px;line-height:1.6}
+.pbtn{display:block;width:100%;min-height:46px;border-radius:10px;background:var(--tx);
+  color:#0B0B0C;font-size:13.5px;font-weight:700;margin-bottom:8px;cursor:pointer}
+.pbtn.ghost{background:var(--s3);color:var(--tx2);font-weight:500;min-height:40px;font-size:12px}
+.psub{width:100%;height:80px;background:var(--s3);color:var(--tx3);border:0;border-radius:8px;
+  padding:9px;font-family:var(--mono);font-size:9.5px;margin-bottom:8px;resize:none}
+.pnote{margin:0;font-size:11px;color:var(--tx3);line-height:1.7}
 .wsum{margin:0 16px 10px;padding:12px 14px;background:var(--s1);border-radius:11px;
   font-size:12.5px;color:var(--tx2);line-height:1.7}
 .wsum b{color:var(--tx)}
@@ -877,7 +887,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver">v2026.09.14-A</span>
+      <span class="ver">v2026.09.14-C</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -1003,6 +1013,16 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 <!-- ══ 관심 ══ -->
 <main class="page" id="p-my">
   <div class="sec">
+    <div class="sec-h"><h2>알림 실험</h2><span class="note">푸시 시험</span></div>
+    <div class="pushbox" id="pushBox">
+      <div class="pst" id="pushState">확인 중…</div>
+      <button class="pbtn" id="pushBtn" hidden>알림 받기</button>
+      <textarea class="psub" id="pushSub" readonly hidden
+        placeholder="구독 정보"></textarea>
+      <button class="pbtn ghost" id="pushCopy" hidden>구독 정보 복사</button>
+      <p class="pnote" id="pushNote"></p>
+    </div>
+
     <div class="sec-h"><h2>관심 종목</h2><span class="note" id="wCount"></span></div>
     <div class="wsum" id="watchSum" style="display:none"></div>
     <div class="rows" id="watchRows"></div>
@@ -1046,8 +1066,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.09.14-A';
-console.log('%c ANDRE99 v2026.09.14-A ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
+var BUILD_VER='v2026.09.14-C';
+console.log('%c ANDRE99 v2026.09.14-C ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 var CUR_PAGE='home';   /* 지금 보고 있는 탭 — 카드 창이 목록을 고를 때 쓴다 */
 var $=function(id){return document.getElementById(id)};
@@ -1198,8 +1218,8 @@ function renderMarket(tab){
     var pv = (p==null) ? '—' : fx(p, Math.abs(p)>=1000 ? 0 : 2);
     var cv = (x.chg_pct==null) ? '—'
       : ((x.chg_pct>=0?'+':'')+x.chg_pct.toFixed(2)+(x.unit==='%p'?'%p':'%'));
-    var badge = (x.session && x.session!=='정규장')
-      ? '<span class="mkses">'+esc(x.session==='프리마켓'?'프리':'애프터')+'</span>' : '';
+    var sesShort = {'프리마켓':'프리','애프터마켓':'애프터','직전 시간외':'시간외'}[x.session];
+    var badge = sesShort ? '<span class="mkses">'+esc(sesShort)+'</span>' : '';
     return '<div class="mkc" style="background:'+mkColor(x.chg_pct, r.mx)+'">'+
       '<div class="k">'+esc(x.name)+badge+'</div>'+
       '<div class="v">'+pv+(x.unit==='%p'?'%':'')+'</div>'+
@@ -1227,10 +1247,11 @@ function loadMarket(){
       MKT_DATA.forEach(function(b){ (b.items||[]).forEach(function(x){
         if(x.symbol==='^GSPC' && x.session) ses=x.session;
       }); });
-      idxNote.textContent = (ses==='프리마켓') ? '미국 프리마켓 진행 중 · 코스피는 한국장 종가'
+      idxNote.textContent =
+          (ses==='프리마켓')   ? '미국 프리마켓 진행 중 · 코스피는 한국장 종가'
         : (ses==='애프터마켓') ? '미국 애프터마켓 진행 중 · 코스피는 한국장 종가'
-        : (MKT_OPEN ? '미국장 진행 중 · 코스피는 직전 종가'
-        : '미국 '+(ld.getMonth()+1)+'/'+ld.getDate()+'('+lwk+') 종가 · 코스피는 한국장 종가');
+        : (ses==='정규장')     ? '미국장 진행 중 · 코스피는 직전 종가'
+        : '미국 '+(ld.getMonth()+1)+'/'+ld.getDate()+'('+lwk+') 종가 · 코스피는 한국장 종가';
     }
     renderMarket('전체');
     if($('mkNote')) $('mkNote').textContent = d.market_note||'';
@@ -4164,7 +4185,15 @@ function renderTrading(d){
   var ref=d.기준가, price=d.현재가;
   var h='';
 
+  var sesTxt = d.현재가_세션 || '';
+  var atTxt = d.현재가_시각 ? (' · ' + esc(d.현재가_시각)) : '';
   h+='<div class="sec-h"><h2>거래</h2><span class="note">'+esc(d.기준||'')+'</span></div>';
+  if(sesTxt){
+    h+='<p class="tdwhen">현재가는 <b>'+esc(sesTxt)+'</b> 가격입니다'+atTxt+
+       (d.현재가_묵은분!=null && d.현재가_묵은분>60
+         ? ' · '+Math.round(d.현재가_묵은분/60)+'시간 전 값' : '')+
+       '<br>구간·거래량은 <b>전일 마감</b> 기준으로, 미국장 마감 후 갱신됩니다.</p>';
+  }
 
   /* ① 거래 구간 */
   h+='<div class="tdcard"><div class="tdh"><b>이번 주 가장 많이 거래된 구간</b>'+
@@ -4246,6 +4275,75 @@ function loadTrading(sym){
     .catch(function(){ box.innerHTML='<div class="skel">불러오지 못했습니다</div>'; });
 }
 
+/* ══ 푸시 알림 실험 · 2026.09.14 ══
+   저장소 없이 "폰에 알림이 뜨는가"만 확인한다.
+   구독 정보를 화면에 띄우면, 그걸 복사해 /pushtest 에 붙여넣어 발송한다. */
+var VAPID_PUBLIC = '';   /* ← 조현원 님이 만든 공개키를 여기 넣습니다 */
+
+function b64ToU8(s){
+  var pad='='.repeat((4-s.length%4)%4);
+  var b=(s+pad).replace(/-/g,'+').replace(/_/g,'/');
+  var raw=atob(b), arr=new Uint8Array(raw.length);
+  for(var i=0;i<raw.length;i++) arr[i]=raw.charCodeAt(i);
+  return arr;
+}
+function pushSay(t){ var e=$('pushState'); if(e) e.textContent=t; }
+function pushNote(t){ var e=$('pushNote'); if(e) e.innerHTML=t; }
+
+function initPush(){
+  var box=$('pushBox'); if(!box) return;
+  if(!('serviceWorker' in navigator)){ pushSay('이 브라우저는 알림을 지원하지 않습니다.'); return; }
+  if(!('PushManager' in window)){ pushSay('이 브라우저는 푸시를 지원하지 않습니다.'); return; }
+  if(location.protocol!=='https:'){ pushSay('https 에서만 알림이 됩니다.'); return; }
+
+  navigator.serviceWorker.register('sw.js').then(function(reg){
+    return reg.pushManager.getSubscription().then(function(sub){
+      if(sub){ showSub(sub); pushSay('알림을 받고 있습니다.'); return; }
+      pushSay('알림을 받으려면 아래 버튼을 눌러주세요.');
+      var b=$('pushBtn'); if(b){ b.hidden=false;
+        b.onclick=function(){ subscribePush(reg); }; }
+    });
+  }).catch(function(e){
+    pushSay('서비스 워커 등록 실패');
+    pushNote('sw.js 파일이 앱과 같은 폴더에 있어야 합니다.<br>'+esc(String(e.message||e)));
+  });
+}
+
+function subscribePush(reg){
+  if(!VAPID_PUBLIC){ pushSay('공개키가 아직 설정되지 않았습니다.');
+    pushNote('앱 코드의 VAPID_PUBLIC 에 공개키를 넣어야 합니다.'); return; }
+  pushSay('권한을 요청하는 중…');
+  Notification.requestPermission().then(function(p){
+    if(p!=='granted'){ pushSay('알림이 거부되었습니다.');
+      pushNote('브라우저 설정에서 이 사이트의 알림을 허용해야 합니다.'); return; }
+    return reg.pushManager.subscribe({
+      userVisibleOnly:true, applicationServerKey:b64ToU8(VAPID_PUBLIC)
+    }).then(function(sub){
+      pushSay('구독 완료. 아래 정보를 복사해 시험 페이지에 붙여넣으세요.');
+      showSub(sub);
+      var b=$('pushBtn'); if(b) b.hidden=true;
+    });
+  }).catch(function(e){
+    pushSay('구독 실패'); pushNote(esc(String(e.message||e)));
+  });
+}
+
+function showSub(sub){
+  var ta=$('pushSub'), cp=$('pushCopy');
+  if(!ta) return;
+  ta.value=JSON.stringify(sub); ta.hidden=false;
+  if(cp){ cp.hidden=false;
+    cp.onclick=function(){
+      ta.select();
+      try{ document.execCommand('copy'); cp.textContent='복사했습니다'; }
+      catch(e){ cp.textContent='길게 눌러 직접 복사해주세요'; }
+      setTimeout(function(){ cp.textContent='구독 정보 복사'; },1800);
+    };
+  }
+  pushNote('이 정보는 이 기기·이 브라우저에만 해당합니다.<br>'+
+    '시험 주소: <b>'+esc(API)+'/pushtest</b>');
+}
+
 /* ── 관심 종목 ── */
 function getWatch(){ try{ return JSON.parse(localStorage.getItem('a99_watch')||'[]'); }catch(e){ return []; } }
 function setWatch(a){ try{ localStorage.setItem('a99_watch',JSON.stringify(a)); }catch(e){} }
@@ -4314,6 +4412,7 @@ function drawWatchSum(a,b,c){
     '최근 5거래일 거래대금 60%가 들어간 구간과 현재가를 비교한 것입니다.</div>';
 }
 renderWatch();
+initPush();
 </script>
 </body>
 </html>
