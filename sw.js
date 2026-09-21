@@ -1,15 +1,20 @@
-/* ANDRE99 서비스 워커 · 2026.09.18-A
+/* ANDRE99 서비스 워커 · 2026.09.21-A
    역할 세 가지
      ① 푸시 메시지를 받아 알림을 띄운다
      ② 알림을 누르면 앱을 연다
      ③ 앱이 물어보면 자기 버전을 알려준다 (진단용)
    앱이 닫혀 있어도 브라우저가 이 파일을 대신 실행한다.
 
-   경로는 전부 상대 경로로 둔다. 이 파일이 /andre99/sw.js 에 있으므로
-   'icon-192.png' 는 /andre99/icon-192.png 로 풀린다.
-   폴더 이름이 바뀌어도 따라간다. */
+   경로는 전부 상대 경로로 둔다. 이 파일이 놓인 폴더가 기준이 되므로
+   'icon-192.png' 는 같은 폴더의 icon-192.png 로 풀린다.
+   폴더 이름이 바뀌어도, 도메인이 바뀌어도 따라간다.
 
-const SW_VER = '2026.09.18-A';
+   [2026.09.21-A 변경]
+   알림을 눌렀을 때 이미 열린 창을 찾는 조건에서 '/andre99/' 하드코딩을 없앴다.
+   registration.scope(이 워커가 맡은 주소 구역)와 비교하므로
+   GitHub Pages 든 Cloudflare Pages 든 커스텀 도메인이든 그대로 작동한다. */
+
+const SW_VER = '2026.09.21-A';
 const APP_URL = 'andre99_mobile_app.html';
 
 self.addEventListener('install', (e) => {
@@ -58,11 +63,16 @@ self.addEventListener('push', (e) => {
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || APP_URL;
+
+  // 이 워커가 맡은 주소 구역. 예) https://andre99.pages.dev/
+  // 도메인이나 폴더가 바뀌어도 브라우저가 알아서 채워준다.
+  const scope = self.registration.scope;
+
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-      // 이미 열린 탭이 있으면 그걸 앞으로
+      // 이미 열린 우리 앱 창이 있으면 그걸 앞으로
       for (const c of list) {
-        if (c.url.indexOf('/andre99/') >= 0 && 'focus' in c) return c.focus();
+        if (c.url.indexOf(scope) === 0 && 'focus' in c) return c.focus();
       }
       if (self.clients.openWindow) return self.clients.openWindow(url);
     })
