@@ -893,7 +893,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <button class="iconbtn" id="toSearch" aria-label="종목 검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       </button>
-      <span class="ver" id="verTag">v2026.09.18-B</span>
+      <span class="ver" id="verTag">v2026.09.22-A</span>
       <button class="iconbtn" id="btnReload" aria-label="새로고침">
         <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/></svg>
       </button>
@@ -1074,7 +1074,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.09.18-B';
+var BUILD_VER='v2026.09.22-A';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -4522,5 +4522,914 @@ function drawWatchSum(a,b,c){
 renderWatch();
 initPush();
 </script>
+<!-- ══════════════════════════════════════════════════════════════
+  안드레99 — 알림 이식 패치  v2026.09.22-C  (앱 v2026.09.18-B 대조 완료)
+  붙여넣는 곳: andre99_mobile_app.html 의 </body> 바로 앞
+  고치는 곳  : 없음 (스스로 찾아서 붙는다)
+
+  v2026.09.22-A 에서 바뀐 것
+   · 바텀시트를 없앴다. 화면 전환이 사라진다.
+   · 종목 화면 '＋ 관심' 줄 아래에 전체 너비 «알림 줄»이 늘 있다.
+     그 줄이 가장 가까운 선의 값을 이미 보여주므로 눈이 지나치지 않는다.
+   · 줄을 누르면 그 자리에서 목록이 펼쳐진다.
+
+  하는 일
+   ① 종목 화면에 알림 줄 + 펼침 패널을 만든다
+   ② 관심 탭 아래에 '걸어둔 알림' 관리 목록을 만든다
+
+  워커 규격 (배포본과 대조 완료)
+   POST /sub        {device_id, endpoint, p256dh, auth, platform} / {on:false} 로 전체 해제
+   POST /watch      {device_id, symbol}                           / {on:false} 로 빼기
+   POST /alert      {device_id, symbol, terms[1~3], combine, repeat_n}
+   GET  /alerts?d=<device_id>
+   POST /alert/off  {device_id, alert_id}
+   POST /surge      {device_id, on, pct}
+   GET  /pushkey    → {공개키}
+   GET  /technical?symbol=X&tf=d&yrs=2
+        → {ma:{ma20,ma60,ma120,ma200}, ichimoku:{tenkan,kijun,futureA,futureB},
+           regression:{p250:{upper,lower}}, candles:[...]}
+═══════════════════════════════════════════════════════════════ -->
+
+<style>
+/* ── 알림 패치 전용 CSS. 기존 클래스는 건드리지 않는다 ── */
+
+/* 알림 줄 — 현재가 아래에 늘 있는 한 줄 */
+.a9-wrap{margin-top:14px}
+.a9-bar{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:13px 16px;min-height:56px;background:var(--s1);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.a9-bar:active{background:var(--s2)}
+.a9-bar .bell{flex:none;width:17px;height:17px;color:var(--tx2)}
+.a9-bar .t{flex:1;min-width:0}
+.a9-bar .t b{display:block;font-size:13px;font-weight:700;letter-spacing:-.01em}
+.a9-bar .t span{display:block;font-size:11.5px;color:var(--tx3);margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.a9-bar .t span em{font-style:normal;font-family:var(--mono);color:var(--tx2)}
+.a9-bar .chev{flex:none;font-size:14px;color:var(--tx3);transition:transform .16s}
+.a9-bar.open .chev{transform:rotate(90deg)}
+@media(prefers-reduced-motion:reduce){.a9-bar .chev{transition:none}}
+
+/* 펼침 패널 — 오버레이 없음. 화면 안에서 그대로 늘어난다 */
+.a9-panel{border-bottom:1px solid var(--line);padding-bottom:16px}
+.a9-panel[hidden]{display:none!important}
+
+/* 걸어둔 것 — 패널 맨 위 */
+.a9-have{padding:12px 16px 4px}
+.a9-have>p{margin:0 0 8px;font-size:11px;color:var(--tx3);letter-spacing:.04em;
+  font-weight:600}
+
+/* 고르는 목록 */
+.a9-pick{padding:12px 16px 0}
+.a9-pick>p.lead{margin:0 0 10px;font-size:11.5px;color:var(--tx3);line-height:1.7}
+.a9-gp{display:flex;flex-direction:column}
+.a9-gp.lead{gap:7px}
+.a9-gp>summary{list-style:none;cursor:pointer;display:flex;align-items:center;
+  gap:8px;min-height:44px;padding:6px 2px;font-size:12px;color:var(--tx2);
+  font-weight:600}
+.a9-gp>summary::-webkit-details-marker{display:none}
+.a9-gp>summary .c{margin-left:auto;font-size:10.5px;color:var(--tx3);font-weight:400}
+.a9-gp>summary::after{content:'▾';font-size:10px;color:var(--tx3)}
+.a9-gp[open]>summary::after{content:'▴'}
+.a9-gp-b{display:flex;flex-direction:column;gap:7px;padding-bottom:5px}
+.a9-li{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:12px 13px;min-height:48px;border:1px solid var(--line);
+  border-radius:10px;background:var(--s2)}
+.a9-li:active{background:var(--s3)}
+.a9-li.on{border-color:var(--tx2);background:var(--s3)}
+.a9-li .nm{font-size:12.5px;color:var(--tx2);flex:none;min-width:80px}
+.a9-li .pv{font-size:15px;font-weight:700;font-family:var(--mono);
+  letter-spacing:-.02em}
+.a9-li .df{margin-left:auto;font-size:11.5px;font-family:var(--mono)}
+.a9-li .df.u{color:var(--up)}
+.a9-li .df.d{color:var(--dn)}
+
+/* 직접 입력 */
+.a9-man{display:flex;gap:7px;padding:9px 16px 0}
+.a9-man input{flex:1;min-width:0;padding:11px;min-height:48px;background:var(--s2);
+  border:1px solid var(--line);border-radius:10px;color:var(--tx);
+  font-size:15px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.a9-man input:focus{outline:2px solid var(--tx3);outline-offset:1px}
+.a9-man button{padding:0 15px;min-height:48px;border-radius:10px;
+  background:var(--s3);color:var(--tx);font-size:12.5px;font-weight:600}
+
+/* 고급 — 조건 두 개 묶기 */
+.a9-adv{margin:13px 16px 0;border-top:1px solid var(--line);padding-top:10px}
+.a9-adv>summary{list-style:none;cursor:pointer;font-size:12px;color:var(--tx3);
+  padding:8px 0;min-height:44px;display:flex;align-items:center;gap:6px}
+.a9-adv>summary::-webkit-details-marker{display:none}
+.a9-adv>summary::after{content:'펼치기';margin-left:auto;font-size:11px}
+.a9-adv[open]>summary::after{content:'접기'}
+.a9-grp{margin:6px 0 13px}
+.a9-grp>p{margin:0 0 7px;font-size:11px;color:var(--tx3);letter-spacing:.04em;
+  font-weight:600}
+.a9-seg{display:flex;flex-wrap:wrap;gap:6px}
+.a9-seg button{padding:9px 11px;min-height:44px;border:1px solid var(--line);
+  border-radius:8px;background:var(--s2);color:var(--tx2);font-size:12px}
+.a9-seg button.on{background:var(--s3);color:var(--tx);border-color:var(--tx3)}
+.a9-t2{display:flex;align-items:center;gap:8px;padding:11px 12px;
+  border:1px dashed var(--line);border-radius:10px;font-size:12.5px;
+  color:var(--tx3);width:100%;min-height:44px;margin-bottom:8px;text-align:left}
+.a9-t2.set{border-style:solid;color:var(--tx2)}
+
+/* 확인 + 방향 + 걸기 */
+.a9-sum{margin:12px 16px 0;padding:12px;background:var(--s2);border-radius:10px;
+  font-size:12.5px;color:var(--tx2);line-height:1.7}
+.a9-sum b{color:var(--tx);font-family:var(--mono)}
+.a9-sum .tl{margin-top:7px;color:var(--tx3);font-size:11.5px}
+.a9-dir{display:flex;gap:6px;margin:7px 0 2px}
+.a9-dir button{flex:1;min-height:46px;border-radius:9px;border:1px solid var(--line);
+  background:var(--bg);color:var(--tx3);font-size:12.5px;font-weight:600}
+.a9-dir button.on{background:var(--s3);color:var(--tx);border-color:var(--tx3)}
+.a9-go{display:block;width:calc(100% - 32px);margin:11px 16px 0;padding:15px;
+  min-height:52px;border-radius:11px;background:var(--tx);color:var(--bg);
+  font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+.a9-go:disabled{background:var(--s3);color:var(--tx3)}
+
+/* 걸어둔 조건 한 줄 — 종목 화면·관심 탭 공용 */
+.a9-arow{display:flex;align-items:flex-start;gap:9px;padding:11px 0;
+  border-bottom:1px solid var(--line)}
+.a9-arow:last-child{border-bottom:0}
+.a9-arow.box{padding:11px 14px;border:1px solid var(--line);border-radius:10px;
+  background:var(--s2);margin-bottom:7px}
+.a9-arow .bd{flex:1;min-width:0}
+.a9-arow .t1{font-size:13px;font-weight:600;letter-spacing:-.01em}
+.a9-arow .t1 em{font-style:normal;font-family:var(--mono);color:var(--tx)}
+.a9-arow .t2{margin-top:3px;font-size:11.5px;color:var(--tx3);line-height:1.6}
+.a9-st{display:inline-flex;align-items:center;gap:4px;font-size:11px}
+.a9-st i{width:5px;height:5px;border-radius:50%;background:var(--tx3);flex:none}
+.a9-st.wait i{background:var(--dn)}
+.a9-st.fired i{background:var(--up)}
+.a9-off{flex:none;align-self:center;padding:8px 10px;min-height:44px;min-width:44px;
+  font-size:11.5px;color:var(--tx3);border:1px solid var(--line);border-radius:8px}
+
+/* 관심 탭 — 관리 목록 */
+.a9-mg{margin:0 16px 20px}
+.a9-sw{display:flex;align-items:center;gap:10px;padding:13px 14px;
+  background:var(--s2);border:1px solid var(--line);border-radius:11px;
+  width:100%;text-align:left;min-height:44px}
+.a9-sw>span:first-child{flex:1;min-width:0}
+.a9-sw .tt{display:block;font-size:13px;font-weight:600}
+.a9-sw .ds{display:block;font-size:11.5px;color:var(--tx3);margin-top:2px;
+  line-height:1.6}
+.a9-sw .kn{margin-left:auto;flex:none;width:44px;height:26px;border-radius:13px;
+  background:var(--s3);position:relative;transition:background .16s}
+.a9-sw .kn::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;
+  border-radius:50%;background:var(--tx3);transition:transform .16s,background .16s}
+.a9-sw.on .kn{background:var(--tx3)}
+.a9-sw.on .kn::after{transform:translateX(18px);background:var(--tx)}
+.a9-cnt{margin-left:auto;font-size:11.5px;color:var(--tx3);
+  font-variant-numeric:tabular-nums}
+.a9-empty{padding:20px 14px;text-align:center;font-size:12px;color:var(--tx3);
+  line-height:1.75;white-space:pre-line}
+
+.a9-toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:950;
+  background:var(--s3);color:var(--tx);font-size:12.5px;padding:11px 16px;
+  border-radius:10px;border:1px solid var(--line);opacity:0;pointer-events:none;
+  transition:opacity .2s;max-width:86vw;text-align:center;line-height:1.6}
+.a9-toast.show{opacity:1}
+</style>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   안드레99 알림 패치 — 스스로 설치되는 한 덩어리
+   기존 코드를 고치지 않는다. 기존 전역도 덮어쓰지 않는다.
+   ════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+  if (window.A99Alert) return;                 // 두 번 붙어도 안전
+
+  /* ── 0. 설정 : 앱이 이미 쓰는 값을 찾아 쓴다 ─────────────── */
+  var CFG = {
+    api: (function () {
+      var c = [window.API, window.API_BASE, window.WORKER, window.WORKER_URL, window.BASE];
+      for (var i = 0; i < c.length; i++) {
+        if (typeof c[i] === 'string' && /^https?:\/\//.test(c[i])) return c[i].replace(/\/+$/, '');
+      }
+      return 'https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';   // ← 못 찾으면 이 값
+    })(),
+    // 앱 v2026.09.18-B 에서 확인: loadStock() 이 TECH_SYM 과 LAST 를 채운다
+    symbol: function () {
+      var L = window.LAST;
+      if (L && typeof L.symbol === 'string' && L.symbol) return L.symbol.toUpperCase();
+      if (typeof window.TECH_SYM === 'string' && window.TECH_SYM) return window.TECH_SYM.toUpperCase();
+      return '';
+    },
+    price: function () {
+      var L = window.LAST;
+      if (L && typeof L.price === 'number' && L.price > 0) return L.price;
+      return null;
+    }
+  };
+
+  /* ── 1. 기기 ID ──────────────────────────────────────────── */
+  function devId() {
+    var k = 'a99_dev', v = '';
+    try { v = localStorage.getItem(k) || ''; } catch (e) {}
+    if (!/^[A-Za-z0-9_-]{8,64}$/.test(v)) {
+      var a = new Uint8Array(16);
+      (window.crypto || crypto).getRandomValues(a);
+      v = Array.prototype.map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+      try { localStorage.setItem(k, v); } catch (e) {}
+    }
+    return v;
+  }
+  var DEV = devId();
+
+  /* ── 2. 작은 도구들 ──────────────────────────────────────── */
+  function el(t, c, x) {
+    var n = document.createElement(t);
+    if (c) n.className = c;
+    if (x != null) n.textContent = x;
+    return n;
+  }
+  function n4(v) { return (Math.round(v * 100) / 100).toFixed(2); }
+  function api(path, body) {
+    var o = body
+      ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      : { method: 'GET' };
+    return fetch(CFG.api + path, o).then(function (r) { return r.json(); });
+  }
+  var toastT = null;
+  function toast(msg) {
+    var t = document.getElementById('a9Toast');
+    if (!t) { t = el('div', 'a9-toast'); t.id = 'a9Toast'; document.body.appendChild(t); }
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastT);
+    toastT = setTimeout(function () { t.classList.remove('show'); }, 2600);
+  }
+  function b64u(s) {
+    var p = '='.repeat((4 - s.length % 4) % 4);
+    var b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/'));
+    var a = new Uint8Array(b.length);
+    for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+    return a;
+  }
+  function keyStr(k) {
+    return btoa(String.fromCharCode.apply(null, new Uint8Array(k)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function when(iso) {
+    try {
+      var d = new Date(iso);
+      return (d.getMonth() + 1) + '/' + d.getDate() + ' ' +
+        ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    } catch (e) { return ''; }
+  }
+  function word(k) { return k === 'cross_up' ? '위로 뚫으면' : k === 'cross_down' ? '아래로 깨지면' : '닿으면'; }
+  function combWord(c) {
+    return c === 'any' ? '둘 중 하나' : c === 'sequence' ? '순서대로'
+      : c === 'same_bar' ? '같은 1분' : c === 'within' ? '시간 안에' : '둘 다';
+  }
+
+  /* ── 3. 구독 : 이 폰을 서버에 등록한다 ────────────────────
+     알림을 처음 걸 때 한 번만 일어난다. 이미 되어 있으면 건너뛴다. */
+  var subBusy = false;
+  function ensureSub() {
+    if (subBusy) return Promise.reject(new Error('진행 중입니다'));
+    subBusy = true;
+    return (function () {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        throw new Error('이 브라우저는 알림을 지원하지 않습니다');
+      }
+      return Notification.requestPermission().then(function (p) {
+        if (p !== 'granted') throw new Error('알림이 차단되어 있습니다. 브라우저 설정에서 허용해주세요');
+        return navigator.serviceWorker.ready;
+      }).then(function (reg) {
+        return reg.pushManager.getSubscription().then(function (s) {
+          if (s) return s;
+          return api('/pushkey').then(function (k) {
+            if (!k || !k.공개키) throw new Error('서버 열쇠를 받지 못했습니다');
+            return reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: b64u(k.공개키)
+            });
+          });
+        });
+      }).then(function (sub) {
+        return api('/sub', {
+          device_id: DEV,
+          endpoint: sub.endpoint,
+          p256dh: keyStr(sub.getKey('p256dh')),
+          auth: keyStr(sub.getKey('auth')),
+          platform: /android/i.test(navigator.userAgent) ? 'android'
+            : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'desktop'
+        });
+      }).then(function (r) {
+        if (!r || !r.ok) throw new Error((r && r.오류) || '등록에 실패했습니다');
+        return r;
+      });
+    })().finally(function () { subBusy = false; });
+  }
+
+  /* ── 4. 지표 : /technical 한 번으로 선을 전부 뽑는다 ──────
+     추가 호출은 없다. 응답 하나에 다 들어 있다. */
+  var techCache = {};
+  function suggest(sym, px) {
+    if (techCache[sym]) return Promise.resolve(pickLines(techCache[sym], px));
+    return api('/technical?symbol=' + encodeURIComponent(sym) + '&tf=d&yrs=2')
+      .then(function (t) {
+        if (!t || t.status !== 'ok') throw new Error('지표를 가져오지 못했습니다');
+        techCache[sym] = t;
+        return pickLines(t, px);
+      });
+  }
+  function last(a) {
+    if (!a || !a.length) return null;
+    for (var i = a.length - 1; i >= 0; i--) if (a[i] != null) return a[i];
+    return null;
+  }
+  /* 선행스팬은 26봉 앞으로 밀려 그려진다.
+     futureA[0] 이 '오늘' 머리 위의 구름이고 futureA[25] 는 26거래일 뒤다.
+     알림은 오늘 값으로 걸어야 하므로 맨 앞을 쓴다. */
+  function head(a) {
+    if (!a || !a.length) return null;
+    for (var i = 0; i < a.length; i++) if (a[i] != null) return a[i];
+    return null;
+  }
+  function pickLines(t, px) {
+    var cur = px;
+    if (!cur && t.candles && t.candles.length) cur = t.candles[t.candles.length - 1].c;
+    if (!cur) return { cur: null, groups: [] };
+
+    var ich = t.ichimoku || {}, ma = t.ma || {}, rg = t.regression || {};
+    var G = [];
+    var add = function (name, items) {
+      var keep = items.filter(function (x) { return x && isFinite(x.p) && x.p > 0; });
+      if (keep.length) G.push({ name: name, items: keep });
+    };
+
+    add('이동평균선', [
+      { nm: '20일선', p: last(ma.ma20), src: 'sma20' },
+      { nm: '60일선', p: last(ma.ma60), src: 'sma60' },
+      { nm: '120일선', p: last(ma.ma120), src: 'sma120' },
+      { nm: '200일선', p: last(ma.ma200), src: 'sma200' }
+    ]);
+    add('일목균형표', [
+      { nm: '전환선', p: last(ich.tenkan), src: 'ichimoku_tenkan' },
+      { nm: '기준선', p: last(ich.kijun), src: 'ichimoku_kijun' },
+      { nm: '선행스팬A', p: head(ich.futureA) || last(ich.spanA), src: 'ichimoku_spanA' },
+      { nm: '선행스팬B', p: head(ich.futureB) || last(ich.spanB), src: 'ichimoku_spanB' }
+    ]);
+
+    var w52 = null;
+    if (t.candles && t.candles.length > 5) {
+      var arr = t.candles.slice(-252), hi = -1e9, lo = 1e9;
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i].h > hi) hi = arr[i].h;
+        if (arr[i].l < lo) lo = arr[i].l;
+      }
+      w52 = { hi: hi, lo: lo };
+    }
+    var band = (rg.p250 && rg.p250.ok) ? rg.p250 : ((rg.p120 && rg.p120.ok) ? rg.p120 : null);
+    add('가격대', [
+      w52 ? { nm: '52주 고가', p: w52.hi, src: 'high_52w' } : null,
+      w52 ? { nm: '52주 저가', p: w52.lo, src: 'low_52w' } : null,
+      band ? { nm: '회귀채널 상단', p: band.upper[1], src: 'reg_upper' } : null,
+      band ? { nm: '회귀채널 하단', p: band.lower[1], src: 'reg_lower' } : null
+    ]);
+
+    // 라운드 가격 — 사람들이 실제로 의식하는 자리
+    var step = cur >= 500 ? 50 : cur >= 100 ? 10 : cur >= 20 ? 5 : 1;
+    var rd = Math.ceil(cur / step) * step;
+    if (Math.abs(rd - cur) / cur < 0.004) rd += step;
+
+    // 가까운 선 — 현재가 위·아래로 하나씩
+    var all = [];
+    G.forEach(function (g) { g.items.forEach(function (x) { all.push(x); }); });
+    var up = null, dn = null;
+    all.forEach(function (c) {
+      if (c.p > cur * 1.002) { if (!up || c.p < up.p) up = c; }
+      else if (c.p < cur * 0.998) { if (!dn || c.p > dn.p) dn = c; }
+    });
+    var rec = [];
+    if (up) rec.push({ nm: up.nm, p: up.p, src: up.src });
+    if (dn) rec.push({ nm: dn.nm, p: dn.p, src: dn.src });
+    rec.push({ nm: '라운드 가격', p: rd, src: 'round' });
+
+    return { cur: cur, groups: [{ name: '가까운 선', items: rec, lead: true }].concat(G) };
+  }
+
+  /* ── 5. 알림 줄 + 펼침 패널 ──────────────────────────────── */
+  var ST = null;          // 지금 고르는 중인 조건
+  var LINES = null;       // 이 종목의 지표 묶음
+  var MINE = [];          // 이 종목에 이미 걸린 조건들
+  var open = false;
+  var curSym = '';
+  var W = null;           // {wrap, bar, panel}
+
+  function newST(sym) {
+    return { sym: sym, cur: CFG.price(), t1: null, t2: null, t1i: -1, t2i: -1,
+             comb: 'all_today', rep: 1, editing: 1 };
+  }
+
+  function installBar() {
+    // 종목 화면의 가격 헤더. 티커·회사명·현재가·등락이 들어 있는 덩어리다.
+    //  알림 줄은 이 바로 아래에 온다 — 눈이 가격에서 그대로 내려온다.
+    var row = document.querySelector('#stockBody .shead') || document.querySelector('.shead');
+    if (!row || !row.parentNode) return false;
+    var sym = CFG.symbol();
+    if (!sym) return false;
+
+    // 이미 붙어 있고 종목도 그대로면 아무것도 하지 않는다
+    if (W && document.body.contains(W.wrap) && curSym === sym) return true;
+
+    curSym = sym;
+    ST = newST(sym);
+    LINES = null;
+    MINE = [];
+    open = false;
+
+    var wrap = el('div', 'a9-wrap');
+    wrap.id = 'a9Wrap';
+    var bar = el('button', 'a9-bar');
+    bar.type = 'button';
+    bar.id = 'a9Bar';
+    var panel = el('div', 'a9-panel');
+    panel.id = 'a9Panel';
+    panel.hidden = true;
+    wrap.appendChild(bar);
+    wrap.appendChild(panel);
+
+    var old = document.getElementById('a9Wrap');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+    row.parentNode.insertBefore(wrap, row.nextSibling);
+
+    W = { wrap: wrap, bar: bar, panel: panel };
+    bar.addEventListener('click', function () {
+      open = !open;
+      panel.hidden = !open;
+      bar.classList.toggle('open', open);
+      bar.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) renderPanel();
+    });
+    bar.setAttribute('aria-expanded', 'false');
+    bar.setAttribute('aria-controls', 'a9Panel');
+
+    paintBar();
+    loadLines();
+    refreshList();
+    return true;
+  }
+
+  function loadLines() {
+    if (!curSym) return;
+    suggest(curSym, ST.cur).then(function (r) {
+      if (r.cur) ST.cur = r.cur;
+      LINES = r.groups;
+      paintBar();
+      if (open) renderPanel();
+    }).catch(function () {
+      LINES = [];
+      paintBar();
+      if (open) renderPanel();
+    });
+  }
+
+  /* 줄 문구 — 상태에 따라 세 가지 */
+  function paintBar() {
+    if (!W) return;
+    var b = W.bar;
+    b.innerHTML =
+      '<svg class="bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>' +
+      '<path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>';
+    var t = el('div', 't');
+    var sub = el('span');
+
+    if (MINE.length) {
+      t.appendChild(el('b', null, '알림 ' + MINE.length + '개 걸어둠'));
+      var f = MINE[0];
+      var ps = (f.조건 || []).map(function (x) { return n4(x.p); }).join(' + ');
+      sub.innerHTML = '<em>' + ps + '</em> ' +
+        word((f.조건 && f.조건[0] && f.조건[0].k) || 'touch') +
+        (MINE.length > 1 ? ' 외 ' + (MINE.length - 1) + '건' : '');
+    } else if (LINES && LINES.length) {
+      var near = LINES[0].items[0];
+      t.appendChild(el('b', null, '알림 받기'));
+      sub.innerHTML = '가장 가까운 선 <em>' + n4(near.p) + '</em> ' + near.nm;
+    } else {
+      t.appendChild(el('b', null, '알림 받기'));
+      sub.textContent = LINES ? '가격을 직접 정해 걸 수 있습니다' : '지표를 읽는 중입니다…';
+    }
+    t.appendChild(sub);
+    b.appendChild(t);
+    b.appendChild(el('span', 'chev', '›'));
+    b.classList.toggle('open', open);
+    b.setAttribute('aria-label', curSym + ' 알림 ' + (open ? '접기' : '펼치기'));
+  }
+
+  /* 패널 — 걸어둔 것 + 고르는 목록 + 고급 + 확인 + 걸기 */
+  function renderPanel() {
+    if (!W) return;
+    var p = W.panel;
+    p.innerHTML = '';
+
+    if (MINE.length) {
+      var h = el('div', 'a9-have');
+      h.appendChild(el('p', null, '이 종목에 걸어둔 알림'));
+      MINE.forEach(function (x) { h.appendChild(alertRow(x, true)); });
+      p.appendChild(h);
+    }
+
+    var pick = el('div', 'a9-pick');
+    pick.appendChild(el('p', 'lead',
+      ST.editing === 2 ? '두 번째 조건을 고르세요. 두 조건이 함께 맞을 때만 알립니다.'
+        : ST.t1 ? '아래 «알림 걸기» 를 누르면 끝납니다. 다른 값을 고르면 바뀝니다.'
+                : '값을 하나 고르면 끝납니다.'));
+    p.appendChild(pick);
+
+    if (!LINES) {
+      pick.appendChild(el('p', 'a9-empty', '지표를 읽는 중입니다…'));
+    } else if (!LINES.length) {
+      pick.appendChild(el('p', 'a9-empty', '지표를 가져오지 못했습니다.\n아래에 직접 적어주세요.'));
+    } else {
+      var idx = 0;
+      LINES.forEach(function (g) {
+        var box, host;
+        if (g.lead) { box = el('div', 'a9-gp lead'); host = box; }
+        else {
+          box = el('details', 'a9-gp');
+          var sm = el('summary');
+          sm.appendChild(el('span', null, g.name));
+          sm.appendChild(el('span', 'c', g.items.length + '개'));
+          box.appendChild(sm);
+          host = el('div', 'a9-gp-b');
+          box.appendChild(host);
+        }
+        g.items.forEach(function (c) { host.appendChild(lineBtn(c, idx++)); });
+        pick.appendChild(box);
+      });
+    }
+
+    p.appendChild(manualBox());
+    p.appendChild(advBox());
+    var sum = el('div', 'a9-sum');
+    sum.id = 'a9Sum';
+    p.appendChild(sum);
+    var go = el('button', 'a9-go', '알림 걸기');
+    go.type = 'button';
+    go.id = 'a9Go';
+    go.addEventListener('click', save);
+    p.appendChild(go);
+    paintSum();
+  }
+
+  function lineBtn(c, i) {
+    var b = el('button', 'a9-li');
+    b.type = 'button';
+    b.dataset.i = i;
+    b.appendChild(el('span', 'nm', c.nm));
+    b.appendChild(el('span', 'pv', n4(c.p)));
+    var d = ST.cur ? (c.p - ST.cur) / ST.cur * 100 : 0;
+    b.appendChild(el('span', 'df ' + (d >= 0 ? 'u' : 'd'),
+      (d >= 0 ? '▲ ' : '▼ ') + Math.abs(d).toFixed(1) + '%'));
+    b.setAttribute('aria-label',
+      c.nm + ' ' + n4(c.p) + ', 현재가 대비 ' + (d >= 0 ? '위' : '아래') + ' ' + Math.abs(d).toFixed(1) + '퍼센트');
+    if (i === ST.t1i || (ST.t2 && i === ST.t2i)) b.classList.add('on');
+    b.addEventListener('click', function () {
+      // 기본 방향: 현재가보다 위면 «위로 뚫으면», 아래면 «아래로 깨지면».
+      //  확인 줄에서 언제든 바꿀 수 있다.
+      setTerm({ k: d >= 0 ? 'cross_up' : 'cross_down', p: c.p, src: c.src, nm: c.nm }, i);
+    });
+    return b;
+  }
+
+  function manualBox() {
+    var m = el('div', 'a9-man');
+    var ip = el('input');
+    ip.type = 'text';
+    ip.inputMode = 'decimal';
+    ip.id = 'a9Manual';
+    ip.placeholder = '직접 입력 (예: 140)';
+    ip.setAttribute('aria-label', '알림 가격 직접 입력');
+    var ok = el('button', null, '고르기');
+    ok.type = 'button';
+    ok.addEventListener('click', function () {
+      var v = parseFloat(String(ip.value).replace(/[^0-9.]/g, ''));
+      if (!isFinite(v) || v <= 0) { toast('가격을 숫자로 적어주세요'); ip.focus(); return; }
+      setTerm({ k: (ST.cur && v < ST.cur) ? 'cross_down' : 'cross_up',
+                p: v, src: 'manual', nm: '직접 입력' }, -1);
+    });
+    ip.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); ok.click(); } });
+    m.appendChild(ip);
+    m.appendChild(ok);
+    return m;
+  }
+
+  function advBox() {
+    var d = el('details', 'a9-adv');
+    d.appendChild(el('summary', null, '고급 — 조건 두 개 묶기 · 반복 횟수'));
+
+    var g2 = el('div', 'a9-grp');
+    g2.appendChild(el('p', null, '두 번째 조건'));
+    var t2 = el('button', 'a9-t2');
+    t2.type = 'button';
+    t2.id = 'a9T2';
+    if (ST.t2) {
+      t2.classList.add('set');
+      t2.textContent = '조건 2 · ' + ST.t2.nm + ' ' + n4(ST.t2.p) + ' — 바꾸려면 누르세요';
+    } else {
+      t2.textContent = '＋ 조건 추가 — 둘 다 맞을 때만 알림';
+    }
+    t2.addEventListener('click', function () {
+      if (!ST.t1) { toast('첫 번째 값을 먼저 고르세요'); return; }
+      ST.editing = 2;
+      var lead = W.panel.querySelector('.a9-pick > p.lead');
+      if (lead) lead.textContent = '두 번째 조건을 고르세요. 두 조건이 함께 맞을 때만 알립니다.';
+      var box = W.panel.querySelector('.a9-pick');
+      if (box) box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+    g2.appendChild(t2);
+    d.appendChild(g2);
+
+    var g1 = el('div', 'a9-grp');
+    g1.appendChild(el('p', null, '묶는 방식'));
+    g1.appendChild(seg([
+      ['all_today', '오늘 안에 둘 다'], ['sequence', '순서대로'],
+      ['same_bar', '같은 1분 안에'], ['any', '둘 중 하나']
+    ], 'comb'));
+    d.appendChild(g1);
+
+    var g3 = el('div', 'a9-grp');
+    g3.appendChild(el('p', null, '반복'));
+    g3.appendChild(seg([[1, '1회만'], [3, '3회까지']], 'rep'));
+    d.appendChild(g3);
+    return d;
+  }
+
+  function seg(opts, key) {
+    var w = el('div', 'a9-seg');
+    opts.forEach(function (o) {
+      var b = el('button', ST[key] === o[0] ? 'on' : '', o[1]);
+      b.type = 'button';
+      b.setAttribute('aria-pressed', ST[key] === o[0] ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        ST[key] = o[0];
+        Array.prototype.forEach.call(w.children, function (c) {
+          c.classList.remove('on'); c.setAttribute('aria-pressed', 'false');
+        });
+        b.classList.add('on');
+        b.setAttribute('aria-pressed', 'true');
+        paintSum();
+      });
+      w.appendChild(b);
+    });
+    return w;
+  }
+
+  function setTerm(t, idx) {
+    if (ST.editing === 2) { ST.t2 = t; ST.t2i = idx; ST.editing = 1; }
+    else { ST.t1 = t; ST.t1i = idx; }
+    var box = W.panel.querySelector('.a9-pick');
+    if (box) {
+      Array.prototype.forEach.call(box.querySelectorAll('.a9-li'), function (c) {
+        var i = Number(c.dataset.i);
+        c.classList.toggle('on', i === ST.t1i || (ST.t2 && i === ST.t2i));
+      });
+    }
+    var lead = W.panel.querySelector('.a9-pick > p.lead');
+    if (lead) lead.textContent = '아래 «알림 걸기» 를 누르면 끝납니다. 다른 값을 고르면 바뀝니다.';
+    var t2b = document.getElementById('a9T2');
+    if (t2b && ST.t2) {
+      t2b.classList.add('set');
+      t2b.textContent = '조건 2 · ' + ST.t2.nm + ' ' + n4(ST.t2.p) + ' — 바꾸려면 누르세요';
+    }
+    paintSum();
+  }
+
+  /* 방향은 두 개를 나란히 — 한쪽만 두면 나머지 선택지가 숨는다 */
+  function dirSeg(which) {
+    var t = which === 2 ? ST.t2 : ST.t1;
+    var w = el('div', 'a9-dir');
+    [['cross_up', '위로 뚫으면'], ['cross_down', '아래로 깨지면']].forEach(function (o) {
+      var b = el('button', t.k === o[0] ? 'on' : '', o[1]);
+      b.type = 'button';
+      b.setAttribute('aria-pressed', t.k === o[0] ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        if (which === 2) ST.t2.k = o[0]; else ST.t1.k = o[0];
+        paintSum();
+      });
+      w.appendChild(b);
+    });
+    return w;
+  }
+
+  function paintSum() {
+    var s = document.getElementById('a9Sum'), go = document.getElementById('a9Go');
+    if (!s) return;
+    s.innerHTML = '';
+    if (!ST.t1) {
+      s.textContent = '위에서 값을 하나 고르세요.';
+      if (go) go.disabled = true;
+      return;
+    }
+    var l1 = el('div');
+    l1.appendChild(el('span', null, ST.sym + ' 가 '));
+    l1.appendChild(el('b', null, n4(ST.t1.p)));
+    l1.appendChild(el('span', null, ' (' + ST.t1.nm + ') 을'));
+    s.appendChild(l1);
+    s.appendChild(dirSeg(1));
+    if (ST.t2) {
+      var lead = ST.comb === 'any' ? '또는 ' : ST.comb === 'sequence' ? '그 다음 '
+        : ST.comb === 'same_bar' ? '같은 1분 안에 ' : '그리고 오늘 안에 ';
+      var l2 = el('div');
+      l2.appendChild(el('span', null, lead));
+      l2.appendChild(el('b', null, n4(ST.t2.p)));
+      l2.appendChild(el('span', null, ' (' + ST.t2.nm + ') 을'));
+      s.appendChild(l2);
+      s.appendChild(dirSeg(2));
+    }
+    s.appendChild(el('div', 'tl', '알립니다 · ' + ST.rep + '회'));
+    if (go) go.disabled = false;
+  }
+
+  function save() {
+    var go = document.getElementById('a9Go');
+    if (!ST.t1) return;
+    if (go) { go.disabled = true; go.textContent = '거는 중…'; }
+    ensureSub().then(function () {
+      var terms = [{ k: ST.t1.k, p: ST.t1.p, src: ST.t1.src }];
+      if (ST.t2) terms.push({ k: ST.t2.k, p: ST.t2.p, src: ST.t2.src });
+      return api('/alert', {
+        device_id: DEV, symbol: ST.sym, terms: terms,
+        combine: terms.length === 1 ? 'single' : ST.comb,
+        repeat_n: ST.rep
+      });
+    }).then(function (r) {
+      if (!r || !r.ok) throw new Error((r && r.오류) || '저장에 실패했습니다');
+      toast(ST.sym + ' ' + n4(ST.t1.p) + ' ' + word(ST.t1.k) + ' 알립니다');
+      ST = newST(curSym);
+      open = false;
+      if (W) { W.panel.hidden = true; W.bar.setAttribute('aria-expanded', 'false'); }
+      return refreshList();
+    }).catch(function (e) {
+      if (go) { go.disabled = false; go.textContent = '알림 걸기'; }
+      toast(e.message || '실패했습니다');
+    });
+  }
+
+  /* ── 6. 걸어둔 조건 한 줄 (종목 화면·관심 탭 공용) ───────── */
+  function alertRow(x, boxed) {
+    var row = el('div', 'a9-arow' + (boxed ? ' box' : ''));
+    var bd = el('div', 'bd');
+    var t1 = el('div', 't1');
+    var ps = (x.조건 || []).map(function (t) { return n4(t.p); }).join(' + ');
+    t1.innerHTML = x.종목 + ' <em>' + ps + '</em>';
+    bd.appendChild(t1);
+
+    var t2 = el('div', 't2');
+    var fired = !!x.울린시각;
+    var st = el('span', 'a9-st ' + (fired ? 'fired' : 'wait'));
+    st.appendChild(el('i'));
+    st.appendChild(el('span', null, fired ? when(x.울린시각) + ' 보냄' : '대기중'));
+    t2.appendChild(st);
+    var sub = [];
+    if (x.조건 && x.조건[0]) sub.push(word(x.조건[0].k));
+    if ((x.조건 || []).length > 1) sub.push(combWord(x.결합));
+    if (x.반복 > 1) sub.push(x.반복 + '회 중 ' + (x.보낸횟수 || 0) + '회');
+    if (x.상태 === 'cooldown' && x.재무장시각) sub.push('잠시 멈춤');
+    if (sub.length) t2.appendChild(el('span', null, ' · ' + sub.join(' · ')));
+    bd.appendChild(t2);
+    row.appendChild(bd);
+
+    var off = el('button', 'a9-off', '끄기');
+    off.type = 'button';
+    off.setAttribute('aria-label', x.종목 + ' ' + ps + ' 알림 끄기');
+    off.addEventListener('click', function () {
+      off.disabled = true;
+      api('/alert/off', { device_id: DEV, alert_id: x.조건ID }).then(function (q) {
+        if (q && q.ok) { toast('알림을 껐습니다'); refreshList(); }
+        else { off.disabled = false; toast((q && q.결과) || '실패했습니다'); }
+      }).catch(function () { off.disabled = false; toast('실패했습니다'); });
+    });
+    row.appendChild(off);
+    return row;
+  }
+
+  /* ── 7. 관심 탭 — 관리 목록 ──────────────────────────────── */
+  function installList() {
+    if (document.getElementById('a9Mg')) return true;
+    // 관심 탭의 '알림 실험' 상자. 진짜 기능을 그 위에 둔다.
+    var box = document.getElementById('pushBox') || document.querySelector('.pushbox');
+    if (!box) return false;
+    // 상자 위의 '알림 실험' 제목줄까지 올라가서 그 앞에 끼운다
+    var anchor = box.previousElementSibling && box.previousElementSibling.classList.contains('sec-h')
+      ? box.previousElementSibling : box;
+    var w = el('div', 'a9-mg');
+    w.id = 'a9Mg';
+    w.innerHTML =
+      '<button type="button" class="a9-sw" id="a9Master">' +
+        '<span><span class="tt">가격 알림</span>' +
+        '<span class="ds" id="a9MasterDs">켜면 이 폰으로 알림이 옵니다</span></span>' +
+        '<span class="kn" aria-hidden="true"></span></button>' +
+      '<button type="button" class="a9-sw" id="a9Surge" style="margin-top:8px">' +
+        '<span><span class="tt">급등락 알림</span>' +
+        '<span class="ds">관심 종목이 하루 5% 넘게 움직이면 하루 한 번</span></span>' +
+        '<span class="kn" aria-hidden="true"></span></button>' +
+      '<div class="sec" style="margin-top:14px;padding:0">' +
+        '<div class="sec-h"><h2 style="font-size:14px">걸어둔 알림</h2>' +
+        '<span class="a9-cnt" id="a9Cnt"></span></div>' +
+        '<div class="rows" id="a9Rows"></div>' +
+      '</div>';
+    anchor.parentNode.insertBefore(w, anchor);
+    document.getElementById('a9Master').addEventListener('click', toggleMaster);
+    document.getElementById('a9Surge').addEventListener('click', toggleSurge);
+    refreshList();
+    return true;
+  }
+
+  var STATE = null;
+  function refreshList() {
+    return api('/alerts?d=' + DEV).then(function (r) {
+      STATE = r;
+      MINE = ((r && r.조건) || []).filter(function (x) { return x.종목 === curSym; });
+      paintBar();
+      if (open) renderPanel();
+      paintList(r);
+    }).catch(function () {});
+  }
+
+  function paintList(r) {
+    var rows = document.getElementById('a9Rows');
+    var cnt = document.getElementById('a9Cnt');
+    var ms = document.getElementById('a9Master');
+    var sg = document.getElementById('a9Surge');
+    var ds = document.getElementById('a9MasterDs');
+    if (!rows) return;
+
+    var on = !!(r && r.등록됨);
+    if (ms) { ms.classList.toggle('on', on); ms.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+    if (ds) ds.textContent = on ? '켜져 있습니다. 끄면 걸어둔 알림도 함께 지워집니다'
+                                : '켜면 이 폰으로 알림이 옵니다';
+    var sOn = !!(r && r.설정 && r.설정.급등락알림);
+    if (sg) { sg.classList.toggle('on', sOn); sg.setAttribute('aria-pressed', sOn ? 'true' : 'false'); }
+
+    var a = (r && r.조건) || [];
+    if (cnt) cnt.textContent = a.length ? a.length + ' / ' + ((r.상한 && r.상한.알림) || 5) : '';
+    rows.innerHTML = '';
+    if (!a.length) {
+      rows.appendChild(el('p', 'a9-empty',
+        on ? '아직 걸어둔 알림이 없습니다.\n종목 화면의 «알림 받기» 줄을 눌러보세요.'
+           : '먼저 위에서 가격 알림을 켜주세요.'));
+      return;
+    }
+    a.forEach(function (x) { rows.appendChild(alertRow(x, false)); });
+  }
+
+  function toggleMaster() {
+    var on = !!(STATE && STATE.등록됨);
+    var b = document.getElementById('a9Master');
+    if (b) b.disabled = true;
+    var go = on
+      ? (confirm('알림을 끄면 걸어둔 조건도 함께 지워집니다. 끄시겠습니까?')
+          ? api('/sub', { device_id: DEV, on: false })
+          : Promise.reject(new Error('취소')))
+      : ensureSub();
+    go.then(function () {
+      toast(on ? '알림을 껐습니다' : '알림을 켰습니다');
+      return refreshList();
+    }).catch(function (e) {
+      if (e && e.message !== '취소') toast(e.message || '실패했습니다');
+    }).finally(function () { if (b) b.disabled = false; });
+  }
+
+  function toggleSurge() {
+    if (!(STATE && STATE.등록됨)) { toast('먼저 가격 알림을 켜주세요'); return; }
+    var on = !!(STATE.설정 && STATE.설정.급등락알림);
+    var b = document.getElementById('a9Surge');
+    if (b) b.disabled = true;
+    api('/surge', { device_id: DEV, on: !on, pct: 5 }).then(function (r) {
+      toast((r && r.결과) || '바꿨습니다');
+      return refreshList();
+    }).catch(function () { toast('실패했습니다'); })
+      .finally(function () { if (b) b.disabled = false; });
+  }
+
+  /* ── 8. 설치 : 화면이 바뀌어도 다시 붙는다 ──────────────── */
+  function install() { installBar(); installList(); }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', install);
+  } else {
+    install();
+  }
+  // 앱이 탭·종목을 갈아끼우면 DOM이 새로 그려진다. 그때 다시 붙는다.
+  //  ※ 관찰은 잦으므로 반드시 묶어서 처리한다. 매 변화마다 돌면 화면이 버벅인다.
+  var moT = null;
+  var mo = new MutationObserver(function () {
+    if (moT) return;
+    moT = setTimeout(function () { moT = null; install(); }, 250);
+  });
+  mo.observe(document.body, { childList: true, subtree: true });
+
+  window.A99Alert = {
+    refresh: refreshList,
+    device: DEV,
+    api: CFG.api
+  };
+})();
+</script>
+
 </body>
 </html>
