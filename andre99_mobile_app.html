@@ -1063,7 +1063,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.09.28-A';
+var BUILD_VER='v2026.09.28-B';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -5388,7 +5388,7 @@ button.a9-rung:active{background:var(--s1)}
   v2026.09.28-A 에서 바뀐 것
    · 탭 이름 「알림」 → 「트레이딩」, 아이콘은 캔들
    · 종목 화면 「차트」「알림」 버튼으로 들어오면 그 종목으로 바로 열리고,
-     「알림」이면 알림 상자로 내려간다. 맨 위 「← 종목 요약」 칩으로 돌아간다 (보던 자리 그대로)
+     「알림」이면 알림 상자로 내려간다. 맨 위 「‹ 종목 요약」 칩이나 폰의 뒤로가기로 돌아간다 (보던 자리 그대로)
 
   v2026.09.24-A 에서 바뀐 것
    · 차트를 종목 탭과 같은 트레이딩뷰 위젯으로 바꿨다 (화질·기능·실시간이 종목 탭과 같다)
@@ -5883,7 +5883,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
     try { if (screen.orientation && screen.orientation.unlock && FS.locked) screen.orientation.unlock(); } catch (e) {}
     var fe = document.fullscreenElement || document.webkitFullscreenElement;
     if (fe) { var ex = document.exitFullscreen || document.webkitExitFullscreen; try { ex.call(document); } catch (e) {} }
-    if (FS.hist && !fromNav) { FS.hist = false; try { history.back(); } catch (e) {} }
+    if (FS.hist && !fromNav) { FS.hist = false; silentBack(); }
     FS.hist = false;
   }
   window.addEventListener('resize', fsFit);
@@ -5894,7 +5894,24 @@ html.at-lock,html.at-lock body{overflow:hidden}
       if (!fe && FS.on && FS.full) fsClose(false);      // 시스템 뒤로가기·스와이프로 전체화면이 풀렸을 때
     });
   });
-  window.addEventListener('popstate', function () { if (FS.on) { FS.hist = false; fsClose(true); } });
+  // 뒤로가기 한 곳에서 처리 — ① 앱이 스스로 되돌린 것은 무시 ② 전체화면이면 닫기 ③ 종목에서 왔으면 종목 요약으로
+  window.addEventListener('popstate', function () {
+    if (S.skipPop) { S.skipPop--; return; }
+    if (FS.on) { FS.hist = false; fsClose(true); return; }
+    if (S.back && S.back.hist) { S.back.hist = false; goBack(); }
+  });
+  // 앱이 쌓은 기록을 조용히 걷어낸다. 같은 순간 여러 번이면 한 번에 (history.go(-n))
+  var POPN = 0, POPT = 0;
+  function silentBack() {
+    POPN++;
+    if (POPT) return;
+    POPT = setTimeout(function () {
+      var n = POPN; POPN = 0; POPT = 0;
+      S.skipPop = (S.skipPop || 0) + 1;
+      try { history.go(-n); } catch (e) { S.skipPop--; }
+    }, 0);
+  }
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && FS.on) fsClose(false); });
 
   function pick(sym) {
@@ -5920,6 +5937,11 @@ html.at-lock,html.at-lock body{overflow:hidden}
 
   /* 종목 화면에서 들어왔을 때 — 돌아가는 칩 */
   function setBack(b) {
+    var prev = S.back;
+    if (b) {
+      if (prev && prev.hist) b.hist = true;                       // 이미 쌓은 칸을 그대로 쓴다
+      else { try { history.pushState({ a99back: 1 }, ''); b.hist = true; } catch (e) { b.hist = false; } }
+    } else if (prev && prev.hist) { prev.hist = false; silentBack(); }
     S.back = b;
     if (!UI || !UI.back) return;
     UI.back.hidden = !b;
@@ -5971,8 +5993,8 @@ html.at-lock,html.at-lock body{overflow:hidden}
       opts = opts || {};
       var y = window.scrollY;
       if (typeof window.show === 'function') window.show('my');
+      setBack(opts.from === 'stock' && sym ? { sym: String(sym).toUpperCase(), y: y } : null);   // 뒤로가기 칸을 먼저
       if (sym) pick(sym);
-      setBack(opts.from === 'stock' && sym ? { sym: String(sym).toUpperCase(), y: y } : null);
       if (opts.focus === 'alert') setTimeout(toAlert, 60);
     },
     _S: S, _box: function () { return BOX; }
