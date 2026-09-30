@@ -1063,7 +1063,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.09.29-A';
+var BUILD_VER='v2026.09.30-A';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -6823,7 +6823,8 @@ html.at-lock,html.at-lock body{overflow:hidden}
 })();
 </script>
 <!-- ══════════════════════════════════════════════════════════════
-  안드레99 — 운영자 모드 · 데이터 점검  v2026.09.28-A
+  안드레99 — 운영자 모드 · 데이터 점검  v2026.09.30-A
+  (09.30 추가) 패널 맨 위에 앱 · 알림 처리 파일(sw.js) · 서버(워커) 버전 한 줄 비교
   붙여넣는 곳: stock-flat 뒤 (</body> 앞)
 
   들어가는 법: 화면 오른쪽 위 버전 글자(v2026…)를 3초 안에 5번 누른다 → 운영자 모드 켜짐/꺼짐
@@ -6858,6 +6859,9 @@ html.at-lock,html.at-lock body{overflow:hidden}
 .ad-it.e{border-left-color:var(--up);color:var(--tx)}
 .ad-it.w{border-left-color:#E8A317}
 .ad-ok{font-size:12px;color:var(--tx3)}
+.ad-ver{margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:12px;line-height:1.7;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:pre}
+.ad-ver b{font-family:inherit}
+.ad-ver .ok{color:var(--tx2)} .ad-ver .bad{color:var(--up);font-weight:700}
 .ad-note{margin-top:14px;font-size:11.5px;color:var(--tx3);line-height:1.6}
 </style>
 
@@ -6868,6 +6872,8 @@ html.at-lock,html.at-lock body{overflow:hidden}
   var API = window.API || 'https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
   var KEY = 'a99_admin';
   var DAY = 86400000;
+  // 이번 배포에서 짝이 맞아야 하는 버전 — 배포 파일을 만들 때 함께 올린다
+  var EXPECT = { worker: '2026.09.30-A', sw: '2026.09.29-A' };
   var LIST = 'AAPL MSFT NVDA GOOGL AMZN META TSLA AVGO BRK-B JPM V MA UNH LLY JNJ XOM KO PEP WMT COST ' +
              'NFLX AMD INTC PLTR SNOW CRWD NET SHOP UBER ABNB COIN MSTR SOFI RKLB IONQ HOOD ARM SMCI TSM ASML';
 
@@ -6960,7 +6966,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
     if (!P) {
       P = document.createElement('div'); P.className = 'ad-wrap'; P.id = 'adWrap';
       P.innerHTML = '<div class="ad-h"><b>데이터 점검</b><span>운영자 모드</span><button type="button" id="adX" aria-label="닫기">✕</button></div>' +
-        '<div class="ad-body"><textarea id="adList" aria-label="점검할 티커">' + LIST + '</textarea>' +
+        '<div class="ad-body"><div class="ad-ver" id="adVer">버전 확인 중…</div><textarea id="adList" aria-label="점검할 티커">' + LIST + '</textarea>' +
         '<div class="ad-row"><button type="button" class="pri" id="adGo">점검 시작</button><button type="button" id="adCopy" disabled>결과 복사</button>' +
         '<button type="button" id="adOff">운영자 모드 끄기</button></div>' +
         '<p class="ad-st" id="adSt">종목마다 워커를 3번 부릅니다(기본·분기·SEC). 40개면 2~4분 걸립니다.</p><div id="adRes"></div>' +
@@ -6972,6 +6978,33 @@ html.at-lock,html.at-lock body{overflow:hidden}
       $('adOff').addEventListener('click', function () { ls(KEY, null); paintBtn(); P.hidden = true; toast('운영자 모드 꺼짐'); });
     }
     P.hidden = false;
+    checkVer();
+  }
+
+  /* ── 버전 한 줄 비교 — 셋 중 하나라도 어긋나면 빨강 ── */
+  function swVer() {
+    return new Promise(function (ok) {
+      try {
+        var c = navigator.serviceWorker && navigator.serviceWorker.controller;
+        if (!c) return ok(null);
+        var ch = new MessageChannel(), tm = setTimeout(function () { ok(null); }, 3000);
+        ch.port1.onmessage = function (e) { clearTimeout(tm); ok((e.data && e.data.ver) || null); };
+        c.postMessage({ q: 'ver' }, [ch.port2]);
+      } catch (e) { ok(null); }
+    });
+  }
+  function checkVer() {
+    var box = $('adVer'); if (!box) return;
+    box.textContent = '버전 확인 중…';
+    Promise.all([get('/version?_=' + Date.now(), 10000), swVer()]).then(function (r) {
+      var wv = r[0] && r[0].worker_version, sv = r[1], av = window.BUILD_VER || ($('verTag') || {}).textContent || '';
+      var row = function (k, v, want) {
+        var good = want ? v === want : !!v;
+        return '<div class="' + (good ? 'ok' : 'bad') + '">' + k + ' <b>' + esc(v || '못 읽음') + '</b>' +
+          (good ? ' ✓' : (want ? ' ✕ (' + esc(want) + ' 이어야 함)' : ' ✕')) + '</div>';
+      };
+      box.innerHTML = row('앱      ', av, null) + row('알림처리', sv, EXPECT.sw) + row('서버    ', wv, EXPECT.worker);
+    });
   }
   function run() {
     if (RUN) return;
