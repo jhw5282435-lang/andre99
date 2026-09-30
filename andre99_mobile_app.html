@@ -12,7 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="안드레99">
-<meta name="description" content="미국주식을 검색하면 세 줄 요약 · 핵심 숫자 · 실적 · 뉴스 · 공시를 한국어로 보여드립니다.">
+<meta name="description" content="미국주식을 검색하면 세 줄 요약 · 재무제표 · 실적 · 뉴스 · 공시를 한국어로 보여드립니다.">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
 <style>
 :root{
@@ -948,7 +948,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     <div class="quick" id="quick"></div>
   </div>
   <div id="stockBody">
-    <div class="sec sf-empty"><p class="t">종목을 검색하면</p><p class="s">세 줄 요약 · 핵심 숫자 · 실적 · 뉴스 · 공시</p></div>
+    <div class="sec sf-empty"><p class="t">종목을 검색하면</p><p class="s">세 줄 요약 · 재무제표 · 실적 · 뉴스 · 공시</p></div>
     <div class="disc-bar">
       <button class="disc-b on" data-disc="fk">오늘 공시</button>
       <button class="disc-b" data-disc="ta">흑자 전환</button>
@@ -1063,7 +1063,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.09.28-B';
+var BUILD_VER='v2026.09.29-A';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -2194,10 +2194,10 @@ function loadMV(){
   fetchT(API+'/movers?dir='+MV_DIR+'&n=10&_='+Date.now(), 30000)
     .then(function(r){return r.json()})
     .then(function(j){ MV_LOADING=false;
-      if(!j || j.status!=='ok'){ box.innerHTML=''; return; }
+      if(!j || j.status!=='ok'){ box.innerHTML='<div class="sec"><div class="ta-load">지금 목록을 불러오지 못했습니다<br><button type="button" class="mv-retry" onclick="MV=null;loadMV()">다시 시도</button></div></div>'; return; }
       j.__k=k; MV=j; drawMV(j);
     })
-    .catch(function(){ MV_LOADING=false; var b=$('mvBox'); if(b) b.innerHTML=''; });
+    .catch(function(){ MV_LOADING=false; var box=$('mvBox'); if(box) box.innerHTML='<div class="sec"><div class="ta-load">지금 목록을 불러오지 못했습니다<br><button type="button" class="mv-retry" onclick="MV=null;loadMV()">다시 시도</button></div></div>'; });
 }
 function mvReason(x){
   if(!x.reasons || !x.reasons.length){
@@ -2228,7 +2228,7 @@ function mvRow(x){
 function drawMV(j){
   var box=$('mvBox'); if(!box) return;
   var it=j.items||[];
-  if(!it.length){ box.innerHTML=''; return; }
+  if(!it.length){ box.innerHTML='<div class="sec"><div class="ta-load">지금은 크게 움직인 종목이 없습니다</div></div>'; return; }
   var o='<div class="sec"><div class="sec-h"><h2>오늘 크게 움직인 종목</h2>'+
         '<span class="note">이유 확인</span></div>'+
         '<div class="ta-days">'+
@@ -5414,6 +5414,25 @@ button.a9-rung:active{background:var(--s1)}
 .at-box-h.flash{animation:atFlash 1.2s ease-out}
 @keyframes atFlash{0%{background:var(--line)}100%{background:transparent}}
 @media (prefers-reduced-motion:reduce){.at-box-h.flash{animation:none}}
+/* 옛 「알림 실험」 상자 — 개발용, 사용자에게는 숨긴다 (2026.09.29) */
+#pushBox{display:none!important}
+.at-help{display:block;width:100%;min-height:40px;margin-top:6px;padding:0;background:transparent;color:var(--tx3);
+  font-size:12.5px;text-align:left;text-decoration:underline;text-underline-offset:3px}
+.at-sh{position:fixed;inset:0;z-index:95}
+.at-sh .bd{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.at-sh .pn{position:absolute;left:0;right:0;bottom:0;max-height:86vh;overflow-y:auto;max-width:560px;margin:0 auto;
+  background:var(--bg);border-radius:16px 16px 0 0;padding:6px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+.at-sh .gr{width:36px;height:4px;border-radius:2px;background:var(--line);margin:4px auto 6px}
+.at-sh .hd{display:flex;align-items:center;justify-content:space-between;min-height:44px}
+.at-sh .hd b{font-size:15px;font-weight:700}
+.at-sh .x{width:40px;height:40px;background:transparent;color:var(--tx2);font-size:16px}
+.at-sh ol{margin:4px 0 0;padding:0;list-style:none;counter-reset:s}
+.at-sh li{position:relative;padding:12px 0 12px 26px;border-bottom:1px solid var(--line);font-size:14px;font-weight:600;line-height:1.45}
+.at-sh li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:13px;font-size:11px;font-family:var(--mono);color:var(--tx3)}
+.at-sh li span{display:block;margin-top:3px;font-size:12px;font-weight:500;color:var(--tx3);line-height:1.55}
+.at-sh .go{display:block;width:100%;min-height:48px;margin-top:16px;border-radius:10px;background:var(--tx);color:var(--bg);font-size:14px;font-weight:700}
+.at-sh .go:disabled{opacity:.5}
+.at-sh .ft{margin:10px 0 0;font-size:11.5px;color:var(--tx3);line-height:1.6}
 .at-chips{display:flex;gap:6px;overflow-x:auto;padding:6px 0 12px;scrollbar-width:none}
 .at-chips::-webkit-scrollbar{display:none}
 .at-chips button{flex:none;display:inline-flex;align-items:center;gap:5px;padding:0 12px;min-height:36px;
@@ -5973,10 +5992,67 @@ html.at-lock,html.at-lock body{overflow:hidden}
     } else { stopTimer(); paintLive(); fsClose(false); setBack(null); }
   }
 
+  /* ── 알림이 늦게 오면 — 기기 설정 안내 + 1분 뒤 시험 알림 (2026.09.29) ──
+     웹 알림은 폰의 크롬이 대신 받는다. 제조사 절전이 크롬을 재우면 크롬을 켤 때 몰아서 온다. */
+  var HELP = null;
+  function plat() { var u = navigator.userAgent || ''; return /android/i.test(u) ? 'a' : /iphone|ipad|ipod/i.test(u) ? 'i' : 'd'; }
+  function helpBody() {
+    var p = plat(), L;
+    if (p === 'a') L = [
+      ['크롬 배터리를 「제한 없음」으로', '설정 → 애플리케이션 → Chrome → 배터리 → 제한 없음'],
+      ['절전 목록에서 크롬 빼기', '설정 → 배터리 → 백그라운드 사용 제한 → 「절전 앱」「딥 슬립 앱」에 Chrome이 있으면 삭제'],
+      ['크롬 알림 허용', '설정 → 애플리케이션 → Chrome → 알림 → 허용'],
+      ['최근 앱 화면에서 크롬을 쓸어 닫지 않기', '일부 기종은 쓸어 닫으면 크롬을 완전히 멈춰 알림을 못 받습니다']];
+    else if (p === 'i') L = [
+      ['홈 화면에 추가', '사파리 아래 공유 버튼 → 홈 화면에 추가'],
+      ['홈 화면 아이콘으로 열기', '사파리 탭이 아니라 홈 화면에 생긴 안드레99 아이콘으로 엽니다'],
+      ['그 안에서 가격 알림 켜기', '아이폰은 이 방법으로만 웹 알림이 옵니다 (iOS 16.4 이상)']];
+    else L = [
+      ['크롬을 완전히 닫지 않기', 'PC는 크롬이 실행 중일 때만 알림을 받습니다'],
+      ['백그라운드 실행 켜기 (윈도우)', '크롬 설정 → 시스템 → Google Chrome이 닫혀도 백그라운드 앱 계속 실행']];
+    return '<ol>' + L.map(function (x) { return '<li>' + esc(x[0]) + '<span>' + esc(x[1]) + '</span></li>'; }).join('') + '</ol>' +
+      '<button type="button" class="go" id="atTestGo">1분 뒤 시험 알림 받기</button>' +
+      '<p class="ft">누른 뒤 화면을 끄고 기다려 보세요. 늦게 도착한 알림에는 끝에 「N분 늦게 도착」이 붙습니다.</p>';
+  }
+  function openHelp() {
+    if (!HELP) {
+      HELP = document.createElement('div'); HELP.className = 'at-sh'; HELP.hidden = true;
+      HELP.innerHTML = '<div class="bd"></div><div class="pn" role="dialog" aria-modal="true" aria-labelledby="atHelpT"><div class="gr" aria-hidden="true"></div>' +
+        '<div class="hd"><b id="atHelpT">알림이 늦게 오면</b><button type="button" class="x" aria-label="닫기">✕</button></div><div class="bx"></div></div>';
+      document.body.appendChild(HELP);
+      var close = function () { HELP.hidden = true; document.documentElement.classList.remove('at-lock'); };
+      HELP.querySelector('.bd').addEventListener('click', close);
+      HELP.querySelector('.x').addEventListener('click', close);
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !HELP.hidden) close(); });
+      HELP.addEventListener('click', function (e) {
+        var b = e.target.closest('#atTestGo'); if (!b) return;
+        b.disabled = true;
+        AL.call('/testpush', { device_id: AL.device }).then(function (r) {
+          AL.toast((r && (r.결과 || r.오류)) || '실패했습니다');
+          if (r && r.ok) b.textContent = '예약됨 · 화면을 끄고 기다려 보세요';
+          else b.disabled = false;
+        }).catch(function () { AL.toast('실패했습니다'); b.disabled = false; });
+      });
+    }
+    HELP.querySelector('.bx').innerHTML = helpBody();
+    HELP.hidden = false; document.documentElement.classList.add('at-lock');
+    HELP.querySelector('.x').focus();
+  }
+  function addHelp() {
+    var sg = document.getElementById('a9Surge'); if (!sg || document.getElementById('atHelp')) return;
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'at-help'; b.id = 'atHelp'; b.textContent = '알림이 늦게 오나요?';
+    b.addEventListener('click', openHelp);
+    sg.parentNode.insertBefore(b, sg.nextSibling);
+  }
+
   function boot() {
     var page = document.getElementById('p-my'); if (!page) return;
     renameTab();
     hookStockSearch();
+    addHelp(); AL.onChange(addHelp);
+    // 옛 「알림 실험」 제목줄도 숨긴다
+    var pb = document.getElementById('pushBox'), ph = pb && pb.previousElementSibling;
+    if (ph && ph.classList.contains('sec-h') && /알림 실험/.test(ph.textContent)) ph.style.display = 'none';
     if (!document.getElementById('atTab')) build(page);
     paintChips(); paintHead();
     var watch = function () { onVisible(page.classList.contains('on')); };
@@ -6146,7 +6222,8 @@ html.at-lock,html.at-lock body{overflow:hidden}
 #stockBody .sf-meta{margin-top:8px;font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
 #stockBody .sf-meta .hot{color:#E8A317;font-weight:600}
 /* 빈 화면 — 상자 없이 두 줄 */
-.sf-empty{padding:36px 16px 32px}
+.sf-empty{padding:36px 16px 32px;text-align:center}
+.mv-retry{margin-top:10px;min-height:36px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--tx);font-size:12.5px;font-weight:600}
 .sf-empty .t{margin:0;font-size:17px;font-weight:700;letter-spacing:-.02em;color:var(--tx)}
 .sf-empty .s{margin:6px 0 0;font-size:13px;color:var(--tx3)}
 /* 가격 머리 — 오른쪽 위 차트·알림 */
