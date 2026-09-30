@@ -1,4 +1,4 @@
-/* ANDRE99 서비스 워커 · 2026.09.29-A
+/* ANDRE99 서비스 워커 · 2026.09.30-A
    역할 세 가지
      ① 푸시 메시지를 받아 알림을 띄운다
      ② 알림을 누르면 앱을 연다
@@ -16,9 +16,14 @@
 
    [2026.09.29-A 변경]
    서버가 보낸 시각(at)과 받은 시각을 비교해, 3분 넘게 늦게 도착한 알림에는
-   「N분 늦게 도착」을 붙인다. 폰 절전 때문에 늦은 알림을 제때 온 것으로 착각하지 않게. */
+   「N분 늦게 도착」을 붙인다. 폰 절전 때문에 늦은 알림을 제때 온 것으로 착각하지 않게.
 
-const SW_VER = '2026.09.29-A';
+   [2026.09.30-A 변경]
+   크롬이 알림 받을 주소를 바꾸면(pushsubscriptionchange) 새 주소로 다시 구독하고
+   서버에 옛 주소 → 새 주소를 알린다. 예전에는 기록만 해서, 서버가 옛 주소로 보내다 실패했다. */
+
+const SW_VER = '2026.09.30-A';
+const API = 'https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 const APP_URL = 'andre99_mobile_app.html';
 
 self.addEventListener('install', (e) => {
@@ -88,8 +93,19 @@ self.addEventListener('notificationclick', (e) => {
   );
 });
 
-/* 구독이 만료·교체되면 브라우저가 알려준다.
-   지금은 기록만 하고, 저장소가 붙으면 서버에 갱신을 보낸다. */
+/* 구독이 만료·교체되면 브라우저가 알려준다 → 새 주소로 다시 구독하고 서버에 옛 주소와 함께 알린다.
+   (앱을 다시 열 때도 앱이 스스로 재등록한다 — 이 경로는 앱을 열지 않아도 되게 하는 보조) */
 self.addEventListener('pushsubscriptionchange', (e) => {
-  console.log('[a99] 구독이 바뀌었습니다. 다시 구독이 필요합니다.');
+  e.waitUntil((async () => {
+    const old = e.oldSubscription || null;
+    let sub = e.newSubscription || null;
+    if (!sub && old && old.options) sub = await self.registration.pushManager.subscribe(old.options);
+    if (!sub || !old) return;
+    const j = sub.toJSON();
+    if (!j || !j.keys) return;
+    await fetch(API + '/sub/rotate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_endpoint: old.endpoint, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }),
+    });
+  })().catch(() => {}));
 });
