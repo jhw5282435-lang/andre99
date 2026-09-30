@@ -1,4 +1,4 @@
-/* ANDRE99 서비스 워커 · 2026.09.21-A
+/* ANDRE99 서비스 워커 · 2026.09.29-A
    역할 세 가지
      ① 푸시 메시지를 받아 알림을 띄운다
      ② 알림을 누르면 앱을 연다
@@ -12,9 +12,13 @@
    [2026.09.21-A 변경]
    알림을 눌렀을 때 이미 열린 창을 찾는 조건에서 '/andre99/' 하드코딩을 없앴다.
    registration.scope(이 워커가 맡은 주소 구역)와 비교하므로
-   GitHub Pages 든 Cloudflare Pages 든 커스텀 도메인이든 그대로 작동한다. */
+   GitHub Pages 든 Cloudflare Pages 든 커스텀 도메인이든 그대로 작동한다.
 
-const SW_VER = '2026.09.21-A';
+   [2026.09.29-A 변경]
+   서버가 보낸 시각(at)과 받은 시각을 비교해, 3분 넘게 늦게 도착한 알림에는
+   「N분 늦게 도착」을 붙인다. 폰 절전 때문에 늦은 알림을 제때 온 것으로 착각하지 않게. */
+
+const SW_VER = '2026.09.29-A';
 const APP_URL = 'andre99_mobile_app.html';
 
 self.addEventListener('install', (e) => {
@@ -41,8 +45,13 @@ self.addEventListener('push', (e) => {
   catch (err) { d = { title: 'ANDRE99', body: e.data ? e.data.text() : '' }; }
 
   const title = d.title || 'ANDRE99';
+  let body = d.body || '';
+  if (typeof d.at === 'number' && isFinite(d.at)) {
+    const late = Math.round((Date.now() - d.at) / 60000);
+    if (late >= 3) body += ' · ' + (late >= 60 ? Math.floor(late / 60) + '시간 ' + (late % 60) + '분' : late + '분') + ' 늦게 도착';
+  }
   const opts = {
-    body: d.body || '',
+    body: body,
     icon: d.icon || 'icon-192.png',
     badge: d.badge || 'icon-192.png',
     tag: d.tag || 'a99',            // 같은 tag면 덮어쓴다 (알림 쌓임 방지)
