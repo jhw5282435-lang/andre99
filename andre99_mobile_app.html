@@ -1063,7 +1063,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.09.30-A';
+var BUILD_VER='v2026.09.30-B';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -4458,7 +4458,7 @@ renderWatch();
 initPush();
 </script>
 <!-- ══════════════════════════════════════════════════════════════
-  안드레99 — 알림 이식 패치  v2026.09.28-A  (앱 v2026.09.18-B 대조 완료)
+  안드레99 — 알림 이식 패치  v2026.09.30-A  (앱 v2026.09.18-B 대조 완료)
   붙여넣는 곳: andre99_mobile_app.html 의 </body> 바로 앞
   고치는 곳  : 없음 (스스로 찾아서 붙는다)
 
@@ -4744,9 +4744,29 @@ button.a9-rung:active{background:var(--s1)}
         });
       }).then(function (r) {
         if (!r || !r.ok) throw new Error((r && r.오류) || '등록에 실패했습니다');
+        ls('a99_push_off', null); ls('a99_sync_at', String(Date.now()));
         return r;
       });
     })().finally(function () { subBusy = false; });
+  }
+
+  /* 구독 주소 자동 재등록 (2026.09.30)
+     크롬은 가끔 알림 받을 주소를 스스로 바꾼다. 서버가 옛 주소로 보내다 실패하면 기기 줄을 지우므로,
+     앱을 열 때마다 조용히 다시 알린다. 조건: 알림 허용됨 + 사용자가 끄지 않음 + (서버에 기기 없음 or 하루 지남) */
+  function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
+  var syncTried = false;
+  function autoSync(st) {
+    if (syncTried) return;
+    try {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      if (ls('a99_push_off') === '1') return;
+      var hasAlerts = !!(st && st.조건 && st.조건.length);
+      var fresh = Date.now() - Number(ls('a99_sync_at') || 0) < 86400000;
+      if (st && st.등록됨 && fresh) return;
+      if (!(st && st.등록됨) && !hasAlerts && !ls('a99_sync_at')) return;   // 한 번도 켠 적 없는 기기
+      syncTried = true;
+      ensureSub().then(function () { return refreshList(); }).catch(function () {});
+    } catch (e) {}
   }
 
   /* ── 4. 지표 : /technical 한 번으로 선을 전부 뽑는다 ──────
@@ -5285,6 +5305,7 @@ button.a9-rung:active{background:var(--s1)}
   function refreshList() {
     return api('/alerts?d=' + DEV).then(function (r) {
       STATE = r;
+      autoSync(r);
       BOXES.forEach(function (b) { try { b.setMine(r); } catch (e) { console.warn('알림 상자', e); } });
       paintList(r);
       LISTEN.forEach(function (f) { try { f(r); } catch (e) {} });
@@ -5303,7 +5324,7 @@ button.a9-rung:active{background:var(--s1)}
 
     var on = !!(r && r.등록됨);
     if (ms) { ms.classList.toggle('on', on); ms.setAttribute('aria-pressed', on ? 'true' : 'false'); }
-    if (ds) ds.textContent = on ? '켜짐 · 끄면 걸어둔 알림도 지워집니다'
+    if (ds) ds.textContent = on ? '켜짐 · 꺼도 걸어둔 알림은 남습니다'
                                 : '켜면 이 폰으로 알림이 옵니다';
     var sOn = !!(r && r.설정 && r.설정.급등락알림);
     if (sg) { sg.classList.toggle('on', sOn); sg.setAttribute('aria-pressed', sOn ? 'true' : 'false'); }
@@ -5325,8 +5346,8 @@ button.a9-rung:active{background:var(--s1)}
     var b = document.getElementById('a9Master');
     if (b) b.disabled = true;
     var go = on
-      ? (confirm('알림을 끄면 걸어둔 조건도 함께 지워집니다. 끄시겠습니까?')
-          ? api('/sub', { device_id: DEV, on: false })
+      ? (confirm('알림을 끄면 이 폰으로 알림이 오지 않습니다. 걸어둔 조건은 남겨 둡니다. 끄시겠습니까?')
+          ? api('/sub', { device_id: DEV, on: false }).then(function (r) { ls('a99_push_off', '1'); return r; })
           : Promise.reject(new Error('취소')))
       : ensureSub();
     go.then(function () {
@@ -5382,7 +5403,8 @@ button.a9-rung:active{background:var(--s1)}
 })();
 </script>
 <!-- ══════════════════════════════════════════════════════════════
-  안드레99 — 트레이딩 탭  v2026.09.28-A
+  안드레99 — 트레이딩 탭  v2026.09.30-A
+  (09.30) 주식 알림 감시 시간 안내 — 감시 시간 밖이면 알림 칸 위에 한 줄, (i)·도움말에 전체 설명
   붙여넣는 곳: alert-patch 바로 뒤 (</body> 앞). alert-patch(v2026.09.28-A 이상)가 먼저 있어야 한다.
 
   v2026.09.28-A 에서 바뀐 것
@@ -5409,8 +5431,10 @@ button.a9-rung:active{background:var(--s1)}
 .at-back{display:inline-flex;align-items:center;gap:4px;min-height:36px;margin:6px 0 0;padding:0 12px 0 8px;
   background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--tx);font-size:12.5px;font-weight:600}
 .at-back svg{width:15px;height:15px}
+.at-back[hidden],.at-hrs[hidden],.at-sh[hidden]{display:none!important}
 .at-back b{font-family:var(--mono);font-weight:700}
 .at-box-h h2:focus{outline:none}
+.at-hrs{margin:-2px 0 10px;font-size:12px;color:#E8A317;line-height:1.5}
 .at-box-h.flash{animation:atFlash 1.2s ease-out}
 @keyframes atFlash{0%{background:var(--line)}100%{background:transparent}}
 @media (prefers-reduced-motion:reduce){.at-box-h.flash{animation:none}}
@@ -5675,7 +5699,8 @@ html.at-lock,html.at-lock body{overflow:hidden}
         '<div class="frame" id="atFrameBox"><div class="ph">차트 불러오는 중</div></div></div>' +
       '<div class="at-box-h"><h2 tabindex="-1">알림</h2><span id="atBoxSym"></span>' +
         '<button type="button" id="atInfoB" aria-label="알림 판정 기준" aria-expanded="false">i</button></div>' +
-      '<p class="at-info" id="atInfo" hidden>차트는 트레이딩뷰, 알림 판정은 야후 가격(1분 간격)입니다. 시간외 거래와 코인에서는 두 가격이 조금 다를 수 있습니다. 주문 기능은 없습니다.</p>' +
+      '<p class="at-hrs" id="atHrs" hidden></p>' +
+      '<p class="at-info" id="atInfo" hidden></p>' +
       '<div id="atBoxHost"></div>';
     page.insertBefore(w, page.firstChild);
     UI = {
@@ -5683,8 +5708,14 @@ html.at-lock,html.at-lock body{overflow:hidden}
       res: w.querySelector('#atRes'), sym: w.querySelector('#atSym'), px: w.querySelector('#atPx'),
       chg: w.querySelector('#atChg'), ses: w.querySelector('#atSes'), live: w.querySelector('#atLive'),
       tv: w.querySelector('#atTv'), boxSym: w.querySelector('#atBoxSym'), frame: w.querySelector('#atFrameBox'),
-      fsSym: w.querySelector('#atFsSym'), fsPx: w.querySelector('#atFsPx'), fsChg: w.querySelector('#atFsChg')
+      fsSym: w.querySelector('#atFsSym'), fsPx: w.querySelector('#atFsPx'), fsChg: w.querySelector('#atFsChg'),
+      hrs: w.querySelector('#atHrs')
     };
+    var h0 = watchHours();
+    w.querySelector('#atInfo').textContent = '차트는 트레이딩뷰, 알림 판정은 야후 가격이며 1분마다 확인합니다. ' +
+      '주식 알림은 한국 ' + h0.a + ':00 ~ 다음 날 ' + h0.b + ':00 (미국 평일 프리·정규·애프터)에만 감시합니다. ' +
+      '한국 낮 주간거래 시간에는 가격 자료가 없어 울리지 않습니다. 코인은 24시간 감시합니다. ' +
+      '시간외 거래와 코인에서는 차트와 판정 가격이 조금 다를 수 있습니다. 주문 기능은 없습니다.';
     w.querySelector('#atFsb').addEventListener('click', fsOpen);
     UI.back = w.querySelector('#atBack');
     UI.back.addEventListener('click', goBack);
@@ -5837,7 +5868,25 @@ html.at-lock,html.at-lock body{overflow:hidden}
           (has[s] ? '<span class="dot" aria-label="알림 있음"></span>' : '') + '</button>';
       }).join('');
   }
+  /* 주식 알림 감시 시간 — 미국 동부 평일 04:00~20:00 (서머타임에 따라 한국 17~09시 / 18~10시) */
+  function watchHours() {
+    var h = -etOff(Date.now()) / 60;           // 4 또는 5
+    return { a: (4 + h + 9) % 24, b: (20 + h + 9) % 24 };
+  }
+  function inWatch(ms) {
+    var et = new Date(ms + etOff(ms) * 60000), d = et.getUTCDay(), m = et.getUTCHours() * 60 + et.getUTCMinutes();
+    return d >= 1 && d <= 5 && m >= 240 && m < 1200;
+  }
+  function paintHours() {
+    if (!UI || !UI.hrs) return;
+    var s = S.sym;
+    if (!s || isCoin(s) || inWatch(Date.now())) { UI.hrs.hidden = true; return; }
+    var h = watchHours();
+    UI.hrs.textContent = '지금은 주식 알림 감시 시간이 아닙니다 · 한국 ' + h.a + ':00 (미국 평일)부터 감시';
+    UI.hrs.hidden = false;
+  }
   function paintHead(err) {
+    paintHours();
     var s = S.sym || '—', nm = KO[s] || NAMES[s] || '';
     UI.sym.innerHTML = esc(s) + (nm ? '<span>' + esc(nm) + '</span>' : '');
     UI.boxSym.textContent = s;
@@ -6012,7 +6061,8 @@ html.at-lock,html.at-lock body{overflow:hidden}
       ['백그라운드 실행 켜기 (윈도우)', '크롬 설정 → 시스템 → Google Chrome이 닫혀도 백그라운드 앱 계속 실행']];
     return '<ol>' + L.map(function (x) { return '<li>' + esc(x[0]) + '<span>' + esc(x[1]) + '</span></li>'; }).join('') + '</ol>' +
       '<button type="button" class="go" id="atTestGo">1분 뒤 시험 알림 받기</button>' +
-      '<p class="ft">누른 뒤 화면을 끄고 기다려 보세요. 늦게 도착한 알림에는 끝에 「N분 늦게 도착」이 붙습니다.</p>';
+      '<p class="ft">누른 뒤 화면을 끄고 기다려 보세요. 늦게 도착한 알림에는 끝에 「N분 늦게 도착」이 붙습니다.</p>' +
+      '<p class="ft">주식 알림은 한국 ' + watchHours().a + ':00 ~ 다음 날 ' + watchHours().b + ':00 (미국 평일)에만 감시합니다. 한국 낮 주간거래 시간에는 울리지 않습니다. 판정은 1분 간격입니다.</p>';
   }
   function openHelp() {
     if (!HELP) {
@@ -6254,6 +6304,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
 .sm-r[data-k] .k::after{content:"›";margin-left:4px;color:var(--tx3)}
 /* 추이 바텀시트 */
 .sf-sh{position:fixed;inset:0;z-index:90}
+.sf-sh[hidden],#stockBody>[data-sfg][hidden]{display:none!important}
 .sf-sh .bd{position:absolute;inset:0;background:rgba(0,0,0,.45)}
 .sf-sh .pn{position:absolute;left:0;right:0;bottom:0;max-height:82vh;overflow-y:auto;background:var(--bg);
   border-radius:16px 16px 0 0;padding:6px 16px calc(18px + env(safe-area-inset-bottom,0px));transition:transform .18s ease-out;
@@ -6873,7 +6924,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
   var KEY = 'a99_admin';
   var DAY = 86400000;
   // 이번 배포에서 짝이 맞아야 하는 버전 — 배포 파일을 만들 때 함께 올린다
-  var EXPECT = { worker: '2026.09.30-A', sw: '2026.09.29-A' };
+  var EXPECT = { worker: '2026.09.30-B', sw: '2026.09.30-A' };
   var LIST = 'AAPL MSFT NVDA GOOGL AMZN META TSLA AVGO BRK-B JPM V MA UNH LLY JNJ XOM KO PEP WMT COST ' +
              'NFLX AMD INTC PLTR SNOW CRWD NET SHOP UBER ABNB COIN MSTR SOFI RKLB IONQ HOOD ARM SMCI TSM ASML';
 
@@ -6996,14 +7047,22 @@ html.at-lock,html.at-lock body{overflow:hidden}
   function checkVer() {
     var box = $('adVer'); if (!box) return;
     box.textContent = '버전 확인 중…';
-    Promise.all([get('/version?_=' + Date.now(), 10000), swVer()]).then(function (r) {
+    Promise.all([get('/version?_=' + Date.now(), 10000), swVer(), get('/watchdog?_=' + Date.now(), 10000)]).then(function (r) {
       var wv = r[0] && r[0].worker_version, sv = r[1], av = window.BUILD_VER || ($('verTag') || {}).textContent || '';
       var row = function (k, v, want) {
         var good = want ? v === want : !!v;
         return '<div class="' + (good ? 'ok' : 'bad') + '">' + k + ' <b>' + esc(v || '못 읽음') + '</b>' +
           (good ? ' ✓' : (want ? ' ✕ (' + esc(want) + ' 이어야 함)' : ' ✕')) + '</div>';
       };
-      box.innerHTML = row('앱      ', av, null) + row('알림처리', sv, EXPECT.sw) + row('서버    ', wv, EXPECT.worker);
+      var wd = r[2] || {}, lm = wd.마지막감시, wdHtml;
+      if (!wd.ok) wdHtml = '<div class="bad">감시     못 읽음 ✕</div>';
+      else {
+        var late = !lm || lm.몇분전 > 15, sick = lm && lm.상태 !== '감시 정상';
+        wdHtml = '<div class="' + (late || sick || wd.하루가격실패 ? 'bad' : 'ok') + '">감시     <b>' +
+          (lm ? esc(lm.상태) + ' · ' + lm.몇분전 + '분 전' : '기록 없음') + '</b>' + (late ? ' ✕ (15분 넘게 기록 없음)' : sick ? ' ✕' : ' ✓') + '</div>' +
+          '<div class="' + (wd.하루가격실패 ? 'bad' : 'ok') + '">24시간   <b>가격 실패 ' + wd.하루가격실패 + ' · 발송 ' + wd.하루발송 + '건</b></div>';
+      }
+      box.innerHTML = row('앱      ', av, null) + row('알림처리', sv, EXPECT.sw) + row('서버    ', wv, EXPECT.worker) + wdHtml;
     });
   }
   function run() {
