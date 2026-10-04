@@ -1063,7 +1063,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.09.30-B';
+var BUILD_VER='v2026.10.04-A';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -6127,6 +6127,522 @@ html.at-lock,html.at-lock body{overflow:hidden}
   };
 })();
 </script>
+<script>
+/* ══════════════════════════════════════════════════════════════
+   안드레99 — 겹침 가격대(핵심 가격대) 엔진  v1.0 (2026-10-04)
+   여러 시간 단위·여러 지표의 선이 한 가격 근처에 몰린 곳을 찾아 강도를 매긴다.
+   입력: 시간 단위별 봉 { W, D, H4, H1, M15, M5 } — 각 [{t,o,h,l,c,v}] 오래된 것 → 최근
+   출력: 현재가 위·아래 가까운 구간 [{lo, hi, mid, score, strength(1~5), tfs[], parts[]}]
+   브라우저·Worker 공용 (의존성 없음)
+═══════════════════════════════════════════════════════════════ */
+(function (root) {
+  'use strict';
+
+  // 시간 단위 이름 · 무게 (큰 시간 단위일수록 무겁다)
+  var TF = {
+    W:   { ko: '주봉',   short: '주',  w: 3.0 },
+    D:   { ko: '일봉',   short: '일',  w: 2.5 },
+    H4:  { ko: '4시간',  short: '4h',  w: 2.0 },
+    H1:  { ko: '1시간',  short: '1h',  w: 1.5 },
+    M15: { ko: '15분',   short: '15m', w: 1.0 },
+    M5:  { ko: '5분',    short: '5m',  w: 0.7 }
+  };
+  // 보기 묶음 — 사용자가 고르는 3가지
+  var MODE = {
+    all:   ['W', 'D', 'H4', 'H1', 'M15', 'M5'],
+    day:   ['H4', 'H1', 'M15', 'M5'],
+    swing: ['W', 'D', 'H4']
+  };
+
+  function sma(a, n) { if (a.length < n) return null; var s = 0; for (var i = a.length - n; i < a.length; i++) s += a[i]; return s / n; }
+  function hiLo(b, from, to) { var h = -Infinity, l = Infinity; for (var i = from; i < to; i++) { if (b[i].h > h) h = b[i].h; if (b[i].l < l) l = b[i].l; } return [h, l]; }
+  function atr(b, n) {
+    if (b.length < n + 1) return null; var s = 0;
+    for (var i = b.length - n; i < b.length; i++) { var p = b[i - 1].c; s += Math.max(b[i].h - b[i].l, Math.abs(b[i].h - p), Math.abs(b[i].l - p)); }
+    return s / n;
+  }
+
+  /* 한 시간 단위에서 의미 있는 선을 뽑는다 */
+  function linesOf(tf, b) {
+    var L = [], add = function (p, kind, name, mult) { if (p != null && isFinite(p) && p > 0) L.push({ p: p, tf: tf, kind: kind, name: TF[tf].ko + ' ' + name, w: TF[tf].w * mult }); };
+    if (!b || b.length < 30) return L;
+    var c = b.map(function (x) { return x.c; }), n = b.length;
+    // 이동평균 — 짧은 시간 단위의 짧은 평균선은 가격을 졸졸 따라다녀 '겹침'을 부풀리므로 뺀다
+    var MAS = { W: [20, 60, 120], D: [20, 60, 120, 200], H4: [20, 60, 120, 200], H1: [60, 120, 200], M15: [200], M5: [] }[tf];
+    MAS.forEach(function (p) { add(sma(c, p), 'ma', p + '선', p >= 120 ? 1.1 : 1.0); });
+    // 일목 — 기준선(26), 전환선(9), 지금 머리 위 구름(26봉 전에 계산된 선행스팬)
+    if (n >= 52 + 26 && tf !== 'M5') {
+      var k = hiLo(b, n - 26, n), t9 = hiLo(b, n - 9, n);
+      add((k[0] + k[1]) / 2, 'ichi', '기준선', 1.0);
+      if (tf !== 'M15') add((t9[0] + t9[1]) / 2, 'ichi', '전환선', 0.7);
+      var m = n - 26, kB = hiLo(b, m - 26, m), tB = hiLo(b, m - 9, m), sB = hiLo(b, m - 52, m);
+      add(((kB[0] + kB[1]) / 2 + (tB[0] + tB[1]) / 2) / 2, 'ichi', '구름 위·아래끝 A', 0.8);
+      add((sB[0] + sB[1]) / 2, 'ichi', '구름 위·아래끝 B', 0.8);
+    }
+    // 직전 봉 고가·저가 (주봉 → 전주, 일봉 → 전일, 4시간 → 직전 4시간)
+    if (tf === 'W' || tf === 'D' || tf === 'H4') {
+      var pv = b[n - 2], lab = tf === 'W' ? '전주' : tf === 'D' ? '전일' : '직전 4시간';
+      add(pv.h, 'prev', lab + ' 고가', 1.2); add(pv.l, 'prev', lab + ' 저가', 1.2);
+    }
+    // 스윙 고점·저점 — 좌우 3봉보다 높은/낮은 봉, 최근 각 2개
+    var hi = [], lo = [];
+    for (var i = n - 4; i >= Math.max(3, n - 120) && (hi.length < 2 || lo.length < 2); i--) {
+      var isH = true, isL = true;
+      for (var j = 1; j <= 3; j++) {
+        if (!(b[i].h > b[i - j].h && b[i].h >= b[i + j].h)) isH = false;
+        if (!(b[i].l < b[i - j].l && b[i].l <= b[i + j].l)) isL = false;
+      }
+      if (isH && hi.length < 2) hi.push(b[i].h);
+      if (isL && lo.length < 2) lo.push(b[i].l);
+    }
+    hi.forEach(function (p) { add(p, 'pivot', '최근 고점', 1.1); });
+    lo.forEach(function (p) { add(p, 'pivot', '최근 저점', 1.1); });
+    // 거래량이 가장 많이 쌓인 가격 (최근 120봉 · 40칸)
+    var seg = b.slice(-120), hl = hiLo(seg, 0, seg.length), bins = 40, step = (hl[0] - hl[1]) / bins, vol = new Array(bins).fill(0);
+    if (step > 0) {
+      seg.forEach(function (x) { var mid = (x.h + x.l + x.c) / 3, ix = Math.min(bins - 1, Math.floor((mid - hl[1]) / step)); vol[ix] += x.v || 1; });
+      var best = 0; for (var q = 1; q < bins; q++) if (vol[q] > vol[best]) best = q;
+      add(hl[1] + step * (best + 0.5), 'poc', '매물 최대', 1.2);
+    }
+    // 장중 시간 단위 — 당일 거래량 가중 평균가(VWAP), 세션 시작 = 최근 날짜 경계
+    if (tf === 'H1' || tf === 'M15' || tf === 'M5') {
+      var day = Math.floor(b[n - 1].t / 86400000), pv2 = 0, vv = 0;
+      for (var r = n - 1; r >= 0 && Math.floor(b[r].t / 86400000) === day; r--) { var tp = (b[r].h + b[r].l + b[r].c) / 3, vr = b[r].v || 1; pv2 += tp * vr; vv += vr; }
+      if (vv > 0 && tf === 'M5') add(pv2 / vv, 'vwap', 'VWAP', 1.0);   // 세 시간 단위가 같은 값이라 한 번만
+    }
+    return L;
+  }
+
+  /* 시간 단위와 무관한 선 — 52주 고저, 라운드 가격, 사용자 선 */
+  function commonLines(bars, px, userLines) {
+    var L = [], d = bars.D;
+    if (d && d.length > 20) {
+      var y = hiLo(d, Math.max(0, d.length - 252), d.length);
+      L.push({ p: y[0], tf: 'D', kind: '52w', name: '52주 고가', w: 2.5 });
+      L.push({ p: y[1], tf: 'D', kind: '52w', name: '52주 저가', w: 2.5 });
+    }
+    var step = Math.pow(10, Math.floor(Math.log10(px))) / 10;   // 83,850 → 1,000 · 168 → 10
+    var base = Math.floor(px / step) * step;
+    for (var k = -2; k <= 3; k++) { var rp = base + k * step; if (rp > 0) L.push({ p: rp, tf: null, kind: 'round', name: '라운드 ' + rp.toLocaleString('en-US'), w: 0.6 }); }
+    (userLines || []).forEach(function (u) { L.push({ p: u.p, tf: null, kind: 'user', name: '내가 그은 선' + (u.name ? ' · ' + u.name : ''), w: 1.5 }); });
+    return L;
+  }
+
+  /* 선 묶기 — 가까운 선끼리 한 구간으로 (구간 폭 상한 = 허용 오차 × 2) */
+  function cluster(lines, tol) {
+    lines.sort(function (a, b) { return a.p - b.p; });
+    var Z = [], cur = null;
+    lines.forEach(function (ln) {
+      if (cur && ln.p - cur.lo <= tol * 2) { cur.parts.push(ln); cur.hi = ln.p; }
+      else { cur = { lo: ln.p, hi: ln.p, parts: [ln] }; Z.push(cur); }
+    });
+    return Z.map(function (z) {
+      // 같은 시간 단위의 같은 종류가 여러 개면 무게를 줄인다 (예: 일봉 20·60선이 겹친 것만으로 강해지지 않게)
+      var seen = {}, score = 0, tfs = {};
+      z.parts.forEach(function (p) { var key = (p.tf || '-') + p.kind; score += p.w * (seen[key] ? 0.5 : 1); seen[key] = 1; if (p.tf) tfs[p.tf] = 1; });
+      var nT = Object.keys(tfs).length;
+      score *= (1 + 0.15 * Math.max(0, nT - 1));      // 서로 다른 시간 단위가 겹칠수록 가산
+      return { lo: z.lo, hi: z.hi, mid: (z.lo + z.hi) / 2, score: score, n: z.parts.length, tfs: Object.keys(tfs), parts: z.parts };
+    });
+  }
+
+  // 강도 — 보기 묶음마다 시간 단위 무게 합이 달라서, 전체 기준(10.7)으로 맞춘 뒤 나눈다
+  function strengthOf(s, mode) {
+    var tot = 0; MODE[mode].forEach(function (t) { tot += TF[t].w; });
+    var x = s * Math.sqrt(10.7 / tot);   // 짧은 보기에서 강도가 지나치게 부풀지 않게 제곱근으로 완화 (실데이터로 재보정 예정)
+    return x >= 12 ? 5 : x >= 9 ? 4 : x >= 6.5 ? 3 : x >= 4.5 ? 2 : 1;
+  }
+
+  /* 메인 — 현재가 위·아래 가장 가까운 구간 2개씩 (강도 2 이상) */
+  function zones(bars, px, opt) {
+    opt = opt || {};
+    var mode = MODE[opt.mode || 'all'], L = [];
+    mode.forEach(function (tf) { L = L.concat(linesOf(tf, bars[tf])); });
+    commonLines(bars, px, opt.userLines).forEach(function (l) {
+      if (!l.tf || mode.indexOf(l.tf) >= 0 || l.kind === '52w' && opt.mode !== 'day') L.push(l);
+    });
+    var a1 = atr(bars.H1 || [], 14), tol = Math.max(px * 0.0012, a1 ? a1 * 0.3 : 0);
+    var Z = cluster(L, tol).filter(function (z) { return z.n >= 3 && z.tfs.length >= 2; });
+    // 강도 = 이 종목 안에서의 상대 순위 (현재가 ±12% 안 후보 기준) + 절대 하한.
+    //   모든 구간이 '최강'으로 보이면 의미가 없으므로, 종목마다 위쪽 15%만 5칸이 된다.
+    var near = Z.filter(function (z) { return Math.abs(z.mid - px) / px <= 0.12; }).map(function (z) { return z.score; }).sort(function (a, b) { return b - a; });
+    function rankStrength(sc, mode) {
+      var abs = strengthOf(sc, mode), i = near.indexOf(sc), q = near.length > 1 ? i / (near.length - 1) : 0;
+      var rel = q <= 0.15 ? 5 : q <= 0.35 ? 4 : q <= 0.6 ? 3 : q <= 0.85 ? 2 : 1;
+      return Math.max(1, Math.min(abs, rel));
+    }
+    Z.forEach(function (z) { z.strength = rankStrength(z.score, opt.mode || 'all'); z.dist = (z.mid - px) / px * 100; z.inside = px >= z.lo - tol * 0.25 && px <= z.hi + tol * 0.25; });
+    Z = Z.filter(function (z) { return z.strength >= 2; });
+    var up = Z.filter(function (z) { return z.lo > px && !z.inside; }).sort(function (a, b) { return a.mid - b.mid; }).slice(0, opt.n || 2);
+    var dn = Z.filter(function (z) { return z.hi < px && !z.inside; }).sort(function (a, b) { return b.mid - a.mid; }).slice(0, opt.n || 2);
+    var at = Z.filter(function (z) { return z.inside; }).sort(function (a, b) { return b.score - a.score; })[0] || null;
+    return { up: up, dn: dn, at: at, tol: tol, lines: L.length };
+  }
+
+  /* 봉 합치기 — 1시간 → 4시간·일봉·주봉, 5분 → 15분 */
+  function agg(b, ms, offset) {
+    var out = [], cur = null;
+    b.forEach(function (x) {
+      var k = Math.floor((x.t - (offset || 0)) / ms);
+      if (!cur || cur.k !== k) { cur = { k: k, t: x.t, o: x.o, h: x.h, l: x.l, c: x.c, v: x.v || 0 }; out.push(cur); }
+      else { cur.h = Math.max(cur.h, x.h); cur.l = Math.min(cur.l, x.l); cur.c = x.c; cur.v += x.v || 0; }
+    });
+    return out;
+  }
+
+  var API = { zones: zones, linesOf: linesOf, cluster: cluster, agg: agg, TF: TF, MODE: MODE };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.A99Zones = API;
+})(typeof self !== 'undefined' ? self : this);
+</script>
+<!-- ═════════ 핵심 가격대 (겹침 가격대) — 트레이딩 탭  v2026.10.04-A ═════════
+     여러 시간 단위(주·일·4시간·1시간·15분·5분)의 선이 한 가격 근처에 몰린 곳을 보여주고,
+     닿으면 알림을 보낸다. 계산은 이 화면(폰)에서 하고, 서버는 매분 닿았는지만 본다.
+     앞에 있어야 하는 것: alert-patch(A99Alert) · alert-tab(A99Tab) · zones.js(A99Zones, build.py 가 바로 앞에 넣는다) -->
+<style>
+/* 트레이딩 탭의 「지표 선 사다리」·「지표 선 전체」는 핵심 가격대로 대신한다 (종목 화면 알림 상자는 그대로) */
+#atTab #atLad,#atTab .a9-all{display:none!important}
+.kz{margin:16px 0 4px}
+.kz-h{display:flex;align-items:center;gap:8px;min-height:36px}
+.kz-h h2{margin:0;font-size:15px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.kz-seg{margin-left:auto;display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none}
+.kz-seg button{min-height:32px;padding:0 11px;color:var(--tx3);font-size:12px;font-weight:600}
+.kz-seg button.on{background:var(--s3);color:var(--tx)}
+.kz-l{margin-top:6px;border-top:1px solid var(--line)}
+.kz-r{display:grid;grid-template-columns:16px minmax(0,1fr) 58px 54px;align-items:center;gap:8px;min-height:52px;padding:6px 0;
+  border-bottom:1px solid var(--line);width:100%;text-align:left}
+.kz-r .g{font-size:10px;line-height:1;text-align:center}
+.kz-r .g.u{color:var(--up)} .kz-r .g.d{color:var(--dn)} .kz-r .g.a{color:#E8A317}
+.kz-r .p{font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;min-width:0}
+.kz-r .t{display:block;margin-top:2px;font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  font-size:11px;font-weight:500;color:var(--tx3);letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kz-r .s{display:flex;gap:3px}
+.kz-r .s i{width:7px;height:7px;border-radius:2px;background:var(--s3)}
+.kz-r .s i.on{background:var(--tx)}
+.kz-r .x{font-family:var(--mono);font-size:12px;color:var(--tx2);text-align:right;font-variant-numeric:tabular-nums}
+.kz-r.at{background:var(--s1)}
+.kz-r.at .x{color:#E8A317;font-family:inherit;font-weight:600}
+.kz-r[aria-expanded="true"]{border-bottom-color:transparent}
+.kz-r:focus-visible,.kz-seg button:focus-visible,.kz-sw:focus-visible,.kz-d .act button:focus-visible,.kz-msg button:focus-visible{outline:2px solid var(--tx2);outline-offset:-2px}
+.kz-now{display:flex;align-items:center;gap:8px;min-height:30px;font-size:11.5px;color:var(--tx3)}
+.kz-now::before,.kz-now::after{content:"";flex:1;height:1px;background:var(--tx3);opacity:.5}
+.kz-now b{font-family:var(--mono);color:var(--tx);font-size:12.5px;font-variant-numeric:tabular-nums}
+.kz-d{padding:0 0 12px 24px;border-bottom:1px solid var(--line)}
+.kz-d ul{margin:0;padding:0}
+.kz-d li{list-style:none;display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--tx2);padding:3px 0}
+.kz-d li span{font-family:var(--mono);color:var(--tx3);font-variant-numeric:tabular-nums}
+.kz-d .act{display:flex;gap:6px;margin-top:8px}
+.kz-d .act button{min-height:34px;padding:0 12px;border:1px solid var(--line);border-radius:8px;color:var(--tx);font-size:12px;font-weight:600}
+.kz-d .act button:disabled{opacity:.5}
+.kz-none,.kz-msg{font-size:12px;color:var(--tx3);padding:12px 0;border-bottom:1px solid var(--line)}
+.kz-msg{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 0}
+.kz-msg button{margin-left:auto;min-height:32px;padding:0 12px;border:1px solid var(--line);border-radius:8px;color:var(--tx);font-size:12px;font-weight:600}
+.kz-sw{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:0;border-bottom:1px solid var(--line);text-align:left}
+.kz-sw .tt{display:block;font-size:14px;font-weight:600}
+.kz-sw .ds{display:block;font-size:11.5px;color:var(--tx3);margin-top:2px}
+.kz-sw .kn{margin-left:auto;flex:none;width:44px;height:26px;border-radius:13px;background:var(--s3);position:relative;transition:background .15s}
+.kz-sw .kn::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--tx3);transition:left .15s,background .15s}
+.kz-sw[aria-checked="true"] .kn{background:var(--tx)}
+.kz-sw[aria-checked="true"] .kn::after{left:21px;background:var(--bg)}
+.kz-sw:disabled{opacity:.6}
+@media (prefers-reduced-motion:reduce){.kz-sw .kn,.kz-sw .kn::after{transition:none}}
+</style>
+
+<script>
+(function () {
+  'use strict';
+  if (window.A99Zone) return;
+  var AL = window.A99Alert, Z = window.A99Zones;
+  if (!AL || !Z) { console.warn('핵심 가격대: A99Alert · A99Zones 가 먼저 있어야 합니다'); return; }
+  var API = AL.api, n4 = AL.n4;
+
+  var MIN_S = 3;                                  // 알림 기준 강도
+  var MODES = [['all', '전체'], ['day', '단타'], ['swing', '스윙']];
+  var TFKO = { W: '주', D: '일', H4: '4시간', H1: '1시간', M15: '15분', M5: '5분' }, ORDER = ['W', 'D', 'H4', 'H1', 'M15', 'M5'];
+  var MIN = 60000, H = 3600000, DAY = 86400000;
+  // 받을 봉 — 1분봉은 쓰지 않는다. 주봉은 일봉을, 4시간은 1시간봉을 합쳐 만든다.
+  //   age: 다시 받는 간격. 주식은 정규장 봉만 쓰므로 일수를 늘려 200선까지 채운다.
+  var FEED = {
+    d1:  { iv: '1d',  dc: 0,  ds: 0,   age: 30 * MIN },
+    h1:  { iv: '1h',  dc: 60, ds: 100, age: 30 * MIN },
+    m15: { iv: '15m', dc: 4,  ds: 10,  age: 5 * MIN },
+    m5:  { iv: '5m',  dc: 2,  ds: 2,   age: 5 * MIN }
+  };
+
+  function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function isCoin(s) { return /-USD$/.test(s || ''); }
+  function fmt(v) { return v >= 1000 ? Math.round(v).toLocaleString('en-US') : n4(v); }
+  function pc(v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + '%'; }
+  function rnd(v) { return Math.abs(v) >= 1 ? Math.round(v * 100) / 100 : +(+v).toPrecision(4); }
+
+  var K = {
+    sym: null, raw: {}, at: {}, bars: null, err: null, busy: false, seq: 0,
+    mode: ({ all: 1, day: 1, swing: 1 })[ls('a99_kz_mode')] ? ls('a99_kz_mode') : 'all',
+    open: null, res: null, sig: '', watch: {}, wBusy: false, posted: {}, timer: 0, done: {}, hold: 0, later: 0
+  };
+  var BOXEL = null;
+
+  /* ═════════ 봉 받기 ═════════ */
+  function toBars(j, regOnly) {
+    var out = [], s = j.s;
+    for (var i = 0; i < j.t.length; i++) {
+      if (regOnly && s && s.charAt(i) !== 'r') continue;
+      out.push({ t: j.t[i] * 1000, o: j.o[i], h: j.h[i], l: j.l[i], c: j.c[i], v: j.v[i] || 0 });
+    }
+    return out;
+  }
+  function pull(sym, key) {
+    var f = FEED[key], d = isCoin(sym) ? f.dc : f.ds;
+    return fetch(API + '/bars?symbol=' + encodeURIComponent(sym) + '&iv=' + f.iv + (d ? '&d=' + d : ''))
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || !j.ok || !j.t || !j.t.length) throw new Error((j && j.오류) || '빈 자료');
+        return j;
+      });
+  }
+  function assemble() {
+    var R = K.raw, coin = isCoin(K.sym);
+    if (!R.d1 || !R.h1) return null;
+    var D = toBars(R.d1, false);
+    var H1 = toBars(R.h1, !coin);
+    var M15 = R.m15 ? toBars(R.m15, !coin) : [];
+    var M5 = R.m5 ? toBars(R.m5, !coin) : [];
+    // 4시간 — 코인은 UTC 0·4·8시, 주식은 정규장 시작(동부 9:30)에 맞춘다
+    var off = coin ? 0 : ((570 - (R.h1.et_offset_min != null ? R.h1.et_offset_min : -240)) * MIN) % (4 * H);
+    return { W: Z.agg(D, 7 * DAY, 4 * DAY), D: D, H4: Z.agg(H1, 4 * H, off), H1: H1, M15: M15, M5: M5 };
+  }
+  function load(force) {
+    var sym = K.sym; if (!sym || K.busy) return;
+    var now = Date.now(), need = Object.keys(FEED).filter(function (k) { return force || !K.raw[k] || now - (K.at[k] || 0) > FEED[k].age; });
+    if (!need.length) { recompute(); return; }
+    K.busy = true; var my = ++K.seq;
+    Promise.all(need.map(function (k) {
+      return pull(sym, k).then(function (j) { return [k, j, null]; }, function (e) { return [k, null, e]; });
+    })).then(function (rs) {
+      if (my !== K.seq || sym !== K.sym) return;
+      var bad = 0;
+      rs.forEach(function (r) { if (r[1]) { K.raw[r[0]] = r[1]; K.at[r[0]] = Date.now(); } else bad++; });
+      K.err = (!K.raw.d1 || !K.raw.h1) ? '가격대 자료를 받지 못했습니다' : null;
+      if (bad && !K.err) K.at.retry = Date.now();
+      K.bars = assemble();
+      recompute(true);
+    }).then(function () { if (my === K.seq) K.busy = false; }, function () { if (my === K.seq) K.busy = false; });
+  }
+
+  /* ═════════ 계산 ═════════ */
+  function price() {
+    var S = window.A99Tab && window.A99Tab._S;
+    if (S && S.sym === K.sym && S.px > 0) return S.px;
+    var m = K.bars && (K.bars.M5.length ? K.bars.M5 : K.bars.H1);
+    return m && m.length ? m[m.length - 1].c : null;
+  }
+  function calc(mode, n) {
+    var px = price(); if (!K.bars || !px) return null;
+    try { var r = Z.zones(K.bars, px, { mode: mode, n: n }); r.px = px; return r; } catch (e) { return null; }
+  }
+  function keyOf(z) { return String(Math.round(z.mid * 1e4)); }
+  function recompute(fresh) {
+    K.res = calc(K.mode);
+    paint();
+    if (fresh || !K.posted[K.sym] || Date.now() - K.posted[K.sym].at > 30 * MIN) syncWatch(false);
+  }
+
+  /* ═════════ 그리기 ═════════ */
+  function dots(n) { var h = ''; for (var i = 1; i <= 5; i++) h += '<i class="' + (i <= n ? 'on' : '') + '"></i>'; return '<span class="s" role="img" aria-label="강도 ' + n + ' / 5">' + h + '</span>'; }
+  function tfs(z) { return ORDER.filter(function (t) { return z.tfs.indexOf(t) >= 0; }).map(function (t) { return TFKO[t]; }).join(' · '); }
+  function row(z, side) {
+    var k = keyOf(z), on = K.open === k;
+    var g = side === 'up' ? '<span class="g u" aria-hidden="true">▲</span>' : side === 'dn' ? '<span class="g d" aria-hidden="true">▼</span>' : '<span class="g a" aria-hidden="true">●</span>';
+    var lab = (side === 'up' ? '위 ' : side === 'dn' ? '아래 ' : '지금 닿은 ') + fmt(z.mid) + ' 부근, ' + tfs(z) + ' 겹침, 강도 ' + z.strength + (side === 'at' ? '' : ', ' + pc(z.dist));
+    var h = '<button type="button" class="kz-r' + (side === 'at' ? ' at' : '') + '" data-k="' + k + '" aria-expanded="' + on + '" aria-label="' + esc(lab) + '">' + g +
+      '<span class="p">' + fmt(z.mid) + '<span class="t">' + tfs(z) + '</span></span>' + dots(z.strength) +
+      '<span class="x">' + (side === 'at' ? '닿음' : pc(z.dist)) + '</span></button>';
+    if (on) {
+      // 무게 순 6개를 골라 가격 높은 것부터 (위 → 아래)
+      var parts = z.parts.slice().sort(function (a, b) { return b.w - a.w; }).slice(0, 6).sort(function (a, b) { return b.p - a.p; });
+      h += '<div class="kz-d"><ul>' + parts.map(function (p) { return '<li>' + esc(p.name) + '<span>' + fmt(p.p) + '</span></li>'; }).join('') + '</ul>' +
+        '<div class="act"><button type="button" data-one="' + side + '" data-k="' + k + '"' + (K.done[K.sym + k] ? ' disabled>등록됨' : '>' + (side === 'at' ? '벗어나면 알림' : '이 가격대만 알림')) + '</button></div></div>';
+    }
+    return h;
+  }
+  function head() {
+    return '<div class="kz-h"><h2>핵심 가격대</h2><div class="kz-seg" role="group" aria-label="보는 기준">' + MODES.map(function (m) {
+      return '<button type="button" data-m="' + m[0] + '" class="' + (K.mode === m[0] ? 'on' : '') + '" aria-pressed="' + (K.mode === m[0]) + '">' + m[1] + '</button>'; }).join('') + '</div></div>';
+  }
+  function switchRow() {
+    var w = K.watch[K.sym], on = !!w;
+    var ds = on ? '켜짐 · 강도 ' + (w.기준강도 || MIN_S) + ' 이상 · ' + modeKo(w.보기) + ' 기준 · 이 종목'
+                : '강도 ' + MIN_S + ' 이상 · 이 종목';
+    return '<button type="button" class="kz-sw" role="switch" aria-checked="' + on + '"' + (K.wBusy ? ' disabled' : '') + '>' +
+      '<span><span class="tt">핵심 가격대 도달 알림</span><span class="ds">' + esc(ds) + '</span></span><span class="kn" aria-hidden="true"></span></button>';
+  }
+  function modeKo(m) { for (var i = 0; i < MODES.length; i++) if (MODES[i][0] === m) return MODES[i][1]; return '전체'; }
+  function paint(forceDom) {
+    if (!BOXEL) return;
+    var r = K.res, h;
+    if (!K.sym) { BOXEL.hidden = true; return; }
+    BOXEL.hidden = false;
+    if (r) {
+      var px = r.px, body = '';
+      if (!r.up.length) body += '<div class="kz-none">위쪽에 겹친 가격대가 없습니다</div>';
+      r.up.slice().reverse().forEach(function (z) { body += row(z, 'up'); });
+      if (r.at) body += row(r.at, 'at');
+      else body += '<div class="kz-now">지금 <b>' + fmt(px) + '</b></div>';
+      r.dn.forEach(function (z) { body += row(z, 'dn'); });
+      if (!r.dn.length) body += '<div class="kz-none">아래쪽에 겹친 가격대가 없습니다</div>';
+      h = head() + '<div class="kz-l">' + body + '</div>' + switchRow();
+    } else if (K.err) {
+      h = head() + '<div class="kz-l"><div class="kz-msg">' + esc(K.err) + '<button type="button" data-retry="1">다시 시도</button></div></div>';
+    } else {
+      h = head() + '<div class="kz-l"><div class="kz-msg">가격대 계산 중</div></div>';
+    }
+    if (!forceDom && h === K.sig) return;            // 바뀐 게 없으면 그대로 둔다 (누르던 버튼의 포커스 유지)
+    if (!forceDom && Date.now() - K.hold < 700) {     // 손가락이 닿아 있는 동안 가격 갱신으로 줄이 바뀌면 누름이 사라진다 — 잠깐 미룬다
+      clearTimeout(K.later); K.later = setTimeout(function () { paint(); }, 750); return;
+    }
+    var fk = document.activeElement && BOXEL.contains(document.activeElement) ? focusKey(document.activeElement) : null;
+    K.sig = h; BOXEL.innerHTML = h;
+    if (fk) { var f = BOXEL.querySelector(fk); if (f) f.focus({ preventScroll: true }); }
+  }
+  function focusKey(el) {
+    if (el.dataset.m) return '[data-m="' + el.dataset.m + '"]';
+    if (el.dataset.one) return '[data-one][data-k="' + el.dataset.k + '"]';
+    if (el.dataset.k) return '.kz-r[data-k="' + el.dataset.k + '"]';
+    if (el.classList.contains('kz-sw')) return '.kz-sw';
+    return null;
+  }
+
+  /* ═════════ 알림 ═════════ */
+  // 서버에 보낼 구간 — 위·아래 4개씩 + 지금 닿은 것 (강도 2 이상, 서버가 기준 강도로 거른다)
+  function payload(mode) {
+    var r = calc(mode, 4); if (!r) return null;
+    var L = r.up.concat(r.at ? [r.at] : [], r.dn);
+    return L.slice(0, 10).map(function (z) {
+      return { lo: z.lo, hi: z.hi, mid: z.mid, s: z.strength, tfs: z.tfs,
+        names: z.parts.slice().sort(function (a, b) { return b.w - a.w; }).slice(0, 3).map(function (p) { return p.name; }) };
+    });
+  }
+  // 켜 둔 종목이면 다시 계산한 가격대를 올린다 (같으면 30분에 한 번만 — 서버는 36시간 지난 가격대를 버린다)
+  function syncWatch(force) {
+    var sym = K.sym, w = K.watch[sym]; if (!w || K.wBusy) return;
+    var mode = w.보기 || K.mode, zs = payload(mode); if (!zs || !zs.length) return;
+    var sig = JSON.stringify(zs.map(function (z) { return [rnd(z.lo), rnd(z.hi), z.s]; })), last = K.posted[sym];
+    if (!force && last && last.sig === sig && Date.now() - last.at < 30 * MIN) return;
+    K.posted[sym] = { sig: sig, at: Date.now() };
+    AL.call('/zones', { device_id: AL.device, symbol: sym, zones: zs, min_s: w.기준강도 || MIN_S, mode: mode })
+      .then(function (r) { if (!r || !r.ok) K.posted[sym] = null; }, function () { K.posted[sym] = null; });
+  }
+  function toggleWatch() {
+    var sym = K.sym; if (!sym || K.wBusy) return;
+    var on = !K.watch[sym];
+    var zs = on ? payload(K.mode) : null;
+    if (on && (!zs || !zs.length)) { AL.toast('지금은 알릴 가격대가 없습니다'); return; }
+    K.wBusy = true; paint(true);
+    var go = on ? AL.ensureSub().then(function () {
+      return AL.call('/zones', { device_id: AL.device, symbol: sym, zones: zs, min_s: MIN_S, mode: K.mode });
+    }) : AL.call('/zones', { device_id: AL.device, symbol: sym, on: false });
+    go.then(function (r) {
+      if (!r || !r.ok) throw new Error((r && r.오류) || '바꾸지 못했습니다');
+      if (on) { K.watch[sym] = { 종목: sym, 기준강도: MIN_S, 보기: K.mode }; K.posted[sym] = { sig: '', at: Date.now() }; }
+      else { delete K.watch[sym]; delete K.posted[sym]; }
+      AL.toast(on ? sym.replace(/-USD$/, '') + ' 핵심 가격대에 닿으면 알려드립니다' : sym.replace(/-USD$/, '') + ' 핵심 가격대 알림을 껐습니다');
+      return AL.refresh && AL.refresh();
+    }).catch(function (e) { AL.toast((e && e.message) || '바꾸지 못했습니다'); })
+      .then(function () { K.wBusy = false; paint(true); });
+  }
+  function findZone(k) {
+    var r = K.res; if (!r) return null;
+    var all = r.up.concat(r.at ? [r.at] : [], r.dn);
+    for (var i = 0; i < all.length; i++) if (keyOf(all[i]) === k) return all[i];
+    return null;
+  }
+  // 「이 가격대만 알림」 — 위 구간은 아래끝(lo), 아래 구간은 위끝(hi)에 닿으면. 지금 닿은 구간은 벗어나면.
+  function oneAlert(btn) {
+    var z = findZone(btn.dataset.k), side = btn.dataset.one, sym = K.sym; if (!z || !sym) return;
+    var terms, comb = 'single', say;
+    if (side === 'at') { terms = [{ k: 'cross_up', p: rnd(z.hi), src: 'zone' }, { k: 'cross_down', p: rnd(z.lo), src: 'zone' }]; comb = 'any'; say = fmt(z.lo) + '~' + fmt(z.hi) + ' 벗어나면'; }
+    else { var p = rnd(side === 'up' ? z.lo : z.hi); terms = [{ k: 'touch', p: p, src: 'zone' }]; say = n4(p) + ' 닿으면'; }
+    btn.disabled = true;
+    AL.ensureSub().then(function () {
+      return AL.call('/alert', { device_id: AL.device, symbol: sym, terms: terms, combine: comb, repeat_n: 1 });
+    }).then(function (r) {
+      if (!r || !r.ok) throw new Error((r && r.오류) || '등록하지 못했습니다');
+      AL.toast(sym.replace(/-USD$/, '') + ' ' + say + ' 알림 등록');
+      K.done[sym + btn.dataset.k] = 1; btn.textContent = '등록됨'; paint(true);
+      return AL.refresh && AL.refresh();
+    }).catch(function (e) { AL.toast((e && e.message) || '등록하지 못했습니다'); btn.disabled = false; });
+  }
+
+  /* ═════════ 연결 ═════════ */
+  function setSym(sym) {
+    sym = String(sym || '').toUpperCase();
+    if (sym === K.sym) return;
+    K.sym = sym; K.raw = {}; K.at = {}; K.bars = null; K.res = null; K.err = null; K.open = null; K.busy = false; K.seq++;
+    paint(true);
+    if (sym && active()) load(true);
+  }
+  function active() { var S = window.A99Tab && window.A99Tab._S; return !!(S && S.active) && !document.hidden; }
+  function onPrice() {
+    var S = window.A99Tab._S;
+    if (S.sym && S.sym !== K.sym) setSym(S.sym);
+    if (!K.bars) { if (!K.busy && active()) load(false); return; }
+    K.res = calc(K.mode); paint();
+  }
+  function tick() {
+    if (!active()) return;
+    var S = window.A99Tab._S;
+    if (S.sym && S.sym !== K.sym) { setSym(S.sym); return; }
+    load(false);
+  }
+  function onState(st) {
+    var m = {};
+    ((st && st.가격대감시) || []).forEach(function (w) { if (w && w.종목) m[w.종목] = w; });
+    if (!(st && st.등록됨)) m = {};
+    K.watch = m; paint(true);
+    if (m[K.sym] && K.bars) syncWatch(false);
+  }
+
+  function mount() {
+    var tab = document.getElementById('atTab'), host = tab && tab.querySelector('.at-box-h');
+    if (!host || !window.A99Tab || !window.A99Tab._box || !window.A99Tab._box()) return false;
+    BOXEL = document.createElement('section'); BOXEL.className = 'kz'; BOXEL.id = 'kzBox'; BOXEL.setAttribute('aria-label', '핵심 가격대');
+    host.parentNode.insertBefore(BOXEL, host);
+    BOXEL.addEventListener('pointerdown', function () { K.hold = Date.now(); });
+    BOXEL.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b || !BOXEL.contains(b)) return;
+      if (b.dataset.m) {
+        if (b.dataset.m === K.mode) return;
+        K.mode = b.dataset.m; ls('a99_kz_mode', K.mode); K.open = null; K.res = calc(K.mode); paint(true);
+        var w = K.watch[K.sym];
+        if (w && w.보기 !== K.mode) { w.보기 = K.mode; syncWatch(true); paint(true); }   // 켜 둔 알림도 보는 기준을 따라간다
+        return;
+      }
+      if (b.dataset.one) { oneAlert(b); return; }
+      if (b.dataset.retry) { K.err = null; paint(true); load(true); return; }
+      if (b.classList.contains('kz-sw')) { toggleWatch(); return; }
+      if (b.classList.contains('kz-r')) { K.open = K.open === b.dataset.k ? null : b.dataset.k; paint(true); }
+    });
+    // 트레이딩 탭이 종목·가격을 바꿀 때 같이 움직인다
+    var BOX = window.A99Tab._box(), oSym = BOX.setSym, oPx = BOX.setPrice;
+    BOX.setSym = function (s) { var r = oSym.apply(this, arguments); setSym(s); return r; };
+    BOX.setPrice = function (p) { var r = oPx.apply(this, arguments); try { onPrice(); } catch (e) {} return r; };
+    AL.onChange(onState);
+    var page = document.getElementById('p-my');
+    if (page) new MutationObserver(function () { if (active()) tick(); }).observe(page, { attributes: true, attributeFilter: ['class'] });
+    document.addEventListener('visibilitychange', function () { if (active()) tick(); });
+    K.timer = setInterval(tick, MIN);
+    var S = window.A99Tab._S; if (S.sym) setSym(S.sym);
+    paint(true);
+    return true;
+  }
+  var tries = 0;
+  function boot() { if (mount()) return; if (++tries < 40) setTimeout(boot, 250); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 0); });
+  else setTimeout(boot, 0);
+
+  window.A99Zone = { _K: K, refresh: function () { load(true); } };
+})();
+</script>
 <!-- ══════════════════════════════════════════════════════════════
   안드레99 — 종목 화면 탭 구성  v2026.09.28-A
   붙여넣는 곳: alert-tab 뒤 (</body> 앞)
@@ -6924,7 +7440,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
   var KEY = 'a99_admin';
   var DAY = 86400000;
   // 이번 배포에서 짝이 맞아야 하는 버전 — 배포 파일을 만들 때 함께 올린다
-  var EXPECT = { worker: '2026.09.30-B', sw: '2026.09.30-A' };
+  var EXPECT = { worker: '2026.10.04-A', sw: '2026.09.30-A' };
   var LIST = 'AAPL MSFT NVDA GOOGL AMZN META TSLA AVGO BRK-B JPM V MA UNH LLY JNJ XOM KO PEP WMT COST ' +
              'NFLX AMD INTC PLTR SNOW CRWD NET SHOP UBER ABNB COIN MSTR SOFI RKLB IONQ HOOD ARM SMCI TSM ASML';
 
