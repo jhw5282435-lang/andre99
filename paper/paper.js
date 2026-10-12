@@ -369,11 +369,12 @@ window.A99E = A99E;
 'use strict';
 if (window.A99Paper) return;
 
-var VER = '2026.10.12-A';
-var Q = 'US' + 'DT';
-var IT = Q + '-FUTURES';
-var WSURL = 'wss://ws.bitget.com/v2/ws/public';
-var REST = 'https://api.bitget.com';
+var VER = '2026.10.12-E';
+var Q = 'US' + 'DT';                              // 모의 계좌 단위 표기 (가상 · 실제 돈 아님). 가격은 하이퍼리퀴드 달러 시세
+var WSURL = 'wss://api.hyperliquid.xyz/ws';      // 실시간 시세: 하이퍼리퀴드 공개 자료
+var HLI = 'https://api.hyperliquid.xyz/info';
+function BS(k) { return k === 'PAXG' ? 'XAU' : /^k[A-Z]/.test(k) ? '1000' + k.slice(1) : k; }   // 화면 표기: 금 = XAU · k로 시작 = 1000단위
+function NM(k) { return BS(k) + Q; }
 var API = window.A99P_API || 'https://andre99-paper.jhw5282435.workers.dev';
 var H9 = 9 * 3600e3;
 var FRESH = 30000;
@@ -638,6 +639,12 @@ function kstWhen(t) { var d = new Date(t + H9), now = new Date(Date.now() + H9);
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function lsGet(k) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
 function lsSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function postJSON(url, body, ms) {
+  var ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  var t = setTimeout(function () { if (ac) ac.abort(); }, ms || 6000);
+  var o = { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }; if (ac) o.signal = ac.signal;
+  return fetch(url, o).then(function (r) { clearTimeout(t); if (!r.ok) throw new Error('http ' + r.status); return r.json(); }, function (e) { clearTimeout(t); throw e; });
+}
 function getJSON(url, ms) {
   var ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
   var t = setTimeout(function () { if (ac) ac.abort(); }, ms || 6000);
@@ -646,10 +653,11 @@ function getJSON(url, ms) {
 
 /* ── 종목 규칙 ── */
 var SP = {}, IDS = [], INFO = { contact: '', signup: true, start: 1000, resetBelow: 500, metric: 'ret' };
-function chip(id) { return id === 'XAU' ? '금' : id === 'CL' ? '원유' : id === 'XAG' ? '은' : id; }
+function chip(id) { return id === 'PAXG' || id === 'XAU' ? '금' : id === 'CL' ? '원유' : id === 'XAG' ? '은' : id; }
 function setSpecs(j) {
   var sp = {};
   (j.list || []).forEach(function (k) { if (j.map[k]) sp[k] = E.prep(Object.assign({}, j.map[k])); });
+  if (sp.PAXG) sp.PAXG.ko = '금 · PAXG 기준';
   SP = sp; IDS = (j.list || []).filter(function (k) { return SP[k]; });
   if (j.info) INFO = Object.assign(INFO, j.info);
   IDS.forEach(function (k) { if (!M[k]) M[k] = { last: null, mark: null, bid: null, ask: null, chg: null, fr: null, nft: null, dir: 0, book: null, trades: [], rx: 0 }; });
@@ -699,7 +707,7 @@ var ERR = {
   auth: '다시 로그인해 주세요.',
   server: '서버에서 문제가 생겼어요. 잠시 뒤 다시 해 주세요.'
 };
-function errMsg(x) { var j = x.j || {}; if (j.info && j.info.err) return E.errText(j.info, U.sym, Q); return ERR[j.err] || E.errText(j, U.sym, Q); }
+function errMsg(x) { var j = x.j || {}; if (j.info && j.info.err) return E.errText(j.info, BS(U.sym), Q); return ERR[j.err] || E.errText(j, BS(U.sym), Q); }
 function applyServer(j) {
   if (!j.acct) return [];
   ME = ME || {};
@@ -721,7 +729,7 @@ function applyServer(j) {
 var KIND = { open: 'Open', close: 'Close', tp: 'TP filled', sl: 'SL filled', liq: 'Liquidated', fund: 'Funding' };
 function toastEvents(ev) {
   (ev || []).forEach(function (e) {
-    var nm = e.sym + Q, sd = e.side === 1 ? 'Long' : 'Short';
+    var nm = NM(e.sym), sd = e.side === 1 ? 'Long' : 'Short';
     if (e.k === 'liq') toast(nm + ' ' + sd + ' ' + e.lev + 'x Liquidated · −' + fu(e.margin) + ' (강제 청산)', true);
     else if (e.k === 'sl' || e.k === 'tp') toast(nm + ' ' + sd + ' ' + (e.k === 'tp' ? 'TP filled' : 'SL filled') + ' · ' + fp(e.sym, e.price) + ' · ' + sg(e.net), e.net < 0);
     else if (e.k === 'lfill') toast(nm + ' Limit ' + (e.side === 1 ? 'Long' : 'Short') + ' filled · ' + fq(e.sym, e.qty) + ' @ ' + fp(e.sym, e.price));
@@ -767,14 +775,14 @@ function triggerOf(id, px, mark) {
   for (var i = 0; i < st.ord.length; i++) { var o = st.ord[i]; if (o.sym === id && px > 0 && (o.side === 1 ? px <= o.px : px >= o.px)) return 'lim'; }
   return '';
 }
-function sweep(id, tradeId) {
+function sweep(id, evd) {
   if (!ME || !TOK) return;
   var w = sw[id] || (sw[id] = { busy: false, at: 0, miss: 0 });
   var now = Date.now();
   if (w.busy || now - w.at < (w.miss ? 2500 * w.miss : 900)) return;
   if (w.miss >= 4 && now - w.at < 60000) return;
   w.busy = true; w.at = now;
-  api('/p/sweep', tradeId ? { sym: id, tradeId: String(tradeId) } : { sym: id }).then(function (x) {
+  api('/p/sweep', evd ? { sym: id, px: evd.px, ts: evd.ts } : { sym: id }).then(function (x) {
     w.busy = false;
     if (x.s !== 200) return;
     var sig = function () { return JSON.stringify([st.pos[id], st.ord.filter(function (o) { return o.sym === id; }).length]); };
@@ -787,14 +795,15 @@ function sweep(id, tradeId) {
 
 /* ── 실시간 연결 (탭을 떠나 있으면 포지션 종목만 · 아무것도 없으면 끊는다) ── */
 var ws = null, subs = {}, lastRx = 0, backoff = 1000, pingT = 0, retryT = 0, firstFail = 0;
-function chan(k) { var a = k.split('|'); return { instType: IT, channel: a[0], instId: a[1] + Q }; }
+function HIV(tf) { return tf === '1H' ? '1h' : tf; }
+function sub(k) { var a = k.split('|'), o = { type: a[0], coin: a[1] }; if (a[0] === 'candle') o.interval = HIV(a[2]); return o; }
 function wanted() {
   var w = {};
   if (ACTIVE) {
-    IDS.forEach(function (k) { w['ticker|' + k] = 1; });
-    if (SP[U.sym]) { if (CHART) w['candle' + U.tf + '|' + U.sym] = 1; w['books15|' + U.sym] = 1; w['trade|' + U.sym] = 1; }
+    IDS.forEach(function (k) { w['activeAssetCtx|' + k] = 1; });
+    if (SP[U.sym]) { if (CHART) w['candle|' + U.sym + '|' + U.tf] = 1; w['l2Book|' + U.sym] = 1; w['trades|' + U.sym] = 1; }
   }
-  IDS.forEach(function (k) { if (ME && exposed(k)) { w['ticker|' + k] = 1; w['trade|' + k] = 1; } });
+  IDS.forEach(function (k) { if (ME && exposed(k)) { w['activeAssetCtx|' + k] = 1; w['trades|' + k] = 1; } });
   return w;
 }
 function needWS() { return ACTIVE || (ME && anyExposed()); }
@@ -803,11 +812,9 @@ function syncSubs() {
   if (!needWS()) { if (ws) { var w0 = ws; ws = null; wsOpen = false; clearInterval(pingT); clearTimeout(retryT); try { w0.onclose = null; w0.close(); } catch (e) {} } return; }
   if (!ws) { connect(); return; }
   if (!wsOpen) return;
-  var w = wanted(), add = [], del = [];
-  Object.keys(w).forEach(function (k) { if (!subs[k]) add.push(k); });
-  Object.keys(subs).forEach(function (k) { if (!w[k]) del.push(k); });
-  if (del.length) wsSend({ op: 'unsubscribe', args: del.map(chan) });
-  for (var i = 0; i < add.length; i += 30) wsSend({ op: 'subscribe', args: add.slice(i, i + 30).map(chan) });
+  var w = wanted();
+  Object.keys(subs).forEach(function (k) { if (!w[k]) wsSend({ method: 'unsubscribe', subscription: sub(k) }); });
+  Object.keys(w).forEach(function (k) { if (!subs[k]) wsSend({ method: 'subscribe', subscription: sub(k) }); });
   subs = w;
 }
 function connect() {
@@ -820,7 +827,7 @@ function connect() {
     wsOpen = true; backoff = 1000; firstFail = 0; subs = {}; lastRx = Date.now();
     syncSubs();
     clearInterval(pingT);
-    pingT = setInterval(function () { if (Date.now() - lastRx > 45000) { try { me.close(); } catch (e) {} return; } wsSend('ping'); }, 25000);
+    pingT = setInterval(function () { if (Date.now() - lastRx > 45000) { try { me.close(); } catch (e) {} return; } wsSend({ method: 'ping' }); }, 20000);
     dirty.quote = true; kick();
   };
   me.onmessage = function (ev) { lastRx = Date.now(); onMsg(ev.data); };
@@ -836,29 +843,24 @@ function scheduleRetry() {
   backoff = Math.min(backoff * 2, 15000);
 }
 function onMsg(raw) {
-  if (raw === 'pong') return;
   var m; try { m = JSON.parse(raw); } catch (e) { return; }
-  if (m.event) return;
-  var a = m.arg; if (!a || !m.data || !a.instId) return;
-  var id = a.instId.slice(0, a.instId.length - Q.length);
-  if (!SP[id]) return;
-  var ch = a.channel;
-  if (ch === 'ticker') { if (m.data[0]) onTicker(id, m.data[0]); }
-  else if (ch === 'books15') { if (m.data[0]) onBook(id, m.data[0]); }
-  else if (ch === 'trade') onTrades(id, m.data, m.action);
-  else if (ch.indexOf('candle') === 0) onCandles(id, ch.slice(6), m.data, m.action);
+  var ch = m.channel, d = m.data;
+  if (!d || ch === 'pong' || ch === 'subscriptionResponse') return;
+  if (ch === 'activeAssetCtx') { if (d.ctx && SP[d.coin]) onCtx(d.coin, d.ctx); }
+  else if (ch === 'l2Book') { if (SP[d.coin]) onBook(d.coin, d); }
+  else if (ch === 'trades') { if (d.length && SP[d[0].coin]) onTrades(d[0].coin, d); }
+  else if (ch === 'candle') { if (SP[d.s]) onCandles(d.s, d.i === '1h' ? '1H' : d.i, [[+d.t, +d.o, +d.h, +d.l, +d.c, +d.v]]); }
 }
-function onTicker(id, d) {
-  var m = M[id], last = +d.lastPr;
-  if (!(last > 0)) return;
-  m.dir = m.last == null ? 0 : (last > m.last ? 1 : last < m.last ? -1 : m.dir);
-  m.last = last;
-  m.mark = +d.markPrice > 0 ? +d.markPrice : last;
-  m.bid = +d.bidPr > 0 ? +d.bidPr : null;
-  m.ask = +d.askPr > 0 ? +d.askPr : null;
-  m.chg = d.change24h != null && d.change24h !== '' ? +d.change24h : null;
-  m.fr = d.fundingRate != null && d.fundingRate !== '' ? +d.fundingRate : null;
-  m.nft = +d.nextFundingTime > 0 ? +d.nextFundingTime : null;
+function setLast(m, px) { m.dir = m.last == null ? 0 : (px > m.last ? 1 : px < m.last ? -1 : m.dir); m.last = px; if (m.prev > 0) m.chg = px / m.prev - 1; }
+/* 종목 상태: 표시가격 · 중간가 · 펀딩(1시간마다) · 전일 가격 */
+function onCtx(id, c) {
+  var m = M[id], mark = +c.markPx, mid = +c.midPx;
+  if (!(mark > 0)) return;
+  m.mark = mark; m.prev = +c.prevDayPx || m.prev;
+  if (!(m.tradeAt && Date.now() - m.tradeAt < 15000)) setLast(m, mid > 0 ? mid : mark);
+  else if (m.prev > 0) m.chg = m.last / m.prev - 1;
+  m.fr = c.funding != null && c.funding !== '' ? +c.funding : null;
+  m.nft = Math.floor(Date.now() / 3600e3) * 3600e3 + 3600e3;
   m.rx = Date.now();
   if (ME && exposed(id) && triggerOf(id, 0, m.mark) === 'liq') sweep(id, null);
   dirty.quote = dirty.acct = dirty.pos = dirty.est = true;
@@ -866,14 +868,22 @@ function onTicker(id, d) {
   kick();
 }
 function onBook(id, d) {
-  M[id].book = { asks: (d.asks || []).map(function (x) { return [+x[0], +x[1]]; }), bids: (d.bids || []).map(function (x) { return [+x[0], +x[1]]; }), rx: Date.now() };
+  var L = d.levels || [[], []], f = function (x) { return [+x.px, +x.sz]; };
+  var b = M[id].book = { bids: (L[0] || []).map(f), asks: (L[1] || []).map(f), rx: Date.now() };
+  M[id].bid = b.bids.length ? b.bids[0][0] : null; M[id].ask = b.asks.length ? b.asks[0][0] : null;
   if (id === U.sym) { dirty.book = true; kick(); }
 }
-function onTrades(id, data, action) {
-  var m = M[id], list = data.map(function (t) { return { ts: +t.ts, px: +t.price, sz: +t.size, side: t.side, id: t.tradeId }; });
-  if (action !== 'snapshot' && ME && exposed(id)) {
-    for (var i = list.length - 1; i >= 0; i--) if (triggerOf(id, list[i].px, m.mark)) { sweep(id, list[i].id); break; }
+function onTrades(id, data) {
+  var m = M[id], now = Date.now();
+  var list = data.map(function (t) { return { ts: +t.time, px: +t.px, sz: +t.sz, side: t.side }; }).filter(function (t) { return t.px > 0 && t.ts > now - 10000; }).sort(function (a, b) { return a.ts - b.ts; });
+  if (!list.length) return;
+  setLast(m, list[list.length - 1].px); m.tradeAt = now;
+  if (ME && exposed(id)) {
+    for (var i = list.length - 1; i >= 0; i--) if (triggerOf(id, list[i].px, m.mark)) { sweep(id, { px: list[i].px, ts: list[i].ts }); break; }
   }
+  dirty.quote = dirty.acct = dirty.pos = dirty.est = true;
+  if (id === U.sym) dirty.mid = true;
+  kick();
 }
 
 
@@ -980,15 +990,17 @@ function closeChart() {
 }
 function renderCwHead() {
   if (!CHART) return;
-  var m = M[U.sym]; $('cwsym').textContent = U.sym + Q + ' Perp';
+  var m = M[U.sym]; $('cwsym').textContent = NM(U.sym) + ' Perp';
   var p = $('cwpx'); p.textContent = m && m.last ? fp(U.sym, m.last) : '—'; p.className = 'px ' + cls(m && m.chg || 0);
 }
 var restMode = 'direct';
 function candles(id, g, n) {
   var viaProxy = function () { return getJSON(API + '/p/k?s=' + id + '&g=' + g + '&n=' + n, 7000).then(function (j) { return j && j.code === '00000' ? j.data : null; }, function () { return null; }); };
   if (restMode === 'proxy') return viaProxy();
-  return getJSON(REST + '/api/v2/mix/market/candles?symbol=' + id + Q + '&productType=' + IT + '&granularity=' + g + '&limit=' + n, 5000).then(function (j) {
-    if (j && j.code === '00000') return j.data; throw new Error('bad');
+  var ms = { '1m': 6e4, '15m': 9e5, '1H': 36e5 }[g], now = Date.now();
+  return postJSON(HLI, { type: 'candleSnapshot', req: { coin: id, interval: HIV(g), startTime: now - n * ms, endTime: now } }, 6000).then(function (d) {
+    if (!Array.isArray(d)) throw new Error('bad');
+    return d.map(function (x) { return [+x.t, +x.o, +x.h, +x.l, +x.c, +x.v]; });
   }).catch(function () { restMode = 'proxy'; return viaProxy(); });
 }
 /* ── 순위 ── */
@@ -1050,7 +1062,7 @@ function changed(all) {
 /* 머리: 종목 · 등락 · 차트 단추 · 내 정보 */
 function renderHead() {
   var id = U.sym, m = M[id], sp = SP[id]; if (!sp || !m) return;
-  $('hname').textContent = id + Q;
+  $('hname').textContent = NM(id);
   var c = $('hchg'); c.textContent = m.chg != null ? pct(m.chg) : '—'; c.className = cls(m.chg || 0);
   var b = $('me');
   if (ME) { b.textContent = ME.nick; b.className = 'pp-me'; } else { b.textContent = 'Log In'; b.className = 'pp-me cta'; }
@@ -1081,7 +1093,7 @@ function renderBook() {
   var ml = $('blast'); ml.textContent = m.last ? fp(id, m.last) : '—'; ml.className = cls(m.dir);
   $('bmark').textContent = m.mark ? fp(id, m.mark) : '—';
   $('fund').textContent = m.fr != null ? (m.fr > 0 ? '+' : '') + fmt(m.fr * 100, 4) + '%' : '—';
-  $('fundt').textContent = m.nft ? hhmmss(m.nft - Date.now()) : '—';
+  $('fundt').textContent = m.fr != null ? hhmmss(Math.floor(Date.now() / 3600e3) * 3600e3 + 3600e3 - Date.now()) : '—';
   if (U.ot === 'limit' && m.last && !$('px').value && document.activeElement !== $('px')) { $('px').value = m.last.toFixed(SP[id].pp); dirty.est = true; }
   var b = m.book;
   if (!b) { $('asks').innerHTML = '<div class="em">호가 기다리는 중…</div>'; $('bids').innerHTML = ''; return; }
@@ -1099,7 +1111,7 @@ function fsz(v) { return v >= 1e6 ? fmt(v / 1e6, 2) + 'M' : v >= 1e4 ? fmt(v / 1
 function renderCbar() {
   var m = M[U.sym], b = $('cbar'); if (!b) return;
   b.hidden = !!CHART;
-  $('cbtx').textContent = U.sym + Q + ' Chart';
+  $('cbtx').textContent = NM(U.sym) + ' Chart';
   var p = $('cbpx'); p.textContent = m && m.last ? fp(U.sym, m.last) : ''; p.className = cls(m && m.chg || 0);
 }
 /* 내 거래 */
@@ -1121,9 +1133,9 @@ function posHTML() {
   if (!keys.length) return '<p class="pp-empty">열린 포지션이 없어요.</p>';
   return keys.map(function (k) {
     var p = st.pos[k];
-    return '<div class="pp-pc"><div class="t"><b>' + k + Q + '</b><span class="pp-tag ' + (p.side === 1 ? 'up' : 'dn') + '">' + (p.side === 1 ? 'Long <small>롱</small>' : 'Short <small>숏</small>') + '</span><span class="pp-tag">' + p.lev + 'x</span><span class="pp-tag">Isolated</span></div>' +
+    return '<div class="pp-pc"><div class="t"><b>' + NM(k) + '</b><span class="pp-tag ' + (p.side === 1 ? 'up' : 'dn') + '">' + (p.side === 1 ? 'Long <small>롱</small>' : 'Short <small>숏</small>') + '</span><span class="pp-tag">' + p.lev + 'x</span><span class="pp-tag">Isolated</span></div>' +
       '<div class="pl"><div><span><span class="pp-t" data-pterm="upnl">Unrealized PnL (' + Q + ')</span></span><b id="pp-pp-' + k + '">—</b></div><div class="r"><span><span class="pp-t" data-pterm="roe">ROE</span></span><b id="pp-pr-' + k + '">—</b></div></div>' +
-      '<dl class="pp-pg"><div><dt>Size (' + k + ')</dt><dd>' + fq(k, p.qty) + '</dd></div><div><dt><span class="pp-t" data-pterm="margin">Margin (' + Q + ')</span></dt><dd>' + fu(p.margin) + '</dd></div><div><dt><span class="pp-t" data-pterm="mmr">MMR</span></dt><dd id="pp-pmm-' + k + '">—</dd></div>' +
+      '<dl class="pp-pg"><div><dt>Size (' + BS(k) + ')</dt><dd>' + fq(k, p.qty) + '</dd></div><div><dt><span class="pp-t" data-pterm="margin">Margin (' + Q + ')</span></dt><dd>' + fu(p.margin) + '</dd></div><div><dt><span class="pp-t" data-pterm="mmr">MMR</span></dt><dd id="pp-pmm-' + k + '">—</dd></div>' +
       '<div><dt><span class="pp-t" data-pterm="entry">Entry Price</span></dt><dd>' + fp(k, p.entry) + '</dd></div><div><dt><span class="pp-t" data-pterm="mark">Mark Price</span></dt><dd id="pp-pm-' + k + '">—</dd></div><div><dt><span class="pp-t" data-pterm="liq">Est. Liq. Price</span></dt><dd class="w" id="pp-pl-' + k + '">—</dd></div></dl>' +
       '<div class="tp"><span>TP / SL</span><b>' + (p.tp != null ? fp(k, p.tp) : '—') + ' / ' + (p.sl != null ? fp(k, p.sl) : '—') + '</b></div>' +
       '<div class="bt"><button type="button" data-pact="tpsl" data-sym="' + k + '">TP/SL</button><button type="button" data-pact="close" data-sym="' + k + '">Close</button></div></div>';
@@ -1146,7 +1158,7 @@ function renderPosNums() {
 function ordHTML() {
   if (!st.ord.length) return '<p class="pp-empty">걸어 둔 지정가 주문이 없어요.</p>';
   return st.ord.map(function (o) {
-    return '<div class="pp-or"><div class="l"><b>' + o.sym + Q + '</b> <span class="' + (o.side === 1 ? 'up' : 'dn') + '">' + (o.side === 1 ? 'Long <small>(롱)</small>' : 'Short <small>(숏)</small>') + '</span> · Limit · ' + o.lev + 'x' +
+    return '<div class="pp-or"><div class="l"><b>' + NM(o.sym) + '</b> <span class="' + (o.side === 1 ? 'up' : 'dn') + '">' + (o.side === 1 ? 'Long <small>(롱)</small>' : 'Short <small>(숏)</small>') + '</span> · Limit · ' + o.lev + 'x' +
       '<small>' + fq(o.sym, o.qty) + ' ' + o.sym + ' @ ' + fp(o.sym, o.px) + (o.tp != null ? ' · TP ' + fp(o.sym, o.tp) : '') + (o.sl != null ? ' · SL ' + fp(o.sym, o.sl) : '') + '</small></div>' +
       '<button type="button" class="pp-sb" data-pact="cancel" data-id="' + esc(o.id) + '">Cancel</button></div>';
   }).join('');
@@ -1158,7 +1170,7 @@ function fillsHTML() {
     /* 포지션 방향 기준: 진입은 그 방향, 종료·TP·SL·청산은 반대 방향 거래 */
     var ps = x.kind === 'open' || x.kind === 'fund' ? x.side : -x.side, sd = ps === 1 ? 'Long' : 'Short';
     var lb = x.kind === 'fund' ? 'Funding' : x.kind === 'open' ? 'Open ' + sd : x.kind === 'close' ? 'Close ' + sd : x.kind === 'tp' ? 'TP · ' + sd : x.kind === 'sl' ? 'SL · ' + sd : 'Liquidated · ' + sd;
-    return '<div class="pp-fr"><span class="tm">' + kstWhen(x.ts) + '</span><span><b>' + x.sym + Q + '</b> <span class="k ' + (x.kind === 'liq' ? 'w' : ps === 1 ? 'up' : 'dn') + '">' + lb + '</span></span>' +
+    return '<div class="pp-fr"><span class="tm">' + kstWhen(x.ts) + '</span><span><b>' + NM(x.sym) + '</b> <span class="k ' + (x.kind === 'liq' ? 'w' : ps === 1 ? 'up' : 'dn') + '">' + lb + '</span></span>' +
       '<span class="v ' + cls(net) + '">' + sg(net, x.kind === 'fund' ? 4 : 2) + '</span><span class="d">' + (x.kind === 'fund' ? 'Funding fee · Mark ' + fp(x.sym, x.price) : fq(x.sym, x.qty) + ' @ ' + fp(x.sym, x.price)) + (x.fee ? ' · Fee ' + fu(x.fee) : '') + '</span></div>';
   }).join('') + '<p class="pp-note">최근 60건까지 보여요. 기록은 180일 동안 보관돼요.</p>';
 }
@@ -1180,7 +1192,7 @@ function maxQty(side) {
 function setLiq(id, v) { var e = $(id); e.textContent = v; e.style.color = /\d/.test(v) ? '' : 'var(--pt3)'; }
 function renderEst() {
   var id = U.sym; if (!SP[id]) return;
-  var lev = levOf(id), qty = num($('qty').value), u = ' ' + id;
+  var lev = levOf(id), qty = num($('qty').value), u = ' ' + BS(id);
   $('maxl').textContent = ME ? fq(id, maxQty(1)) + u : '—';
   $('maxs').textContent = ME ? fq(id, maxQty(-1)) + u : '—';
   var pxL = curPx(1), pxS = curPx(-1);
@@ -1203,7 +1215,7 @@ function setSym(id) {
   if (!SP[id]) return;
   var same = id === U.sym;
   U.sym = id; saveUI();
-  $('qtyu').textContent = id;
+  $('qtyu').textContent = BS(id);
   if (!same) { $('qty').value = ''; $('px').value = ''; $('tp').value = ''; $('sl').value = ''; $('slider').value = 0; hideErr(); if (U.ot === 'limit' && M[id] && M[id].last) $('px').value = M[id].last.toFixed(SP[id].pp); }
   syncSubs();
   if (CHART) loadChart();
@@ -1242,9 +1254,9 @@ function pickerSheet() {
 function renderPicker() {
   var l = $('pkl'); if (!l) { PK = false; return; }
   var q = PKQ.trim().toUpperCase();
-  l.innerHTML = IDS.filter(function (k) { return !q || k.indexOf(q) >= 0 || (SP[k].ko || '').indexOf(PKQ.trim()) >= 0; }).map(function (k) {
+  l.innerHTML = IDS.filter(function (k) { return !q || NM(k).toUpperCase().indexOf(q) >= 0 || (SP[k].ko || '').indexOf(PKQ.trim()) >= 0; }).map(function (k) {
     var m = M[k] || {};
-    return '<button type="button" data-psym="' + k + '" class="' + (k === U.sym ? 'on' : '') + '"><b>' + k + Q + '<small>' + esc(SP[k].ko || '') + '</small>' + (ME && exposed(k) ? '<i></i>' : '') + '</b>' +
+    return '<button type="button" data-psym="' + k + '" class="' + (k === U.sym ? 'on' : '') + '"><b>' + NM(k) + '<small>' + esc(SP[k].ko || '') + '</small>' + (ME && exposed(k) ? '<i></i>' : '') + '</b>' +
       '<span class="v">' + (m.last ? fp(k, m.last) : '—') + '</span><span class="c ' + cls(m.chg || 0) + '">' + (m.chg != null ? pct(m.chg) : '') + '</span></button>';
   }).join('') || '<p class="hint" style="padding:12px 0">찾는 종목이 없어요.</p>';
 }
@@ -1259,7 +1271,7 @@ function submit(side) {
   if (needLogin() || busy) return;
   var id = U.sym, sp = SP[id];
   var qty = E.roundQty(sp, num($('qty').value));
-  if (!(qty >= sp.min - 1e-12)) return showErr(E.errText({ err: 'min', min: sp.min }, id, Q));
+  if (!(qty >= sp.min - 1e-12)) return showErr(E.errText({ err: 'min', min: sp.min }, BS(id), Q));
   var isLimit = U.ot === 'limit', px = null;
   if (isLimit) { px = E.roundPx(sp, num($('px').value)); if (!(px > 0)) return showErr(E.errText({ err: 'px' })); }
   var tp = null, sl = null;
@@ -1271,9 +1283,9 @@ function submit(side) {
     toastEvents(x.j.ev);
     if (x.s !== 200 || !x.j.ok) { showErr(errMsg(x)); changed(); return; }
     var r = x.j.res || {}, f = FILLS[0], red = f && f.kind !== 'open' && f.ts >= Date.now() - 10000 && r.filled > 0, msg;
-    if (r.filled > 0 && !r.rested) msg = id + Q + ' ' + (side === 1 ? 'Long' : 'Short') + ' filled · ' + fq(id, r.filled) + ' @ ' + fp(id, r.px);
-    else if (r.filled > 0) msg = id + Q + ' Limit · filled ' + fq(id, r.filled) + ' · open ' + fq(id, r.rested);
-    else msg = id + Q + ' Limit ' + (side === 1 ? 'Long' : 'Short') + ' placed · ' + fq(id, r.rested) + ' @ ' + fp(id, r.px);
+    if (r.filled > 0 && !r.rested) msg = NM(id) + ' ' + (side === 1 ? 'Long' : 'Short') + ' filled · ' + fq(id, r.filled) + ' @ ' + fp(id, r.px);
+    else if (r.filled > 0) msg = NM(id) + ' Limit · filled ' + fq(id, r.filled) + ' · open ' + fq(id, r.rested);
+    else msg = NM(id) + ' Limit ' + (side === 1 ? 'Long' : 'Short') + ' placed · ' + fq(id, r.rested) + ' @ ' + fp(id, r.px);
     toast(msg + (red ? ' · PnL ' + sg(f.pnl - f.fee) : ''), red && f.pnl - f.fee < 0);
     $('slider').value = 0;
     if (U.tab !== 'pos' && U.tab !== 'ord') U.tab = r.rested && !r.filled ? 'ord' : 'pos';
@@ -1289,7 +1301,7 @@ function closePos(id, btn) {
     if (x.j.acct) applyServer(x.j);
     toastEvents(x.j.ev);
     if (x.s !== 200 || !x.j.ok) { toast(errMsg(x), true); if (btn) btn.disabled = false; changed(); return; }
-    if (x.j.res) toast(id + Q + ' Closed · ' + fp(id, x.j.res.px) + ' · PnL ' + sg(x.j.res.net), x.j.res.net < 0);
+    if (x.j.res) toast(NM(id) + ' Closed · ' + fp(id, x.j.res.px) + ' · PnL ' + sg(x.j.res.net), x.j.res.net < 0);
     changed();
   });
 }
@@ -1334,7 +1346,7 @@ function levSheet() {
 function levHint(v) {
   var id = U.sym, sp = SP[id], cap = E.maxNotional(sp, v), t = E.tierOf(sp, 1), can = Math.min(cap, st.bal * v / (1 + v * sp.taker));
   $('levo').textContent = v + 'x';
-  $('levh').textContent = (ME ? v + 'x면 지금 가용 잔고로 최대 약 ' + fu(can) + ' ' + Q + '어치까지 열 수 있어요. ' : '') + '이 레버리지의 거래소 한도는 ' + fu(cap) + ' ' + Q + ', 첫 단계 유지증거금률은 ' + fmt(t.mmr * 100, 2) + '%예요.';
+  $('levh').textContent = (ME ? v + 'x면 지금 가용 잔고로 최대 약 ' + fu(can) + ' ' + Q + '어치까지 열 수 있어요. ' : '') + '이 레버리지로 열 수 있는 최대 포지션은 ' + fu(cap) + ' ' + Q + ', 첫 단계 유지증거금률은 ' + fmt(t.mmr * 100, 2) + '%예요.';
 }
 function saveLev(v) {
   var id = U.sym;
@@ -1469,7 +1481,7 @@ var GLOSS = [
   ['cost', 'Cost', '필요 증거금', '이 주문을 열 때 묶이는 증거금이에요. 수량 × 가격 ÷ 레버리지.'],
   ['tpsl', 'TP / SL', '익절 / 손절', 'TP(Take Profit)는 이익을 확정하는 가격, SL(Stop Loss)은 손실을 끊는 가격이에요. 닿으면 자동으로 포지션을 닫아요.'],
   ['liq', 'Est. Liq. Price', '예상 청산가', 'Mark 가격이 여기에 닿으면 강제 청산돼 그 포지션의 증거금을 잃어요.'],
-  ['fund', 'Funding / Countdown', '펀딩비 / 남은 시간', '무기한 선물 가격을 현물에 붙여 두려고 롱·숏이 정해진 시각마다 주고받는 비용이에요. 양수면 롱이 숏에게 내요.'],
+  ['fund', 'Funding / Countdown', '펀딩비 / 남은 시간', '무기한 선물 가격을 현물에 붙여 두려고 롱·숏이 매시 정각(1시간마다) 주고받는 비용이에요. 양수면 롱이 숏에게 내요. 정각에 포지션을 들고 있을 때만 정산돼요.'],
   ['upnl', 'Unrealized PnL', '미실현 손익', '아직 닫지 않은 포지션의 평가 손익이에요. 여기서는 닫을 때 낼 수수료까지 빼고 보여 줘요.'],
   ['roe', 'ROE', '증거금 대비 수익률', '미실현 손익 ÷ 증거금. 레버리지가 높으면 같은 가격 변화에도 크게 움직여요.'],
   ['margin', 'Margin', '증거금', '포지션을 유지하려고 묶어 둔 돈이에요.'],
@@ -1602,7 +1614,7 @@ function skeleton() {
     '<div class="pp-foot"><p>모의투자 · 가상 자금이에요. 실제 거래·수익과 무관한 연습용 시뮬레이션입니다.</p>' +
     '<p>순자산이 500 아래로 내려가고 열린 포지션·주문이 없으면 쿠폰으로 1,000에서 다시 시작할 수 있어요(쿠폰은 매달 새로 받아요).</p>' +
     '<p>체결은 서버가 거래소 공개 호가로 계산해요. 앱을 닫아 둔 동안의 청산·TP/SL·지정가·펀딩은 서버가 1분마다 확인해요. 청산은 Mark 가격 기준이에요.</p>' +
-    '<p>시세 · 계약 규칙: Bitget 무기한 선물 공개 자료 · 모의투자 ' + VER + '</p></div>' +
+    '<p>시세: Hyperliquid 공개 자료(실시간 달러 시세) · ' + Q + ' 표기는 모의투자용 가상 단위 · 금(XAU)은 PAXG 시세 · 계약 규칙: 안드레99 모의투자 규칙 · 실제 거래가 아니에요 · ' + VER + '</p></div>' +
     '<button type="button" class="pp-cbar" id="pp-cbar" data-pchart="sheet"><span id="pp-cbtx" style="color:var(--pt1);font-family:var(--pf);font-weight:700;font-size:13.5px">Chart</span><span id="pp-cbpx"></span><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>';
 }
 function bindInputs() {
@@ -1634,7 +1646,7 @@ function mount(host) {
   MOUNTED = true;
   renderAcct(); renderList();
   loadSpecs().then(function () {
-    $('qtyu').textContent = U.sym;
+    $('qtyu').textContent = BS(U.sym);
     setOt(U.ot); setSym(U.sym);
     changed(true);
     if (!lsGet('a99p.tip1') && !BAN) { lsSet('a99p.tip1', 1); banner('점선 밑줄 용어를 누르면 한국어 설명이 나와요. 전체 용어집과 색 설정은 오른쪽 위 ? 에 있어요.', 'tip', '용어집'); }

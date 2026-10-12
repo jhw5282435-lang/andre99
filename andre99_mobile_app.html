@@ -1073,7 +1073,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.10.12-A';
+var BUILD_VER='v2026.10.12-E';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -1115,7 +1115,7 @@ function show(t){
   if(t==='paper'){ paperOpen(); } else if(window.A99Paper){ window.A99Paper.hide(); }
 }
 /* 모의투자 탭: 처음 누를 때만 paper/paper.js(차트 · 계산 엔진 · 화면)를 받아 온다 — 앱 첫 화면은 가볍게 */
-var PAPER_JS='paper/paper.js?v=2026.10.12-A', PAPER_LOADING=false;
+var PAPER_JS='paper/paper.js?v=2026.10.12-E', PAPER_LOADING=false;
 function paperOpen(){
   var host=$('paperHost');
   if(window.A99Paper){ window.A99Paper.mount(host); window.A99Paper.show(); return; }
@@ -8364,6 +8364,9 @@ select.pa-in{padding-right:6px}
         '<label><span>순위 기준<small>바꾸면 이번 달 순위가 바로 다시 계산돼요.</small></span><select class="pa-in" id="psRm"><option value="ret"' + (s.rankMetric !== 'gain' ? ' selected' : '') + '>수익률</option><option value="gain"' + (s.rankMetric === 'gain' ? ' selected' : '') + '>자산 증가액</option></select></label>' +
         '<label><span>매달 주는 초기화 쿠폰<small>새 달 첫 접속 때 이 수로 다시 채워요.</small></span><input class="pa-in" id="psCp" type="number" min="0" max="10" value="' + (s.coupons != null ? s.coupons : 2) + '" style="width:70px"></label>' +
         '<label><span>문의 창구<small>가입 · 비밀번호 분실 안내에 나와요. 예: @andre99</small></span><input class="pa-in" id="psCt" maxlength="60" value="' + esc(s.contact || '') + '" style="width:150px"></label>' +
+        '<label><span>최대 레버리지 · 1군 (BTC · ETH)<small>1~200배. 저장하면 바로 적용돼요(이미 연 포지션은 그대로).</small></span><input class="pa-in" id="psL1" type="number" min="1" max="200" value="' + ((s.levCaps || [])[0] || 125) + '" style="width:70px"></label>' +
+        '<label><span>최대 레버리지 · 2군 (거래대금 3~10위)</span><input class="pa-in" id="psL2" type="number" min="1" max="200" value="' + ((s.levCaps || [])[1] || 75) + '" style="width:70px"></label>' +
+        '<label><span>최대 레버리지 · 3군 (나머지 · 금)</span><input class="pa-in" id="psL3" type="number" min="1" max="200" value="' + ((s.levCaps || [])[2] || 50) + '" style="width:70px"></label>' +
         '</div><div class="pa-row"><button type="button" class="pri" id="psGo">저장</button></div><p class="pa-st" id="paMsg"></p>';
     });
   }
@@ -8397,7 +8400,7 @@ select.pa-in{padding-right:6px}
     }
     if (t.id === 'psGo') {
       t.disabled = true;
-      return call('settings', { approval: $('psAp').checked, signup: $('psSu').checked, rankMetric: $('psRm').value, coupons: +$('psCp').value, contact: $('psCt').value.trim() }).then(function (x) {
+      return call('settings', { approval: $('psAp').checked, signup: $('psSu').checked, rankMetric: $('psRm').value, coupons: +$('psCp').value, contact: $('psCt').value.trim(), levCaps: [+$('psL1').value, +$('psL2').value, +$('psL3').value] }).then(function (x) {
         t.disabled = false; toast(x.s === 200 ? '저장했어요' : '실패');
       });
     }
