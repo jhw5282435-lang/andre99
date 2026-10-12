@@ -1073,7 +1073,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.10.12-E';
+var BUILD_VER='v2026.10.12-G';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -1115,7 +1115,7 @@ function show(t){
   if(t==='paper'){ paperOpen(); } else if(window.A99Paper){ window.A99Paper.hide(); }
 }
 /* 모의투자 탭: 처음 누를 때만 paper/paper.js(차트 · 계산 엔진 · 화면)를 받아 온다 — 앱 첫 화면은 가볍게 */
-var PAPER_JS='paper/paper.js?v=2026.10.12-E', PAPER_LOADING=false;
+var PAPER_JS='paper/paper.js?v=2026.10.12-G', PAPER_LOADING=false;
 function paperOpen(){
   var host=$('paperHost');
   if(window.A99Paper){ window.A99Paper.mount(host); window.A99Paper.show(); return; }
@@ -8161,7 +8161,7 @@ select.pa-in{padding-right:6px}
   function median(a) { a = a.filter(function (x) { return x != null; }).sort(function (x, y) { return x - y; }); return a.length ? a[Math.floor(a.length / 2)] : null; }
   function ping3(url) { return ping(url).then(function (a) { return ping(url).then(function (b) { return ping(url).then(function (c) { return median([a, b, c]); }); }); }); }
 
-  var P = null, TAB = 'home', SEL = {}, UQ = { q: '', status: '', policy: '', page: 0 }, LAST = { users: [], ov: null };
+  var P = null, TAB = 'home', SEL = {}, UQ = { q: '', status: '', policy: '', page: 0 }, LAST = { users: [], ov: null }, OFF = [];
   function open() {
     if (!P) {
       P = document.createElement('div'); P.className = 'pa-wrap'; P.id = 'paWrap';
@@ -8229,7 +8229,8 @@ select.pa-in{padding-right:6px}
         card('체결 기록', n0(o.fills24h) + '건 / 24시간', '누적 ' + n0(o.fillsTotal) + '건 · 180일 보관', '') + '</div>';
       var dbw = o.dbBytes ? o.dbBytes / (500 * 1048576) : null;
       h += '<h3 class="pa-h3">용량</h3><div class="pa-grid">' + card('모의선물 DB', mb(o.dbBytes), '한 DB 한도 500MB', lvl(dbw), dbw) +
-        card('종목', (o.specs.n || 0) + '개', o.specs.fallback ? '기본값 사용 중 (거래소 자료 못 받음)' : '갱신 ' + esc(o.specs.day || '—'), o.specs.fallback ? 'warn' : '') + '</div>';
+        card('종목', (o.specs.n || 0) + '개', o.specs.fallback ? '기본값 사용 중 (시세 자료 못 받음)' : '갱신 ' + esc(o.specs.day || '—'), o.specs.fallback ? 'warn' : '') + '</div>' +
+        '<div class="pa-row"><button type="button" id="paSp">종목 지금 다시 받기</button></div>';
       h += usageHtml(u);
       h += '<div class="pa-row"><button type="button" data-re="1">새로 고침</button><button type="button" id="paKeyDel">키 지우기</button></div><p class="pa-st" id="paMsg"></p>';
       B.innerHTML = h;
@@ -8274,7 +8275,7 @@ select.pa-in{padding-right:6px}
     var q = 'users?q=' + encodeURIComponent(UQ.q) + '&status=' + UQ.status + '&policy=' + UQ.policy + '&page=' + UQ.page;
     call(q).then(function (x) {
       if (denied(B, x)) return;
-      LAST.users = x.j.rows || [];
+      LAST.users = x.j.rows || []; OFF = x.j.officials || [];
       var n = x.j.n || 0, pages = Math.max(1, Math.ceil(n / 50));
       var h = '<div class="pa-row"><input class="pa-in w" id="paQ" placeholder="닉네임 찾기" value="' + esc(UQ.q) + '"><button type="button" id="paQGo">찾기</button></div>' +
         '<div class="pa-row"><select class="pa-in" id="paFs"><option value="">모든 상태</option><option value="active"' + (UQ.status === 'active' ? ' selected' : '') + '>활성</option><option value="suspended"' + (UQ.status === 'suspended' ? ' selected' : '') + '>정지</option></select>' +
@@ -8282,7 +8283,7 @@ select.pa-in{padding-right:6px}
         '<p class="pa-st">' + n0(n) + '명 · ' + (UQ.page + 1) + ' / ' + pages + '쪽</p>';
       h += '<div class="pa-list">' + (LAST.users.length ? LAST.users.map(function (u) {
         return '<label class="pa-u"><input type="checkbox" data-uid="' + esc(u.id) + '"' + (SEL[u.id] ? ' checked' : '') + '>' +
-          '<div><b>' + esc(u.nick) + '</b>' + (u.status !== 'active' ? '<span class="pa-tag red">정지</span>' : '') + (u.policy !== 'default' ? '<span class="pa-tag">' + POL[u.policy] + '</span>' : '') +
+          '<div><b>' + esc(u.nick) + '</b>' + (OFF.indexOf(u.id) >= 0 ? '<span class="pa-tag" style="color:#F5A524;border-color:#F5A524">OFFICIAL</span>' : '') + (u.status !== 'active' ? '<span class="pa-tag red">정지</span>' : '') + (u.policy !== 'default' ? '<span class="pa-tag">' + POL[u.policy] + '</span>' : '') +
           '<div class="m">가입 ' + kst(u.created_at) + ' · 접속 ' + ago(u.last_seen) + ' · 코드 ' + esc(u.invite || '—') + (u.note ? ' · ' + esc(u.note) : '') + '</div>' +
           '<div class="m">거래 ' + n0(u.trades) + ' · 청산 ' + n0(u.liqs) + ' · 초기화 ' + n0(u.resets) + ' · 쿠폰 ' + n0(u.coupons) + ' · 포지션 ' + n0(u.npos) + '</div></div>' +
           '<div class="r"><b>' + n2(u.bal) + '</b><div class="m">' + (u.npos ? '현금(포지션 제외)' : '순자산') + '</div></div></label>';
@@ -8292,6 +8293,7 @@ select.pa-in{padding-right:6px}
         '<div class="pa-row"><button type="button" data-bk="coupons" data-v="1">쿠폰 +1</button><button type="button" data-bk="coupons" data-v="2">쿠폰 +2</button><button type="button" data-bk="coupons" data-v="-1">쿠폰 −1</button><button type="button" data-bk="reset" class="red">지금 초기화</button></div>' +
         '<div class="pa-row"><select class="pa-in" id="paPol">' + Object.keys(POL).map(function (k) { return '<option value="' + k + '">' + POL[k] + '</option>'; }).join('') + '</select><button type="button" data-bk="policy">정책 바꾸기</button></div>' +
         '<div class="pa-row"><button type="button" data-bk="suspend" class="red">정지</button><button type="button" data-bk="unsuspend">정지 풀기</button><button type="button" data-bk="logout">모든 기기 로그아웃</button><button type="button" data-bk="note">메모</button><button type="button" id="paPw">비밀번호 재설정</button></div>' +
+        '<div class="pa-row"><button type="button" id="paRn">닉네임 바꾸기</button><button type="button" id="paOf">공식 계정 지정 · 해제</button></div>' +
         '<p class="pa-st" id="paMsg">정책: 기본 = 설정의 승인 모드를 따름 · 승인 필요 = 이 사람만 승인 후 초기화 · 쿠폰 없이 = 쿠폰 없이 바로 · 초기화 막기 = 못 함. 「지금 초기화」는 열린 포지션·주문이 없는 사람만 바로 1,000으로 되돌려요(쿠폰 안 씀).</p></div>';
       B.innerHTML = h; selN();
     });
@@ -8318,6 +8320,27 @@ select.pa-in{padding-right:6px}
     var pw = prompt((u ? u.nick : '') + ' 님의 새 비밀번호 (8자 이상). 인스타그램 DM으로 알려 주세요.');
     if (!pw) return; if (pw.length < 8) return toast('8자 이상이어야 해요');
     call('pw', { id: ids[0], pw: pw }).then(function (x) { toast(x.j.ok ? '바꿨어요. 그 사람의 다른 기기는 로그아웃돼요.' : '실패'); });
+  }
+
+  function oneSel() { var ids = selIds(); if (ids.length !== 1) { toast('한 명만 고르세요'); return null; } return LAST.users.filter(function (x) { return x.id === ids[0]; })[0] || { id: ids[0], nick: '' }; }
+  function renameUser() {
+    var u = oneSel(); if (!u) return;
+    var nk = prompt(u.nick + ' → 새 닉네임 (한글·영문·숫자·밑줄 2~12자). 운영자 화면에서는 금지어도 쓸 수 있어요.', u.nick);
+    if (!nk || nk.trim() === u.nick) return;
+    call('rename', { id: u.id, nick: nk.trim() }).then(function (x) {
+      toast(x.s === 200 ? '바꿨어요. 로그인도 새 닉네임으로 해요.' : ({ nick_rule: '닉네임 규칙에 맞지 않아요', nick_taken: '이미 있는 닉네임이에요' }[x.j.err] || '실패'));
+      if (x.s === 200) { SEL = {}; go('users'); }
+    });
+  }
+  function toggleOfficial() {
+    var u = oneSel(); if (!u) return;
+    var on = OFF.indexOf(u.id) < 0;
+    if (!confirm(u.nick + ' 님을 공식 계정으로 ' + (on ? '지정' : '해제') + '할까요? 순위표에 OFFICIAL 표시가 ' + (on ? '붙어요.' : '사라져요.'))) return;
+    call('official', { id: u.id, on: on }).then(function (x) { toast(x.s === 200 ? (on ? '공식 계정으로 지정했어요' : '해제했어요') : '실패'); if (x.s === 200) { SEL = {}; go('users'); } });
+  }
+  function refreshSpecsNow() {
+    toast('종목 규칙을 받는 중…');
+    call('specs', {}).then(function (x) { toast(x.j && x.j.ok ? '종목 ' + x.j.n + '개로 갱신했어요' : '실패: ' + ((x.j && x.j.err) || x.s)); if (x.j && x.j.ok) go('home'); });
   }
 
   /* ── 초대코드 ── */
@@ -8382,6 +8405,9 @@ select.pa-in{padding-right:6px}
     if (t.id === 'paAll') { LAST.users.forEach(function (u) { SEL[u.id] = true; }); Array.prototype.forEach.call(P.querySelectorAll('[data-uid]'), function (c) { c.checked = true; }); return selN(); }
     if (d.bk) return bulk(d.bk, d.v);
     if (t.id === 'paPw') return resetPw();
+    if (t.id === 'paRn') return renameUser();
+    if (t.id === 'paOf') return toggleOfficial();
+    if (t.id === 'paSp') return refreshSpecsNow();
     if (t.id === 'paIgo') {
       t.disabled = true;
       return call('invites', { count: +$('paIc').value, uses: +$('paIu').value, days: +$('paId').value, note: $('paIn').value }).then(function (x) {
