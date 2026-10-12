@@ -369,7 +369,7 @@ window.A99E = A99E;
 'use strict';
 if (window.A99Paper) return;
 
-var VER = '2026.10.12-E';
+var VER = '2026.10.12-G';
 var Q = 'US' + 'DT';                              // 모의 계좌 단위 표기 (가상 · 실제 돈 아님). 가격은 하이퍼리퀴드 달러 시세
 var WSURL = 'wss://api.hyperliquid.xyz/ws';      // 실시간 시세: 하이퍼리퀴드 공개 자료
 var HLI = 'https://api.hyperliquid.xyz/info';
@@ -481,7 +481,8 @@ face('651 950', 'd09GMgABAAAAAFkwABIAAAAA3oQAAFjHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 '.pp-bk{min-width:0;font-family:var(--pn);font-size:11px;font-variant-numeric:tabular-nums}',
 '.pp-bk .fd{font-family:var(--pf);font-size:10.5px;color:var(--pt3);text-align:right;line-height:1.35;margin-bottom:4px}',
 '.pp-bk .fd b{color:var(--pt1);font-family:var(--pn);font-weight:600}',
-'.pp-bk .hd{display:flex;justify-content:space-between;color:var(--pt3);font-size:10.5px;padding:0 2px 3px;font-family:var(--pf)}',
+'.pp-bk .hd{display:flex;justify-content:space-between;align-items:center;color:var(--pt3);font-size:10.5px;padding:0 2px 3px;font-family:var(--pf)}',
+'.pp-bkt{font-family:var(--pn);font-size:10.5px;color:var(--pt2);background:var(--pc1);padding:2px 7px;min-height:22px;border-radius:2px}',
 '.pp-bk .lr{position:relative;display:flex;justify-content:space-between;align-items:center;height:22px;padding:0 2px;width:100%;text-align:left}',
 '.pp-bk .lr::before{content:"";position:absolute;top:1px;bottom:1px;right:0;width:var(--w,0%);opacity:.18;pointer-events:none}',
 '.pp-bk .a .lr::before{background:var(--pdn)} .pp-bk .b .lr::before{background:var(--pup)}',
@@ -540,6 +541,7 @@ face('651 950', 'd09GMgABAAAAAFkwABIAAAAA3oQAAFjHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 '.pp-rk .r{color:var(--pt3);text-align:right;font-weight:700;font-family:var(--pn)}',
 '.pp-rk .nk{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}',
 '.pp-rk .nk small{color:var(--pt3);font-size:11px;margin-left:4px;font-weight:500}',
+'.pp-off{display:inline-block;margin-left:6px;padding:1px 5px;border:1px solid currentColor;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.06em;color:#F5A524;vertical-align:2px}',
 '.pp-rk .e,.pp-rk .p{text-align:right;font-family:var(--pn)}',
 '.pp-rk .p{font-size:12.5px;font-weight:600}',
 '.pp-mo{display:flex;gap:6px;overflow-x:auto;padding:12px 0 2px;scrollbar-width:none}',
@@ -665,11 +667,11 @@ function setSpecs(j) {
 
 /* ── 상태 ── */
 var UIS = lsGet(LS_UI) || {};
-var U = { sym: UIS.sym || 'BTC', tf: ['1m', '15m', '1H'].indexOf(UIS.tf) >= 0 ? UIS.tf : '15m', ot: UIS.ot === 'limit' ? 'limit' : 'market', lev: UIS.lev || {}, tab: 'pos', month: null };
+var U = { bk: UIS.bk >= 0 && UIS.bk <= 3 ? UIS.bk : 2, sym: UIS.sym || 'BTC', tf: ['1m', '15m', '1H'].indexOf(UIS.tf) >= 0 ? UIS.tf : '15m', ot: UIS.ot === 'limit' ? 'limit' : 'market', lev: UIS.lev || {}, tab: 'pos', month: null };
 var TOK = lsGet(LS_TOK);
 var ME = null, st = E.newState(0), FILLS = [], lastFillTs = 0, busy = false;
 var ACTIVE = false, MOUNTED = false;
-function saveUI() { lsSet(LS_UI, { sym: U.sym, tf: U.tf, ot: U.ot, lev: U.lev }); }
+function saveUI() { lsSet(LS_UI, { sym: U.sym, tf: U.tf, ot: U.ot, lev: U.lev, bk: U.bk }); }
 function levOf(id) { var p = st.pos[id]; if (p) return p.lev; var l = (ME && ME.acct.lev && ME.acct.lev[id]) || U.lev[id] || 10; return Math.min(Math.max(1, l), SP[id] ? SP[id].max : 125); }
 function exposed(id) { return E.exposed(st, id); }
 function anyExposed() { return Object.keys(st.pos).length > 0 || st.ord.length > 0; }
@@ -727,7 +729,29 @@ function applyServer(j) {
   return fresh;
 }
 var KIND = { open: 'Open', close: 'Close', tp: 'TP filled', sl: 'SL filled', liq: 'Liquidated', fund: 'Funding' };
+/* 체결음: 소리 파일 없이 기기에서 바로 만든다 (Web Audio). 처음 누를 때 소리가 켜진다(브라우저 규칙) */
+var AC = null, SND = lsGet('a99p.snd'), lastBeep = 0;
+if (SND == null) SND = 1;
+function audioUnlock() {
+  if (!SND) return;
+  try { if (!AC) { var C = window.AudioContext || window.webkitAudioContext; if (C) AC = new C(); } if (AC && AC.state === 'suspended') AC.resume(); } catch (e) {}
+}
+function beep(kind) {
+  if (!SND || !AC || AC.state !== 'running') return;
+  var now = Date.now(); if (now - lastBeep < 250) return; lastBeep = now;
+  var N = { fill: [[880, 0, .06], [1320, .06, .12]], close: [[1046, 0, .06], [784, .06, .12]], place: [[740, 0, .07]], liq: [[220, 0, .16], [165, .15, .24]] }[kind] || [[880, 0, .08]];
+  try {
+    var t = AC.currentTime;
+    N.forEach(function (n) {
+      var o = AC.createOscillator(), g = AC.createGain();
+      o.type = kind === 'liq' ? 'triangle' : 'sine'; o.frequency.value = n[0];
+      g.gain.setValueAtTime(0.0001, t + n[1]); g.gain.exponentialRampToValueAtTime(0.16, t + n[1] + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + n[1] + n[2]);
+      o.connect(g); g.connect(AC.destination); o.start(t + n[1]); o.stop(t + n[1] + n[2] + 0.03);
+    });
+  } catch (e) {}
+}
 function toastEvents(ev) {
+  (ev || []).forEach(function (e) { if (e.k === 'liq') beep('liq'); else if (e.k === 'sl' || e.k === 'tp') beep('close'); else if (e.k === 'lfill') beep('fill'); });
   (ev || []).forEach(function (e) {
     var nm = NM(e.sym), sd = e.side === 1 ? 'Long' : 'Short';
     if (e.k === 'liq') toast(nm + ' ' + sd + ' ' + e.lev + 'x Liquidated · −' + fu(e.margin) + ' (강제 청산)', true);
@@ -737,6 +761,7 @@ function toastEvents(ev) {
   });
 }
 function toastFills(list) {
+  if (list.some(function (f) { return f.kind === 'liq'; })) beep('liq'); else if (list.some(function (f) { return f.kind === 'tp' || f.kind === 'sl'; })) beep('close');
   list.slice(0, 4).reverse().forEach(function (f) {
     if (f.kind === 'liq') toast(chip(f.sym) + ' 강제 청산됐어요 · ' + kstWhen(f.ts) + ' · ' + sg(f.pnl), true);
     else if (f.kind === 'tp' || f.kind === 'sl') toast(chip(f.sym) + ' ' + KIND[f.kind] + ' · ' + kstWhen(f.ts) + ' · ' + sg(f.pnl - f.fee), f.pnl - f.fee < 0);
@@ -796,12 +821,16 @@ function sweep(id, evd) {
 /* ── 실시간 연결 (탭을 떠나 있으면 포지션 종목만 · 아무것도 없으면 끊는다) ── */
 var ws = null, subs = {}, lastRx = 0, backoff = 1000, pingT = 0, retryT = 0, firstFail = 0;
 function HIV(tf) { return tf === '1H' ? '1h' : tf; }
-function sub(k) { var a = k.split('|'), o = { type: a[0], coin: a[1] }; if (a[0] === 'candle') o.interval = HIV(a[2]); return o; }
+/* 호가 묶음: 0 = 1틱 · 1 = 5틱 · 2 = 10틱 · 3 = 100틱 (하이퍼리퀴드 유효숫자 묶음 기능) */
+var BKS = [{ nSigFigs: 5 }, { nSigFigs: 5, mantissa: 5 }, { nSigFigs: 4 }, { nSigFigs: 3 }], BKM = [1, 5, 10, 100];
+function bkTick(id) { var m = M[id], px = m && (m.last || m.mark); if (!(px > 0)) return null; var t = Math.pow(10, Math.floor(Math.log10(px)) - 4) * BKM[U.bk]; var sp = SP[id]; return sp && t < sp.tick ? sp.tick : t; }
+function bkLabel(id) { var t = bkTick(id); if (t == null) return '—'; return t >= 1 ? fmt(t, 0) : String(+t.toPrecision(2)); }
+function sub(k) { var a = k.split('|'), o = { type: a[0], coin: a[1] }; if (a[0] === 'candle') o.interval = HIV(a[2]); if (a[0] === 'l2Book') { var g = BKS[+a[2]] || BKS[0]; o.nSigFigs = g.nSigFigs; if (g.mantissa) o.mantissa = g.mantissa; } return o; }
 function wanted() {
   var w = {};
   if (ACTIVE) {
     IDS.forEach(function (k) { w['activeAssetCtx|' + k] = 1; });
-    if (SP[U.sym]) { if (CHART) w['candle|' + U.sym + '|' + U.tf] = 1; w['l2Book|' + U.sym] = 1; w['trades|' + U.sym] = 1; }
+    if (SP[U.sym]) { if (CHART) w['candle|' + U.sym + '|' + U.tf] = 1; w['l2Book|' + U.sym + '|' + U.bk] = 1; w['trades|' + U.sym] = 1; }
   }
   IDS.forEach(function (k) { if (ME && exposed(k)) { w['activeAssetCtx|' + k] = 1; w['trades|' + k] = 1; } });
   return w;
@@ -1021,7 +1050,7 @@ function rankHTML() {
     if (!j.rows || !j.rows.length) h += '<p class="pp-empty">아직 참가자가 없어요.</p>';
     else h += '<ol class="pp-rk">' + j.rows.slice(0, 100).map(function (r) {
       var isMe = ME && r.nick === ME.nick, v = met === 'gain' ? r.gain : r.ret;
-      return '<li' + (isMe ? ' class="me"' : '') + '><span class="r">' + r.rank + '</span><span class="nk">' + esc(r.nick) + (r.liqs ? '<small>청산 ' + r.liqs + '</small>' : '') + '</span><span class="e">' + fu(r.eq) + '</span><span class="p ' + cls(v) + '">' + (met === 'gain' ? sg(v) : pct(v)) + '</span></li>';
+      return '<li' + (isMe ? ' class="me"' : '') + '><span class="r">' + r.rank + '</span><span class="nk">' + esc(r.nick) + (r.off ? '<em class="pp-off">OFFICIAL</em>' : '') + (r.liqs ? '<small>청산 ' + r.liqs + '</small>' : '') + '</span><span class="e">' + fu(r.eq) + '</span><span class="p ' + cls(v) + '">' + (met === 'gain' ? sg(v) : pct(v)) + '</span></li>';
     }).join('') + '</ol>';
   }
   h += '<div class="pp-mo">' + monthsList().map(function (x) { return '<button type="button" data-pmonth="' + x + '" class="' + (x === m ? 'on' : '') + '">' + (x === cur ? '이번 달' : (+x.slice(5)) + '월') + '</button>'; }).join('') + '</div>';
@@ -1095,6 +1124,7 @@ function renderBook() {
   $('fund').textContent = m.fr != null ? (m.fr > 0 ? '+' : '') + fmt(m.fr * 100, 4) + '%' : '—';
   $('fundt').textContent = m.fr != null ? hhmmss(Math.floor(Date.now() / 3600e3) * 3600e3 + 3600e3 - Date.now()) : '—';
   if (U.ot === 'limit' && m.last && !$('px').value && document.activeElement !== $('px')) { $('px').value = m.last.toFixed(SP[id].pp); dirty.est = true; }
+  var bt = $('bkt'); if (bt) bt.textContent = bkLabel(id) + ' ▾';
   var b = m.book;
   if (!b) { $('asks').innerHTML = '<div class="em">호가 기다리는 중…</div>'; $('bids').innerHTML = ''; return; }
   var n = 6, asks = b.asks.slice(0, n), bids = b.bids.slice(0, n), mx = 0, sa = 0, sb = 0;
@@ -1141,11 +1171,17 @@ function posHTML() {
       '<div class="bt"><button type="button" data-pact="tpsl" data-sym="' + k + '">TP/SL</button><button type="button" data-pact="close" data-sym="' + k + '">Close</button></div></div>';
   }).join('');
 }
+/* 포지션 카드: Mark 가격이 바뀌면 글자색만 잠깐 (배경 깜빡임 없음 · 동작 줄이기 설정이면 끔) */
+var PMK = {}, PFT = {}, RMOT = false;
+try { RMOT = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+function flash(el, up) { el.style.transition = 'none'; el.style.color = up ? cssv('--pup', CUP) : cssv('--pdn', CDN); void el.offsetWidth; el.style.transition = 'color .7s ease-out'; el.style.color = ''; }
 function renderPosNums() {
   Object.keys(st.pos).forEach(function (k) {
     var p = st.pos[k], e = $('pp-' + k); if (!p || !e || !SP[k]) return;
-    var mk = (M[k] && M[k].mark) || p.entry, net = (mk - p.entry) * p.qty * p.side - p.fee - p.qty * mk * SP[k].taker;
-    $('pm-' + k).textContent = fp(k, mk);
+    var mk = (M[k] && M[k].mark) || p.entry, net = (mk - p.entry) * p.qty * p.side;   // 거래소와 같게: 수수료는 넣지 않는다
+    var pe = $('pm-' + k); pe.textContent = fp(k, mk);
+    if (PMK[k] && mk !== PMK[k] && Date.now() - (PFT[k] || 0) > 350 && !RMOT) { PFT[k] = Date.now(); flash(pe, mk > PMK[k]); }
+    PMK[k] = mk;
     var lp = E.posLiq(SP[k], p); $('pl-' + k).textContent = lp ? fp(k, lp) : '없음';
     e.textContent = sg(net); e.className = cls(net);
     var r = $('pr-' + k); r.textContent = pct(net / p.margin); r.className = cls(net);
@@ -1287,6 +1323,7 @@ function submit(side) {
     else if (r.filled > 0) msg = NM(id) + ' Limit · filled ' + fq(id, r.filled) + ' · open ' + fq(id, r.rested);
     else msg = NM(id) + ' Limit ' + (side === 1 ? 'Long' : 'Short') + ' placed · ' + fq(id, r.rested) + ' @ ' + fp(id, r.px);
     toast(msg + (red ? ' · PnL ' + sg(f.pnl - f.fee) : ''), red && f.pnl - f.fee < 0);
+    beep(red ? 'close' : r.filled > 0 ? 'fill' : 'place');
     $('slider').value = 0;
     if (U.tab !== 'pos' && U.tab !== 'ord') U.tab = r.rested && !r.filled ? 'ord' : 'pos';
     changed();
@@ -1301,7 +1338,7 @@ function closePos(id, btn) {
     if (x.j.acct) applyServer(x.j);
     toastEvents(x.j.ev);
     if (x.s !== 200 || !x.j.ok) { toast(errMsg(x), true); if (btn) btn.disabled = false; changed(); return; }
-    if (x.j.res) toast(NM(id) + ' Closed · ' + fp(id, x.j.res.px) + ' · PnL ' + sg(x.j.res.net), x.j.res.net < 0);
+    if (x.j.res) { toast(NM(id) + ' Closed · ' + fp(id, x.j.res.px) + ' · PnL ' + sg(x.j.res.net), x.j.res.net < 0); beep('close'); }
     changed();
   });
 }
@@ -1482,7 +1519,7 @@ var GLOSS = [
   ['tpsl', 'TP / SL', '익절 / 손절', 'TP(Take Profit)는 이익을 확정하는 가격, SL(Stop Loss)은 손실을 끊는 가격이에요. 닿으면 자동으로 포지션을 닫아요.'],
   ['liq', 'Est. Liq. Price', '예상 청산가', 'Mark 가격이 여기에 닿으면 강제 청산돼 그 포지션의 증거금을 잃어요.'],
   ['fund', 'Funding / Countdown', '펀딩비 / 남은 시간', '무기한 선물 가격을 현물에 붙여 두려고 롱·숏이 매시 정각(1시간마다) 주고받는 비용이에요. 양수면 롱이 숏에게 내요. 정각에 포지션을 들고 있을 때만 정산돼요.'],
-  ['upnl', 'Unrealized PnL', '미실현 손익', '아직 닫지 않은 포지션의 평가 손익이에요. 여기서는 닫을 때 낼 수수료까지 빼고 보여 줘요.'],
+  ['upnl', 'Unrealized PnL', '미실현 손익', '아직 닫지 않은 포지션의 가격 차이 손익이에요(Mark 가격 기준). 대형 거래소처럼 수수료는 넣지 않아요. 낸 수수료는 거래 기록에서 확인할 수 있어요.'],
   ['roe', 'ROE', '증거금 대비 수익률', '미실현 손익 ÷ 증거금. 레버리지가 높으면 같은 가격 변화에도 크게 움직여요.'],
   ['margin', 'Margin', '증거금', '포지션을 유지하려고 묶어 둔 돈이에요.'],
   ['mmr', 'MMR', '유지증거금률', '(유지증거금 + 닫는 수수료) ÷ (증거금 + 미실현 손익). 100%가 되면 강제 청산돼요.'],
@@ -1503,6 +1540,7 @@ function guideSheet() {
   openSheet('용어 · 설정',
     '<div class="pp-box"><b>상승 · 롱 색</b><div class="pp-cseg"><button type="button" data-pcol="g" class="' + (COL === 'g' ? 'on' : '') + '"><i style="background:#22C083"></i>Green Up</button><button type="button" data-pcol="r" class="' + (COL === 'r' ? 'on' : '') + '"><i style="background:#FF5B5B"></i>Red Up</button></div>' +
     '<p class="hint">Green Up = 세계 거래소 표준(초록 = 상승 · 롱). Red Up = 한국 증권 앱 방식(빨강 = 상승 · 롱). 이 기기에 저장돼요.</p></div>' +
+    '<div class="pp-box"><b>체결음</b><div class="pp-cseg"><button type="button" data-psnd="1" class="' + (SND ? 'on' : '') + '">켜기</button><button type="button" data-psnd="0" class="' + (SND ? '' : 'on') + '">끄기</button></div><p class="hint">체결 · 익절/손절 · 청산 때 짧은 소리가 나요. 휴대폰이 무음(진동) 모드면 안 들릴 수 있어요.</p></div>' +
     '<dl class="pp-gl">' + GLOSS.map(function (g) { return '<div><dt>' + esc(g[1]) + '<small>' + esc(g[2]) + '</small></dt><dd>' + esc(g[3]) + '</dd></div>'; }).join('') + '</dl>');
 }
 function setCol(c) {
@@ -1538,6 +1576,9 @@ function banner(t, kind, go) {
 var armT = 0;
 function onClick(e) {
   var t = e.target, c;
+  audioUnlock();
+  if ((c = t.closest('[data-pbk]'))) { U.bk = (U.bk + 1) % BKS.length; saveUI(); if (M[U.sym]) M[U.sym].book = null; syncSubs(); dirty.book = true; kick(); return; }
+  if ((c = t.closest('[data-psnd]'))) { SND = c.dataset.psnd === '1' ? 1 : 0; lsSet('a99p.snd', SND); $$('[data-psnd]').forEach(function (b) { b.classList.toggle('on', +b.dataset.psnd === SND); }); var sh = document.querySelectorAll('#pp-sheet [data-psnd]'); Array.prototype.forEach.call(sh, function (b) { b.classList.toggle('on', +b.dataset.psnd === SND); }); if (SND) beep('fill'); return; }
   if ((c = t.closest('[data-pclose]'))) { closeSheet(); return; }
   if ((c = t.closest('[data-pterm]'))) { e.preventDefault(); termSheet(c.dataset.pterm); return; }
   if ((c = t.closest('[data-pcol]'))) { setCol(c.dataset.pcol); return; }
@@ -1606,7 +1647,7 @@ function skeleton() {
       '<div class="pp-liq"><span class="pp-t" data-pterm="liq">Est. Liq. Price</span> <b id="pp-liqs">—</b></div>' +
       '<p id="pp-err" class="pp-err" role="alert" hidden></p>' +
     '</form><aside class="pp-bk" aria-label="호가"><div class="fd"><span class="pp-t" data-pterm="fund">Funding / Countdown</span><br><b id="pp-fund">—</b> · <b id="pp-fundt">—</b></div>' +
-      '<div class="hd"><span>Price</span><span>Size</span></div><div class="a" id="pp-asks"></div>' +
+      '<div class="hd"><span>Price</span><button type="button" class="pp-bkt" id="pp-bkt" data-pbk="1" aria-label="호가 묶음 단위 바꾸기">—</button><span>Size</span></div><div class="a" id="pp-asks"></div>' +
       '<div class="mid"><b id="pp-blast">—</b><span><span class="pp-t" data-pterm="mark">Mark</span> <span id="pp-bmark">—</span></span></div><div class="b" id="pp-bids"></div>' +
       '<div class="ratio" id="pp-ratio"></div></aside></div>' +
     '<div class="pp-tabs" role="tablist"><button type="button" data-ptab="pos">Positions<span id="pp-cpos"></span></button><button type="button" data-ptab="ord">Open Orders<span id="pp-cord"></span></button><button type="button" data-ptab="fills">Trade History</button><button type="button" data-ptab="rank">Ranking</button></div>' +
