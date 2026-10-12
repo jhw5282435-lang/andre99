@@ -48,6 +48,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--up)}
 .dot.off{background:var(--tx3)}
 .mstat span{font-size:11.5px;color:var(--tx2)}
+.mstat{min-width:0;white-space:nowrap;overflow:hidden}
+.mstat b,.mstat span,.ver{white-space:nowrap}
+@media(max-width:374px){.top-in{gap:6px;padding:0 12px}.mstat{padding:7px 10px}.mstat span.n{display:none}.ver{font-size:8.5px}.iconbtn{width:40px}}
 .top-act{margin-left:auto;display:flex;gap:4px;align-items:center}
 .ver{font-size:9.5px;color:var(--tx3);font-family:var(--mono);margin-right:2px}
 .iconbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:14px}
@@ -490,7 +493,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 /* ── 하단 내비 ── */
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--bg);
   border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
-.nav-in{display:grid;grid-template-columns:repeat(5,1fr);height:var(--nav-h)}
+.nav-in{display:grid;grid-template-columns:repeat(6,1fr);height:var(--nav-h)}
+.nb span{white-space:nowrap}
+#p-paper .pp-load{padding:48px 16px;text-align:center;font-size:13px;color:var(--tx3);line-height:1.7}
+#p-paper .pp-load button{margin-top:12px;min-height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--line);color:var(--tx);font-size:13px;font-weight:600}
 .nb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--tx3)}
 .nb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
 .nb span{font-size:10.5px;font-weight:600}
@@ -1027,6 +1033,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   <p class="foot">관심 종목은 이 기기에만 저장됩니다.</p>
 </main>
 
+<!-- 모의투자 탭 (2026.10.11) — 처음 누를 때 paper/paper.js 를 불러와 여기에 그린다 -->
+<main class="page" id="p-paper"><div id="paperHost"><p class="pp-load">모의투자 불러오는 중…</p></div></main>
+
 <!-- 카드 선택 저장 (2026-08-11) -->
 <div class="ovl" id="pickOvl">
   <div class="ovl-in pick">
@@ -1059,11 +1068,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     <button class="nb" data-tab="earn"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>실적</span></button>
     <button class="nb" data-tab="eco"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.7 2.5 12.3 0 16M12 4c-2.5 2.7-2.5 12.3 0 16"/></svg><span>경제</span></button>
     <button class="nb" data-tab="my"><svg viewBox="0 0 24 24"><path d="M12 20l-7-7a4.2 4.2 0 016-6l1 1 1-1a4.2 4.2 0 016 6z"/></svg><span>관심</span></button>
+    <button class="nb" data-tab="paper"><svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 01-8 0z"/><path d="M8 6H5.5a2.5 2.5 0 002.7 3.5M16 6h2.5a2.5 2.5 0 01-2.7 3.5M12 13v4M9 20h6M10 17h4"/></svg><span>모의투자</span></button>
   </div>
 </nav>
 
 <script>
-var BUILD_VER='v2026.10.04-A';
+var BUILD_VER='v2026.10.12-A';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -1093,7 +1103,7 @@ var pct=function(v){return (v==null||isNaN(v))?'—':(v>=0?'+':'')+Number(v).toF
 var dirCls=function(v){return v==null?'ft':(v>0?'up':(v<0?'dn':'ft'))};
 
 /* ── 탭 ── */
-var TABS=['home','stock','earn','eco','my'];
+var TABS=['home','stock','earn','eco','my','paper'];
 function show(t){
   CUR_PAGE=t;
   TABS.forEach(function(x){ $('p-'+x).classList.toggle('on',x===t); });
@@ -1102,6 +1112,20 @@ function show(t){
   if(t==='earn'&&!CAL_WEEK){ calInit(); }
   if(t==='eco'){ loadEco(); }
   if(t==='stock'){ setDisc(DISC_TAB); }
+  if(t==='paper'){ paperOpen(); } else if(window.A99Paper){ window.A99Paper.hide(); }
+}
+/* 모의투자 탭: 처음 누를 때만 paper/paper.js(차트 · 계산 엔진 · 화면)를 받아 온다 — 앱 첫 화면은 가볍게 */
+var PAPER_JS='paper/paper.js?v=2026.10.12-A', PAPER_LOADING=false;
+function paperOpen(){
+  var host=$('paperHost');
+  if(window.A99Paper){ window.A99Paper.mount(host); window.A99Paper.show(); return; }
+  if(PAPER_LOADING) return;
+  PAPER_LOADING=true;
+  host.innerHTML='<p class="pp-load">모의투자 불러오는 중…</p>';
+  var sc=document.createElement('script'); sc.src=PAPER_JS; sc.async=true;
+  sc.onload=function(){ PAPER_LOADING=false; if(!window.A99Paper){ sc.onerror(); return; } window.A99Paper.mount(host); if(CUR_PAGE==='paper') window.A99Paper.show(); };
+  sc.onerror=function(){ PAPER_LOADING=false; sc.remove(); host.innerHTML='<p class="pp-load">모의투자 화면을 받지 못했어요. 인터넷 연결을 확인해 주세요.<br><button type="button" onclick="paperOpen()">다시 시도</button></p>'; };
+  document.head.appendChild(sc);
 }
 document.querySelectorAll('.nb').forEach(function(b){ b.addEventListener('click',function(){ show(b.dataset.tab); }); });
 document.querySelectorAll('[data-disc]').forEach(function(b){
@@ -4031,7 +4055,7 @@ function openCardPick(){
                   '<span>이번 주 실적</span></label>';
   }else{
     PICK_MODE='none';
-    ttl.textContent=(CUR_PAGE==='home'?'홈 카드':(CUR_PAGE==='eco'?'경제 카드':'관심 카드'));
+    ttl.textContent=(CUR_PAGE==='home'?'홈 카드':(CUR_PAGE==='eco'?'경제 카드':(CUR_PAGE==='paper'?'모의투자 카드':'관심 카드')));
     box.innerHTML='<div class="pknone">이 탭은 카드 도안이 아직 없습니다.<br>준비 중입니다.</div>';
   }
   ov.classList.add('on');
@@ -4543,7 +4567,8 @@ button.a9-rung:active{background:var(--s1)}
 .a9-seg button{min-width:52px;min-height:44px;padding:0 10px;font-size:13px;font-weight:600;color:var(--tx3);background:transparent}
 .a9-seg button+button{border-left:1px solid var(--line)}
 .a9-seg button.on{background:var(--s2);color:var(--tx)}
-.a9-seg button.on.u{color:var(--up)} .a9-seg button.on.d{color:var(--dn)}
+.a9-seg button.on.u{color:var(--up)} .a9-seg button.on.d{color:var(--dn)} .a9-seg button.on.t{color:#E8A317}
+.a9-seg.k3 button{min-width:44px;padding:0 8px}
 .a9-px{flex:1;min-width:0;display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .a9-px:focus-within{border-color:var(--tx3)}
 .a9-px input{flex:1;min-width:0;width:100%;padding:0 6px;background:transparent;border:0;color:var(--tx);text-align:center;
@@ -4908,6 +4933,8 @@ button.a9-rung:active{background:var(--s1)}
       if (o.collapsible) { B.open = false; panel.hidden = true; }
       paintBar(); if (B.open) renderPanel();
       if (!sym) return;
+      // 지표 선을 안 쓰는 상자(트레이딩 탭 — 핵심 가격대로 대체)는 /technical 을 부르지 않는다 (서버 부담 ↓)
+      if (o.noLines && o.noLines()) { B.LINES = []; paintBar(); if (B.open) renderPanel(); return; }
       suggest(sym, curPx()).then(function (r) {
         if (sym !== B.sym) return;
         if (r.cur && !B.cur) B.cur = r.cur;
@@ -5043,7 +5070,9 @@ button.a9-rung:active{background:var(--s1)}
     function termBox(i) {
       var box = el('div', 'a9-term'), seg = el('div', 'a9-seg'), px = el('div', 'a9-px');
       seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', '조건 ' + i + ' 방향');
-      [['cross_up', '돌파', 'u'], ['cross_down', '이탈', 'd']].forEach(function (op) {
+      seg.classList.add('k3');
+      // 2026.10.04-B 「터치」 추가 — 위·아래 어느 쪽에서든 그 가격에 닿으면
+      [['cross_up', '돌파', 'u'], ['cross_down', '이탈', 'd'], ['touch', '터치', 't']].forEach(function (op) {
         var b = el('button', op[2], op[1]); b.type = 'button'; b.dataset.k = op[0];
         b.addEventListener('click', function () {
           var t = term(i); B.ST.editing = i;
@@ -5431,7 +5460,8 @@ button.a9-rung:active{background:var(--s1)}
 .at-back{display:inline-flex;align-items:center;gap:4px;min-height:36px;margin:6px 0 0;padding:0 12px 0 8px;
   background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--tx);font-size:12.5px;font-weight:600}
 .at-back svg{width:15px;height:15px}
-.at-back[hidden],.at-hrs[hidden],.at-sh[hidden]{display:none!important}
+.at-back[hidden],.at-hrs[hidden],.at-sh[hidden],.at-tvn[hidden]{display:none!important}
+.at-tvn{margin:6px 0 0;font-size:11.5px;color:var(--tx3);line-height:1.55}
 .at-back b{font-family:var(--mono);font-weight:700}
 .at-box-h h2:focus{outline:none}
 .at-hrs{margin:-2px 0 10px;font-size:12px;color:#E8A317;line-height:1.5}
@@ -5501,6 +5531,7 @@ button.a9-rung:active{background:var(--s1)}
 .at-live{display:inline-flex;align-items:center;gap:5px}
 .at-live i{width:6px;height:6px;border-radius:50%;background:var(--tx3)}
 .at-live.on{color:var(--tx2)} .at-live.on i{background:var(--up);animation:atPulse 1.6s infinite}
+.at-live.lag{color:#E8A317} .at-live.lag i{background:#E8A317}
 @keyframes atPulse{50%{opacity:.35}}
 @media(prefers-reduced-motion:reduce){.at-live.on i{animation:none}}
 .at-fsb{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 10px;margin-bottom:2px;
@@ -5555,6 +5586,9 @@ html.at-lock,html.at-lock body{overflow:hidden}
   var DAY = 86400000;
   var SESKO = { p: '프리마켓', r: '정규장', a: '애프터마켓' };
   function isCoin(s) { return /-USD$/.test(s); }
+  // 선물(야후 =F 연속월) — 거의 24시간 거래 · 야후 시세 10~30분 지연 · 트레이딩뷰 무료 차트는 CME 선물을 못 보여줘서 CFD 차트로 대신 (2026.10.05)
+  function isFut(s) { return /=F$/.test(s || ''); }
+  function is24(s) { return isCoin(s || '') || isFut(s); }
 
   // 미국 동부 시차 — 워커의 etOffsetMin 과 같은 규칙 (3월 둘째 일요일 ~ 11월 첫째 일요일)
   var DST = {};
@@ -5591,6 +5625,11 @@ html.at-lock,html.at-lock body{overflow:hidden}
     ['ARM', '에이알엠', '암'], ['ASML', 'ASML', '에이에스엠엘'], ['CRWD', '크라우드스트라이크'],
     ['SNOW', '스노우플레이크'], ['NET', '클라우드플레어'], ['OKLO', '오클로'], ['SMR', '뉴스케일'],
     ['QQQ', '나스닥100', '큐큐큐'], ['SPY', 'S&P500', '에스앤피'], ['VOO', '뱅가드'],
+    ['GC=F', '금', '금선물', '골드'], ['MGC=F', '마이크로금', '마이크로골드'], ['SI=F', '은', '은선물', '실버'],
+    ['CL=F', '원유', 'WTI', '유가', '원유선물'], ['MCL=F', '마이크로원유'], ['BZ=F', '브렌트유', '브렌트'],
+    ['NG=F', '천연가스'], ['HG=F', '구리'], ['PL=F', '백금'],
+    ['NQ=F', '나스닥선물', '나스닥100선물'], ['MNQ=F', '마이크로나스닥'], ['ES=F', 'S&P선물', '에스앤피선물'], ['MES=F', '마이크로S&P'],
+    ['YM=F', '다우선물'], ['RTY=F', '러셀선물'],
     ['SCHD', '슈드'], ['TQQQ', '티큐'], ['SOXL', '속슬'], ['SOXX', '반도체']
   ];
   var KO = {};                       // 심볼 → 한글 이름
@@ -5605,7 +5644,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
       a.forEach(function (x, i) { var v = norm(x);
         if (v === k) score = Math.max(score, 3); else if (v.indexOf(k) === 0) score = Math.max(score, 2);
         else if (i > 0 && v.indexOf(k) > 0 && k.length >= 2) score = Math.max(score, 1); });
-      if (score) hit.push({ s: a[0], n: KO[a[0]] || '', t: isCoin(a[0]) ? 'CRYPTOCURRENCY' : 'EQUITY', sc: score });
+      if (score) hit.push({ s: a[0], n: KO[a[0]] || '', t: isCoin(a[0]) ? 'CRYPTOCURRENCY' : isFut(a[0]) ? 'FUTURE' : 'EQUITY', sc: score });
     });
     return hit.sort(function (a, b) { return b.sc - a.sc; }).slice(0, 6);
   }
@@ -5613,7 +5652,16 @@ html.at-lock,html.at-lock body{overflow:hidden}
   /* ═════════ 트레이딩뷰 위젯 ═════════ */
   // 야후 심볼 → 트레이딩뷰 심볼. 코인은 트레이딩뷰의 여러 거래소 종합 지수(CRYPTO:)를 쓴다 —
   //  야후 코인 가격도 여러 거래소 평균이라 판정 가격과 가장 가깝다. 야후의 숫자 꼬리(예: 24478)는 뗀다.
+  // 선물 → 트레이딩뷰 무료 차트가 보여주는 비슷한 CFD (트레이딩뷰 공식 위젯 예시에 쓰인 심볼) · 없으면 차트 대신 안내
+  var FUTTV = {
+    'GC=F': ['CMCMARKETS:GOLD', '금 현물 CFD'], 'MGC=F': ['CMCMARKETS:GOLD', '금 현물 CFD'],
+    'SI=F': ['CMCMARKETS:SILVER', '은 현물 CFD'], 'HG=F': ['CMCMARKETS:COPPER', '구리 CFD'], 'PL=F': ['CMCMARKETS:PLATINUM', '백금 CFD'],
+    'CL=F': ['TVC:USOIL', 'WTI 원유 CFD'], 'MCL=F': ['TVC:USOIL', 'WTI 원유 CFD'],
+    'ES=F': ['FOREXCOM:SPXUSD', 'S&P500 CFD'], 'MES=F': ['FOREXCOM:SPXUSD', 'S&P500 CFD'],
+    'NQ=F': ['FOREXCOM:NSXUSD', '나스닥100 CFD'], 'MNQ=F': ['FOREXCOM:NSXUSD', '나스닥100 CFD'], 'YM=F': ['FOREXCOM:DJI', '다우 CFD']
+  };
   function tvSym(s) {
+    if (isFut(s)) return FUTTV[s] ? FUTTV[s][0] : null;
     if (isCoin(s)) return 'CRYPTO:' + s.replace(/-USD$/, '').replace(/\d+$/, '') + 'USD';
     var idx = { '^GSPC': 'SP:SPX', '^IXIC': 'NASDAQ:IXIC', '^DJI': 'DJ:DJI', '^VIX': 'CBOE:VIX' }[s];
     return idx || s.replace('-', '.');
@@ -5640,12 +5688,15 @@ html.at-lock,html.at-lock body{overflow:hidden}
         if (sym !== S.sym) return;
         if (!j || !j.ok || !j.t || !j.t.length) { if (!S.px) paintHead('가격을 받지 못했습니다'); return; }
         var L = j.t.length, t = j.t[L - 1] * 1000;
-        S.crypto = !!j.암호화폐; S.px = j.c[L - 1]; S.lastT = t; S.lastOk = Date.now();
-        S.ses = S.crypto ? '24시간' : (j.s ? (SESKO[j.s.charAt(L - 1)] || '') : '');
-        // 전일 종가 — 주식은 앞선 동부 날짜의 마지막 정규장 봉, 코인은 24시간 전
+        S.crypto = !!j.암호화폐; S.fut = j.종류 === 'future' || isFut(sym); S.px = j.c[L - 1]; S.lastT = t; S.lastOk = Date.now();
+        S.ses = S.crypto ? '24시간' : S.fut ? '선물' : (j.s ? (SESKO[j.s.charAt(L - 1)] || '') : '');
+        // 전일 종가 — 주식은 앞선 동부 날짜의 마지막 정규장 봉, 코인은 24시간 전, 선물은 지난 세션(동부 18:00 이전) 마지막 봉
         S.pc = null;
         if (S.crypto) {
           for (var i = L - 1; i >= 0; i--) if (t - j.t[i] * 1000 >= DAY) { S.pc = j.c[i]; break; }
+        } else if (S.fut) {
+          var sk = function (ms) { return Math.floor((ms + etOff(ms) * 60000 - 18 * 3600000) / DAY); }, cur = sk(t);
+          for (var f = L - 1; f >= 0; f--) if (sk(j.t[f] * 1000) < cur) { S.pc = j.c[f]; break; }
         } else {
           var day = Math.floor((t + etOff(t) * 60000) / DAY);
           for (var k = L - 1; k >= 0; k--) {
@@ -5660,7 +5711,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
   }
   // 갱신 주기 — 장중·시간외엔 15초, 장이 쉬면 2분. 코인은 늘 15초.
   function period() {
-    if (S.crypto || isCoin(S.sym || '')) return 15000;
+    if (S.crypto || is24(S.sym || '')) return 15000;
     var n = Date.now(), et = new Date(n + etOff(n) * 60000);
     var d = et.getUTCDay(), m = et.getUTCHours() * 60 + et.getUTCMinutes();
     return (d >= 1 && d <= 5 && m >= 240 && m < 1200) ? 15000 : 120000;
@@ -5686,6 +5737,10 @@ html.at-lock,html.at-lock body{overflow:hidden}
         '<div class="at-coins" id="atCoins" aria-label="코인">' +
           ['BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD', 'DOGE-USD']
             .map(function (c) { return '<button type="button" data-sym="' + c + '" aria-label="' + KO[c] + '">' + c.replace('-USD', '') + '</button>'; }).join('') +
+        '</div>' +
+        '<div class="at-coins" id="atFuts" aria-label="선물">' +
+          [['GC=F', '금'], ['CL=F', '원유'], ['SI=F', '은'], ['NQ=F', '나스닥'], ['ES=F', 'S&P']]
+            .map(function (c) { return '<button type="button" data-sym="' + c[0] + '" aria-label="' + c[1] + ' 선물">' + c[1] + '</button>'; }).join('') +
         '</div></div>' +
       '<div class="at-head"><div class="l"><div class="sym" id="atSym">—</div>' +
         '<div class="px"><span class="v" id="atPx">—</span><span class="c" id="atChg"></span></div>' +
@@ -5697,6 +5752,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
         '<div class="fsbar"><b id="atFsSym"></b><span class="v" id="atFsPx"></span><span class="c" id="atFsChg"></span>' +
           '<button type="button" id="atFsX" aria-label="전체화면 닫기">✕</button></div>' +
         '<div class="frame" id="atFrameBox"><div class="ph">차트 불러오는 중</div></div></div>' +
+      '<p class="at-tvn" id="atTvN" hidden></p>' +
       '<div class="at-box-h"><h2 tabindex="-1">알림</h2><span id="atBoxSym"></span>' +
         '<button type="button" id="atInfoB" aria-label="알림 판정 기준" aria-expanded="false">i</button></div>' +
       '<p class="at-hrs" id="atHrs" hidden></p>' +
@@ -5709,12 +5765,12 @@ html.at-lock,html.at-lock body{overflow:hidden}
       chg: w.querySelector('#atChg'), ses: w.querySelector('#atSes'), live: w.querySelector('#atLive'),
       tv: w.querySelector('#atTv'), boxSym: w.querySelector('#atBoxSym'), frame: w.querySelector('#atFrameBox'),
       fsSym: w.querySelector('#atFsSym'), fsPx: w.querySelector('#atFsPx'), fsChg: w.querySelector('#atFsChg'),
-      hrs: w.querySelector('#atHrs')
+      hrs: w.querySelector('#atHrs'), tvn: w.querySelector('#atTvN')
     };
     var h0 = watchHours();
     w.querySelector('#atInfo').textContent = '차트는 트레이딩뷰, 알림 판정은 야후 가격이며 1분마다 확인합니다. ' +
       '주식 알림은 한국 ' + h0.a + ':00 ~ 다음 날 ' + h0.b + ':00 (미국 평일 프리·정규·애프터)에만 감시합니다. ' +
-      '한국 낮 주간거래 시간에는 가격 자료가 없어 울리지 않습니다. 코인은 24시간 감시합니다. ' +
+      '한국 낮 주간거래 시간에는 가격 자료가 없어 울리지 않습니다. 코인·선물은 24시간 감시합니다. 선물 시세는 야후 기준으로 10분 이상 늦습니다. ' +
       '시간외 거래와 코인에서는 차트와 판정 가격이 조금 다를 수 있습니다. 주문 기능은 없습니다.';
     w.querySelector('#atFsb').addEventListener('click', fsOpen);
     UI.back = w.querySelector('#atBack');
@@ -5723,6 +5779,8 @@ html.at-lock,html.at-lock body{overflow:hidden}
     var ib = w.querySelector('#atInfoB'), inf = w.querySelector('#atInfo');
     ib.addEventListener('click', function () { inf.hidden = !inf.hidden; ib.setAttribute('aria-expanded', inf.hidden ? 'false' : 'true'); });
     BOX = AL.AlertBox({ pre: 'at',
+      // 트레이딩 탭은 지표 선 사다리 대신 핵심 가격대를 쓴다 → /technical 생략 (__a9LadderTest 는 시험용)
+      noLines: function () { return !window.__a9LadderTest; },
       price: function () { return S.px; },
       nowNote: function () { return S.ses || ''; } });
     w.querySelector('#atBoxHost').appendChild(BOX.wrap);
@@ -5733,8 +5791,10 @@ html.at-lock,html.at-lock body{overflow:hidden}
       pick(b.dataset.sym);
     });
     w.querySelector('#atQx').addEventListener('click', function () { openFind(false); });
-    w.querySelector('#atCoins').addEventListener('click', function (e) {
-      var b = e.target.closest('button[data-sym]'); if (b) { openFind(false); pick(b.dataset.sym); }
+    ['#atCoins', '#atFuts'].forEach(function (sel) {
+      w.querySelector(sel).addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-sym]'); if (b) { openFind(false); pick(b.dataset.sym); }
+      });
     });
     UI.res.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-sym]'); if (b) { openFind(false); pick(b.dataset.sym); }
@@ -5774,7 +5834,9 @@ html.at-lock,html.at-lock body{overflow:hidden}
     if (!/[A-Za-z0-9]/.test(q)) { onList(local, true, local.length ? '' : '한글 이름이 목록에 없습니다. 티커나 영문 이름으로 찾아주세요.'); return; }
     onList(local, false, '');
     // 코인 표기면 코인 이름만으로 찾는다 — 야후는 몇몇 코인에 숫자 꼬리를 붙인다 (예: SUI20947-USD)
-    fetch(API + '/search?q=' + encodeURIComponent(base || q)).then(function (r) { return r.json(); }).then(function (j) {
+    // 서버가 잠깐 끊기면 0.8초 뒤 한 번 더 (2026.10.04-B)
+    var sq = function () { return fetch(API + '/search?q=' + encodeURIComponent(base || q)).then(function (r) { return r.json(); }); };
+    sq().catch(function () { return new Promise(function (ok) { setTimeout(ok, 800); }).then(sq); }).then(function (j) {
       var got = (j && j.ok && j.결과) || [];
       got.forEach(function (x) { if (x.n) NAMES[x.s] = x.n; });
       if (base) got = got.filter(function (x) { return x.t === 'CRYPTOCURRENCY'; }).concat(got.filter(function (x) { return x.t !== 'CRYPTOCURRENCY'; }));
@@ -5788,7 +5850,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
     });
   }
   function resHTML(list, loading, msg) {
-    var TY = { CRYPTOCURRENCY: '코인', ETF: 'ETF', INDEX: '지수', EQUITY: '주식' };
+    var TY = { CRYPTOCURRENCY: '코인', ETF: 'ETF', INDEX: '지수', EQUITY: '주식', FUTURE: '선물' };
     return list.map(function (x) {
       var nm = KO[x.s] ? KO[x.s] + (x.n && x.n !== KO[x.s] ? ' · ' + x.n : '') : (x.n || '');
       return '<button type="button" role="option" data-sym="' + esc(x.s) + '" data-t="' + esc(x.t || '') + '"><span class="s">' + esc(x.s) + '</span>' +
@@ -5817,6 +5879,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
     function openSym(sym, ty) {
       res.innerHTML = ''; last = [];
       if (ty === 'CRYPTOCURRENCY' || isCoin(sym)) { AL.toast('코인은 트레이딩 탭에서 봅니다'); window.A99Tab.open(sym); return; }
+      if (ty === 'FUTURE' || isFut(sym)) { AL.toast('선물은 트레이딩 탭에서 봅니다'); window.A99Tab.open(sym); return; }
       q.value = sym;
       if (typeof window.loadStock === 'function') window.loadStock(sym);
     }
@@ -5880,7 +5943,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
   function paintHours() {
     if (!UI || !UI.hrs) return;
     var s = S.sym;
-    if (!s || isCoin(s) || inWatch(Date.now())) { UI.hrs.hidden = true; return; }
+    if (!s || is24(s) || inWatch(Date.now())) { UI.hrs.hidden = true; return; }
     var h = watchHours();
     UI.hrs.textContent = '지금은 주식 알림 감시 시간이 아닙니다 · 한국 ' + h.a + ':00 (미국 평일)부터 감시';
     UI.hrs.hidden = false;
@@ -5900,17 +5963,29 @@ html.at-lock,html.at-lock body{overflow:hidden}
     } else UI.chg.textContent = UI.fsChg.textContent = '';
     var et = new Date(S.lastT + etOff(S.lastT) * 60000);
     UI.ses.textContent = (S.ses ? S.ses + ' · ' : '') + '동부 ' + ('0' + et.getUTCHours()).slice(-2) + ':' +
-      ('0' + et.getUTCMinutes()).slice(-2) + ' · ' + (S.crypto ? '24시간 대비' : '전일 대비');
+      ('0' + et.getUTCMinutes()).slice(-2) + ' · ' + (S.crypto ? '24시간 대비' : S.fut ? '전 세션 대비' : '전일 대비');
   }
   function paintLive() {
     if (!UI) return;
     var on = S.active && S.timer && period() <= 15000 && (Date.now() - S.lastOk) < 60000;
-    UI.live.classList.toggle('on', !!on);
-    UI.live.lastChild.textContent = on ? '실시간' : '장 쉼';
+    // 선물은 야후 시세가 늦다 — 마지막 체결이 몇 분 전인지 그대로 보여준다 (3분 이상이면 「N분 지연」)
+    var lag = S.fut && S.lastT ? Math.floor((Date.now() - S.lastT) / 60000) : 0;
+    var txt = !on ? '장 쉼' : (S.fut && lag >= 3 ? (lag < 90 ? lag + '분 지연' : '장 쉼') : '실시간');
+    UI.live.classList.toggle('on', !!on && txt === '실시간');
+    UI.live.classList.toggle('lag', !!on && /지연/.test(txt));
+    UI.live.lastChild.textContent = txt;
   }
   function loadFrame() {
     if (!S.active || !S.sym || S.frameSym === S.sym) return;
     S.frameSym = S.sym;
+    var tv = tvSym(S.sym), fut = isFut(S.sym);
+    if (UI.tvn) {
+      UI.tvn.hidden = !fut;
+      if (fut) UI.tvn.textContent = tv
+        ? '차트는 ' + FUTTV[S.sym][1] + '(트레이딩뷰) — 선물 가격과 조금 다릅니다. 가격·핵심 가격대·알림은 선물 시세(야후, 10분 이상 지연) 기준입니다.'
+        : '트레이딩뷰 무료 차트는 이 선물을 보여주지 않습니다. 가격·핵심 가격대·알림은 선물 시세(야후, 10분 이상 지연) 기준으로 작동합니다.';
+    }
+    if (!tv) { UI.frame.innerHTML = '<div class="ph">이 선물은 차트를 보여드릴 수 없습니다</div>'; return; }
     UI.frame.innerHTML = '<iframe id="atFrame" title="' + esc(S.sym) + ' 트레이딩뷰 차트" frameborder="0" scrolling="no" ' +
       'allowtransparency="true" src="' + tvUrl(S.sym) + '"></iframe>';
   }
@@ -5987,7 +6062,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
     var changed = sym !== S.sym;
     S.sym = sym; ls('a99_tab_sym', sym);
     var rc = recent().filter(function (x) { return x !== sym; }); rc.unshift(sym); ls('a99_tab_recent', JSON.stringify(rc.slice(0, 6)));
-    if (changed) { S.px = null; S.pc = null; S.ses = ''; S.crypto = isCoin(sym); }
+    if (changed) { S.px = null; S.pc = null; S.ses = ''; S.crypto = isCoin(sym); S.fut = isFut(sym); }
     if (S.back && S.back.sym !== sym) setBack(null);
     paintChips(); paintHead(); BOX.setSym(sym); loadFrame();
     if (changed || !S.px) fetchPx();
@@ -6129,7 +6204,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
 </script>
 <script>
 /* ══════════════════════════════════════════════════════════════
-   안드레99 — 겹침 가격대(핵심 가격대) 엔진  v1.0 (2026-10-04)
+   안드레99 — 겹침 가격대(핵심 가격대) 엔진  v1.2 (2026-10-05)
    여러 시간 단위·여러 지표의 선이 한 가격 근처에 몰린 곳을 찾아 강도를 매긴다.
    입력: 시간 단위별 봉 { W, D, H4, H1, M15, M5 } — 각 [{t,o,h,l,c,v}] 오래된 것 → 최근
    출력: 현재가 위·아래 가까운 구간 [{lo, hi, mid, score, strength(1~5), tfs[], parts[]}]
@@ -6163,26 +6238,33 @@ html.at-lock,html.at-lock body{overflow:hidden}
   }
 
   /* 한 시간 단위에서 의미 있는 선을 뽑는다 */
-  function linesOf(tf, b) {
-    var L = [], add = function (p, kind, name, mult) { if (p != null && isFinite(p) && p > 0) L.push({ p: p, tf: tf, kind: kind, name: TF[tf].ko + ' ' + name, w: TF[tf].w * mult }); };
+  function linesOf(tf, b, cx) {
+    // name: 펼쳤을 때 보이는 긴 이름 · sh: 줄 아래 한 줄에 쓰는 짧은 이름 (noTf 면 시간 단위를 앞에 붙이지 않는다)
+    // m: 이 선이 앞으로 어떻게 움직이는지 계산할 때 쓰는 정보 (유효시각 계산용)
+    var L = [], add = function (p, kind, name, mult, sh, noTf, m) {
+      if (p != null && isFinite(p) && p > 0) L.push({ p: p, tf: tf, kind: kind, name: noTf ? name : TF[tf].ko + ' ' + name,
+        sh: noTf ? (sh || name) : TF[tf].short + ' ' + (sh || name), w: TF[tf].w * mult, m: m || null });
+    };
     if (!b || b.length < 30) return L;
     var c = b.map(function (x) { return x.c; }), n = b.length;
     // 이동평균 — 짧은 시간 단위의 짧은 평균선은 가격을 졸졸 따라다녀 '겹침'을 부풀리므로 뺀다
     var MAS = { W: [20, 60, 120], D: [20, 60, 120, 200], H4: [20, 60, 120, 200], H1: [60, 120, 200], M15: [200], M5: [] }[tf];
-    MAS.forEach(function (p) { add(sma(c, p), 'ma', p + '선', p >= 120 ? 1.1 : 1.0); });
+    MAS.forEach(function (p) { add(sma(c, p), 'ma', p + '선', p >= 120 ? 1.1 : 1.0, null, false, { k: 'ma', n: p }); });
     // 일목 — 기준선(26), 전환선(9), 지금 머리 위 구름(26봉 전에 계산된 선행스팬)
     if (n >= 52 + 26 && tf !== 'M5') {
       var k = hiLo(b, n - 26, n), t9 = hiLo(b, n - 9, n);
-      add((k[0] + k[1]) / 2, 'ichi', '기준선', 1.0);
-      if (tf !== 'M15') add((t9[0] + t9[1]) / 2, 'ichi', '전환선', 0.7);
+      add((k[0] + k[1]) / 2, 'ichi', '기준선', 1.0, null, false, { k: 'win', w: 26 });
+      if (tf !== 'M15') add((t9[0] + t9[1]) / 2, 'ichi', '전환선', 0.7, null, false, { k: 'win', w: 9 });
       var m = n - 26, kB = hiLo(b, m - 26, m), tB = hiLo(b, m - 9, m), sB = hiLo(b, m - 52, m);
-      add(((kB[0] + kB[1]) / 2 + (tB[0] + tB[1]) / 2) / 2, 'ichi', '구름 위·아래끝 A', 0.8);
-      add((sB[0] + sB[1]) / 2, 'ichi', '구름 위·아래끝 B', 0.8);
+      add(((kB[0] + kB[1]) / 2 + (tB[0] + tB[1]) / 2) / 2, 'ichi', '구름 선행A', 0.8, '구름', false, { k: 'spanA' });
+      add((sB[0] + sB[1]) / 2, 'ichi', '구름 선행B', 0.8, '구름', false, { k: 'spanB' });
     }
+    // 마지막 봉이 이미 끝났는가 (주식 장 마감 뒤·장 시작 전, 또는 자료가 늦을 때) — 그러면 그 봉이 「직전 봉」이다
+    var done = !!(cx && cx.cal && ender(tf, b[n - 1].t, cx.cal)(0) <= cx.now);
     // 직전 봉 고가·저가 (주봉 → 전주, 일봉 → 전일, 4시간 → 직전 4시간)
     if (tf === 'W' || tf === 'D' || tf === 'H4') {
-      var pv = b[n - 2], lab = tf === 'W' ? '전주' : tf === 'D' ? '전일' : '직전 4시간';
-      add(pv.h, 'prev', lab + ' 고가', 1.2); add(pv.l, 'prev', lab + ' 저가', 1.2);
+      var pv = done ? b[n - 1] : b[n - 2], lab = tf === 'W' ? '전주' : tf === 'D' ? '전일' : '직전 4시간', ls = tf === 'H4' ? '직전 4h' : lab;
+      add(pv.h, 'prev', lab + ' 고가', 1.2, ls + ' 고가', true, { k: 'prev' }); add(pv.l, 'prev', lab + ' 저가', 1.2, ls + ' 저가', true, { k: 'prev' });
     }
     // 스윙 고점·저점 — 좌우 3봉보다 높은/낮은 봉, 최근 각 2개
     var hi = [], lo = [];
@@ -6195,20 +6277,30 @@ html.at-lock,html.at-lock body{overflow:hidden}
       if (isH && hi.length < 2) hi.push(b[i].h);
       if (isL && lo.length < 2) lo.push(b[i].l);
     }
-    hi.forEach(function (p) { add(p, 'pivot', '최근 고점', 1.1); });
-    lo.forEach(function (p) { add(p, 'pivot', '최근 저점', 1.1); });
-    // 거래량이 가장 많이 쌓인 가격 (최근 120봉 · 40칸)
+    // 고점·저점은 값이 고정이다. 더 새로운 고점·저점이 생기려면 최소 4봉이 필요하므로 20봉 동안 유효로 본다
+    hi.forEach(function (p) { add(p, 'pivot', '최근 고점', 1.1, '고점', false, { k: 'fix', bars: 20 }); });
+    lo.forEach(function (p) { add(p, 'pivot', '최근 저점', 1.1, '저점', false, { k: 'fix', bars: 20 }); });
+    // 매물대 (VRVP 방식, 최근 120봉 · 40칸) — 중심(POC) + 거래 70%가 몰린 구간의 위·아래 끝(VAH·VAL)
     var seg = b.slice(-120), hl = hiLo(seg, 0, seg.length), bins = 40, step = (hl[0] - hl[1]) / bins, vol = new Array(bins).fill(0);
     if (step > 0) {
-      seg.forEach(function (x) { var mid = (x.h + x.l + x.c) / 3, ix = Math.min(bins - 1, Math.floor((mid - hl[1]) / step)); vol[ix] += x.v || 1; });
+      var tot = 0;
+      seg.forEach(function (x) { var mid = (x.h + x.l + x.c) / 3, ix = Math.min(bins - 1, Math.floor((mid - hl[1]) / step)), vx = x.v || 1; vol[ix] += vx; tot += vx; });
       var best = 0; for (var q = 1; q < bins; q++) if (vol[q] > vol[best]) best = q;
-      add(hl[1] + step * (best + 0.5), 'poc', '매물 최대', 1.2);
+      // 매물대는 120봉 창이 한 봉씩 밀리며 천천히 바뀐다 — 창의 10%(12봉) 동안 유효로 본다
+      add(hl[1] + step * (best + 0.5), 'poc', '매물대 중심', 1.2, '매물대', false, { k: 'fix', bars: 12 });
+      var a = best, z = best, acc = vol[best];
+      while (acc < tot * 0.7 && (a > 0 || z < bins - 1)) {
+        var dn = a > 0 ? vol[a - 1] : -1, up = z < bins - 1 ? vol[z + 1] : -1;
+        if (up >= dn) { z++; acc += up; } else { a--; acc += dn; }
+      }
+      if (z > best) add(hl[1] + step * (z + 1), 'vah', '매물대 상단', 1.0, '매물 상단', false, { k: 'fix', bars: 12 });
+      if (a < best) add(hl[1] + step * a, 'val', '매물대 하단', 1.0, '매물 하단', false, { k: 'fix', bars: 12 });
     }
     // 장중 시간 단위 — 당일 거래량 가중 평균가(VWAP), 세션 시작 = 최근 날짜 경계
-    if (tf === 'H1' || tf === 'M15' || tf === 'M5') {
-      var day = Math.floor(b[n - 1].t / 86400000), pv2 = 0, vv = 0;
-      for (var r = n - 1; r >= 0 && Math.floor(b[r].t / 86400000) === day; r--) { var tp = (b[r].h + b[r].l + b[r].c) / 3, vr = b[r].v || 1; pv2 += tp * vr; vv += vr; }
-      if (vv > 0 && tf === 'M5') add(pv2 / vv, 'vwap', 'VWAP', 1.0);   // 세 시간 단위가 같은 값이라 한 번만
+    if (tf === 'M5' && !done) {              // 세 시간 단위가 같은 값이라 5분봉에서 한 번만 · 세션이 끝났으면 「당일」이 아니므로 뺀다
+      var cal0 = cx && cx.cal, day = sessKey(b[n - 1].t, cal0), pv2 = 0, vv = 0, nb = 0;
+      for (var r = n - 1; r >= 0 && sessKey(b[r].t, cal0) === day; r--) { var tp = (b[r].h + b[r].l + b[r].c) / 3, vr = b[r].v || 1; pv2 += tp * vr; vv += vr; nb++; }
+      if (vv > 0) add(pv2 / vv, 'vwap', '당일 VWAP', 1.0, 'VWAP', true, { k: 'vwap', pv: pv2, vv: vv, va: vv / nb, day: day });
     }
     return L;
   }
@@ -6217,14 +6309,16 @@ html.at-lock,html.at-lock body{overflow:hidden}
   function commonLines(bars, px, userLines) {
     var L = [], d = bars.D;
     if (d && d.length > 20) {
-      var y = hiLo(d, Math.max(0, d.length - 252), d.length);
-      L.push({ p: y[0], tf: 'D', kind: '52w', name: '52주 고가', w: 2.5 });
-      L.push({ p: y[1], tf: 'D', kind: '52w', name: '52주 저가', w: 2.5 });
+      var s0 = Math.max(0, d.length - 252), y = hiLo(d, s0, d.length), iH = s0, iL = s0;
+      for (var i = s0; i < d.length; i++) { if (d[i].h >= d[iH].h) iH = i; if (d[i].l <= d[iL].l) iL = i; }
+      // 52주 고가·저가는 그 봉이 252일 창에서 빠질 때 바뀐다
+      L.push({ p: y[0], tf: 'D', kind: '52w', name: '52주 고가', sh: '52주 고가', w: 2.5, m: { k: 'exit', bars: iH - (d.length - 252) } });
+      L.push({ p: y[1], tf: 'D', kind: '52w', name: '52주 저가', sh: '52주 저가', w: 2.5, m: { k: 'exit', bars: iL - (d.length - 252) } });
     }
     var step = Math.pow(10, Math.floor(Math.log10(px))) / 10;   // 83,850 → 1,000 · 168 → 10
     var base = Math.floor(px / step) * step;
-    for (var k = -2; k <= 3; k++) { var rp = base + k * step; if (rp > 0) L.push({ p: rp, tf: null, kind: 'round', name: '라운드 ' + rp.toLocaleString('en-US'), w: 0.6 }); }
-    (userLines || []).forEach(function (u) { L.push({ p: u.p, tf: null, kind: 'user', name: '내가 그은 선' + (u.name ? ' · ' + u.name : ''), w: 1.5 }); });
+    for (var k = -2; k <= 3; k++) { var rp = base + k * step; if (rp > 0) L.push({ p: rp, tf: null, kind: 'round', name: '라운드 ' + rp.toLocaleString('en-US'), sh: '라운드', w: 0.6 }); }
+    (userLines || []).forEach(function (u) { L.push({ p: u.p, tf: null, kind: 'user', name: '내가 그은 선' + (u.name ? ' · ' + u.name : ''), sh: '내 선', w: 1.5 }); });
     return L;
   }
 
@@ -6237,13 +6331,176 @@ html.at-lock,html.at-lock body{overflow:hidden}
       else { cur = { lo: ln.p, hi: ln.p, parts: [ln] }; Z.push(cur); }
     });
     return Z.map(function (z) {
-      // 같은 시간 단위의 같은 종류가 여러 개면 무게를 줄인다 (예: 일봉 20·60선이 겹친 것만으로 강해지지 않게)
-      var seen = {}, score = 0, tfs = {};
-      z.parts.forEach(function (p) { var key = (p.tf || '-') + p.kind; score += p.w * (seen[key] ? 0.5 : 1); seen[key] = 1; if (p.tf) tfs[p.tf] = 1; });
-      var nT = Object.keys(tfs).length;
-      score *= (1 + 0.15 * Math.max(0, nT - 1));      // 서로 다른 시간 단위가 겹칠수록 가산
-      return { lo: z.lo, hi: z.hi, mid: (z.lo + z.hi) / 2, score: score, n: z.parts.length, tfs: Object.keys(tfs), parts: z.parts };
+      var sc = scoreOf(z.parts);
+      return { lo: z.lo, hi: z.hi, mid: (z.lo + z.hi) / 2, score: sc.score, n: z.parts.length, tfs: sc.tfs, parts: z.parts };
     });
+  }
+  // 묶음 점수 — 같은 시간 단위의 같은 종류가 여러 개면 무게를 줄인다 (예: 일봉 20·60선이 겹친 것만으로 강해지지 않게)
+  //   서로 다른 시간 단위가 겹칠수록 가산
+  function scoreOf(parts) {
+    var seen = {}, score = 0, tfs = {};
+    parts.forEach(function (p) { var key = (p.tf || '-') + p.kind; score += p.w * (seen[key] ? 0.5 : 1); seen[key] = 1; if (p.tf) tfs[p.tf] = 1; });
+    var nT = Object.keys(tfs).length;
+    return { score: score * (1 + 0.15 * Math.max(0, nT - 1)), tfs: Object.keys(tfs) };
+  }
+
+  /* ══════════ 유효시각 (2026.10.05) ══════════
+     서버는 가격대를 다시 계산하지 못하고 「계산한 순간의 사진」을 들고 판정한다.
+     그래서 사진이 틀려지는 시점을 미리 계산해 함께 보낸다 — 선마다 실제 데이터로 따진다.
+       이동평균   : 앞으로 빠질 봉의 종가는 이미 안다. 가격이 지금가(또는 가격대 가운데)에 머문다고 보고
+                    선이 허용 오차(tol)보다 더 움직이는 첫 봉을 찾는다.
+       기준·전환선: 창(26·9봉)에서 최고·최저 봉이 빠지는 시점을 같은 방식으로 찾는다.
+       구름       : 앞으로 25봉 동안의 구름 값은 이미 계산돼 있다(26봉 앞서 그려지므로) — 그대로 확인.
+       전일·전주 고저: 지금 봉이 끝나면 「전일」이 바뀐다.
+       고점·저점 20봉 · 매물대 12봉 · 52주 고저는 그 봉이 창에서 빠질 때 · VWAP 는 세션이 끝날 때까지 범위 안.
+     가격대는 「남은 선들이 여전히 가격대 조건(선 3개·시간 단위 2개·점수 60%)을 채우는 동안」만 유효.
+     장 시간: 코인은 24시간, 주식은 동부 9:30~16:00 평일 (주말·장 밖에는 선이 안 움직인다). 최대 72시간. */
+  var MIN = 60000, HOUR = 3600000, DAYMS = 86400000;
+  var TFMS = { W: 7 * DAYMS, D: DAYMS, H4: 4 * HOUR, H1: HOUR, M15: 15 * MIN, M5: 5 * MIN };
+  var CAP = 72 * HOUR;
+  function wkday(ds) { var d = new Date(ds).getUTCDay(); return d >= 1 && d <= 5; }
+  function ender(tf, tLast, cal) {
+    if (cal.mode === 'cme') return enderCme(tf, tLast, cal);
+    var d = TFMS[tf], e = (cal.et || -240) * MIN, rth = cal.mode === 'rth';
+    var o5 = function (ds) { return ds + 570 * MIN; }, c16 = function (ds) { return ds + 960 * MIN; };
+    function first() {
+      if (!rth) { var off = tf === 'W' ? 4 * DAYMS : 0; return Math.floor((tLast - off) / d) * d + off + d; }
+      var L = tLast + e, ds = Math.floor(L / DAYMS) * DAYMS;
+      if (tf === 'D') return c16(ds) - e;
+      if (tf === 'W') { var dw = new Date(ds).getUTCDay(); return c16(ds + ((5 - dw + 7) % 7) * DAYMS) - e; }
+      var o = o5(ds), st = o + Math.max(0, Math.floor((L - o) / d)) * d;
+      return Math.min(st + d, c16(ds)) - e;
+    }
+    function next(prev) {
+      if (!rth) return prev + d;
+      if (tf === 'W') return prev + 7 * DAYMS;
+      var L = prev + e, ds = Math.floor(L / DAYMS) * DAYMS;
+      if (tf === 'D') { ds += DAYMS; while (!wkday(ds)) ds += DAYMS; return c16(ds) - e; }
+      if (L >= c16(ds)) { ds += DAYMS; while (!wkday(ds)) ds += DAYMS; return Math.min(o5(ds) + d, c16(ds)) - e; }
+      return Math.min(L + d, c16(ds)) - e;
+    }
+    var ends = [first()];
+    return function at(k) { while (ends.length <= k) ends.push(next(ends[ends.length - 1])); return ends[k]; };
+  }
+  /* 선물(CME 글로벡스) 달력 — 동부 일 18:00 ~ 금 17:00, 매일 17:00~18:00 쉼.
+     거래일 D 는 전날 18:00 ~ D 17:00. 4시간봉은 18:00 에 맞춘다(18·22·2·6·10·14시, 마지막 봉은 17시에 끝). */
+  function enderCme(tf, tLast, cal) {
+    var e = (cal.et || -240) * MIN, d = TFMS[tf];
+    var C17 = 1020 * MIN, O18 = 1080 * MIN;
+    var loc = function (t) { return t + e; }, utc = function (L) { return L - e; };
+    var dayOf = function (L) { return Math.floor(L / DAYMS) * DAYMS; }, dow = function (ds) { return new Date(ds).getUTCDay(); };
+    var off = tf === 'H4' ? (O18 % (4 * HOUR)) : 0;            // 지역 시각 기준 격자
+    function closeAfter(L) {                                  // L(지역) 이후 첫 17:00 (거래일 끝)
+      var ds = dayOf(L), c = ds + C17;
+      if (L >= c) { c += DAYMS; }
+      while (dow(dayOf(c)) === 6 || dow(dayOf(c)) === 0) c += DAYMS;   // 토·일에는 장이 안 끝난다 (일 18시 시작 → 월 17시)
+      return c;
+    }
+    function openAfter(L) {                                   // L(지역)이 쉬는 시간이면 다음 18:00 개장, 아니면 L
+      var ds = dayOf(L), m = L - ds, w = dow(ds);
+      if (w === 6) return ds + DAYMS + O18;                   // 토 → 일 18:00
+      if (w === 0 && m < O18) return ds + O18;                // 일 18:00 전
+      if (w === 5 && m >= C17) return ds + 2 * DAYMS + O18;   // 금 17:00 뒤 → 일 18:00
+      if (m >= C17 && m < O18) return ds + O18;               // 매일 쉬는 1시간
+      return L;
+    }
+    function barEnd(L0) {                                     // L0(지역)에서 시작·진행 중인 봉의 끝
+      if (tf === 'D') return closeAfter(L0);
+      if (tf === 'W') { var c = closeAfter(L0); while (dow(dayOf(c)) !== 5) c = closeAfter(c + MIN); return c; }
+      var st = Math.floor((L0 - off) / d) * d + off;
+      return Math.min(st + d, closeAfter(L0));
+    }
+    var ends = [utc(barEnd(loc(tLast)))];
+    return function at(k) {
+      while (ends.length <= k) { var L = openAfter(loc(ends[ends.length - 1])); ends.push(utc(barEnd(L))); }
+      return ends[k];
+    };
+  }
+  // VWAP 세션 번호 — 코인 UTC 하루 · 주식 정규장(같은 UTC 날) · 선물 동부 18:00 시작
+  function sessKey(t, cal) {
+    if (cal && cal.mode === 'cme') return Math.floor((t + (cal.et || -240) * MIN - 1080 * MIN) / DAYMS);
+    return Math.floor(t / DAYMS);
+  }
+  // 값이 처음으로 tol 보다 더 움직이는 봉 번호 (0 = 지금 봉이 끝날 때까지) · 끝까지 안 움직이면 maxK + 1
+  function firstBreak(p0, tol, maxK, valAt) {
+    for (var k = 0; k <= maxK; k++) { var v = valAt(k); if (v != null && Math.abs(v - p0) > tol) return k; }
+    return maxK + 1;
+  }
+  function partExpiry(part, ctx) {
+    var m = part.m, b = part.tf && ctx.bars[part.tf];
+    if (!m) return Infinity;                               // 라운드 가격·내 선은 움직이지 않는다
+    if (!b || b.length < 2) return ctx.now;
+    var n = b.length, cal = ctx.cal, at = ender(part.tf, b[n - 1].t, cal), tol = ctx.tol, best = Infinity;
+    // done: 마지막 봉이 이미 끝났다 → 다음 봉이 시작될 때까지 선이 안 움직인다
+    var done = at(0) <= ctx.now;
+    function nextStart() {
+      // 선물: 다음 개장(18:00)에 시작하는 봉 = 그 봉의 끝 − 봉 길이 (일봉 23시간 · 주봉 일 18:00 ~ 금 17:00)
+      if (cal.mode === 'cme') return at(1) - (part.tf === 'D' ? 23 * HOUR : part.tf === 'W' ? 4 * DAYMS + 23 * HOUR : TFMS[part.tf]);
+      if (cal.mode !== 'rth') return at(0);
+      var e = (cal.et || -240) * MIN, L = at(0) + e, ds = Math.floor(L / DAYMS) * DAYMS;
+      if (part.tf !== 'D' && part.tf !== 'W' && L < ds + 960 * MIN) return at(0);
+      ds += DAYMS; while (!wkday(ds)) ds += DAYMS;
+      return ds + 570 * MIN - e;
+    }
+    // k번째 새 봉에서 처음 어긋난다 → 그 봉이 시작되기 직전까지 유효
+    function fromK(k) { if (k <= 0) return ctx.now; if (done) return k === 1 ? nextStart() : at(k - 1); return at(k - 1); }
+    if (m.k === 'prev') return done ? at(1) : at(0);
+    if (m.k === 'fix') return done ? at(m.bars) : at(m.bars - 1);
+    if (m.k === 'exit') return done ? at(Math.max(0, m.bars) + 1) : at(Math.max(0, m.bars));
+    if (m.k === 'spanA' || m.k === 'spanB') {
+      var mid = function (f, t) { var r = hiLo(b, f, t); return (r[0] + r[1]) / 2; };
+      return fromK(firstBreak(part.p, tol, 25, function (k) {
+        var mm = n - 26 + k; if (mm - 52 < 0 || mm > n) return null;
+        return m.k === 'spanA' ? (mid(mm - 26, mm) + mid(mm - 9, mm)) / 2 : mid(mm - 52, mm);
+      }));
+    }
+    if (m.k === 'vwap') {                                  // 세션이 끝나면 VWAP 는 새로 시작한다
+      var e0 = (cal.et || -240) * MIN;
+      var se = cal.mode === 'rth' ? Math.floor((b[n - 1].t + e0) / DAYMS) * DAYMS + 960 * MIN - e0
+             : cal.mode === 'cme' ? m.day * DAYMS + 1080 * MIN + 23 * HOUR - e0     // 18:00 시작 → 다음 날 17:00 끝
+             : (m.day + 1) * DAYMS;
+      if (se <= ctx.now) return ctx.now;
+    }
+    ctx.F.forEach(function (F) {                           // 가격이 지금가 / 가격대 가운데에 머무는 두 경우 중 더 이른 쪽
+      var k;
+      if (m.k === 'ma') {
+        var N = m.n, sum = 0; for (var i = n - N; i < n; i++) sum += b[i].c;
+        // 진행 중인 봉이면 그 봉 종가가 F 로 바뀌는 것부터, 끝난 봉이면 다음 봉부터
+        var cur = done ? sum : sum - b[n - 1].c + F;
+        k = firstBreak(part.p, tol, N, function (j) {
+          if (j > 0) cur += F - (done ? b[n - N + j - 1].c : (j < N ? b[n - N + j - 1].c : F));
+          return cur / N;
+        });
+      } else if (m.k === 'win') {
+        var W = m.w;
+        k = firstBreak(part.p, tol, W, function (j) {
+          if (j >= W) return F;                              // 창이 모두 새 봉으로 바뀜
+          var h = done ? b[n - 1].h : Math.max(b[n - 1].h, F), l = done ? b[n - 1].l : Math.min(b[n - 1].l, F);
+          for (var i = n - W + j; i < n - 1; i++) { if (b[i].h > h) h = b[i].h; if (b[i].l < l) l = b[i].l; }
+          if (j > 0) { if (F > h) h = F; if (F < l) l = F; }
+          return (h + l) / 2;
+        });
+      } else if (m.k === 'vwap') {
+        k = firstBreak(part.p, tol, 288, function (j) { return (m.pv + j * F * m.va) / (m.vv + j * m.va); });
+      } else k = 0;
+      var t = fromK(k);
+      if (m.k === 'vwap') t = Math.min(t, se);
+      if (t < best) best = t;
+    });
+    return best;
+  }
+  // 가격대 유효시각 — 유효시각이 이른 선부터 하나씩 빼 보며, 남은 선이 조건을 못 채우게 되는 순간
+  function zoneExpiry(z, ctx) {
+    var cap = ctx.now + CAP;
+    var P = z.parts.map(function (p) { var x = Math.max(ctx.now, partExpiry(p, ctx)); p.x = Math.min(x, cap); return p; });
+    if (z.weak) return Math.max(ctx.now, Math.min.apply(null, P.map(function (p) { return p.x; })));
+    var ord = P.slice().sort(function (a, b) { return a.x - b.x; }), rest = P.slice();
+    for (var i = 0; i < ord.length; i++) {
+      rest.splice(rest.indexOf(ord[i]), 1);
+      var sc = scoreOf(rest);
+      if (rest.length < 3 || sc.tfs.length < 2 || sc.score < z.score * 0.6) return Math.max(ctx.now, ord[i].x);
+    }
+    return cap;
   }
 
   // 강도 — 보기 묶음마다 시간 단위 무게 합이 달라서, 전체 기준(10.7)으로 맞춘 뒤 나눈다
@@ -6257,7 +6514,8 @@ html.at-lock,html.at-lock body{overflow:hidden}
   function zones(bars, px, opt) {
     opt = opt || {};
     var mode = MODE[opt.mode || 'all'], L = [];
-    mode.forEach(function (tf) { L = L.concat(linesOf(tf, bars[tf])); });
+    var cx = opt.cal ? { cal: opt.cal, now: opt.now || Date.now() } : null;
+    mode.forEach(function (tf) { L = L.concat(linesOf(tf, bars[tf], cx)); });
     commonLines(bars, px, opt.userLines).forEach(function (l) {
       if (!l.tf || mode.indexOf(l.tf) >= 0 || l.kind === '52w' && opt.mode !== 'day') L.push(l);
     });
@@ -6276,6 +6534,20 @@ html.at-lock,html.at-lock body{overflow:hidden}
     var up = Z.filter(function (z) { return z.lo > px && !z.inside; }).sort(function (a, b) { return a.mid - b.mid; }).slice(0, opt.n || 2);
     var dn = Z.filter(function (z) { return z.hi < px && !z.inside; }).sort(function (a, b) { return b.mid - a.mid; }).slice(0, opt.n || 2);
     var at = Z.filter(function (z) { return z.inside; }).sort(function (a, b) { return b.score - a.score; })[0] || null;
+    // 한쪽이 비면 — 가장 가까운 선 묶음 하나를 「약함」으로 보여준다 (짧은 시간 단위 선 하나·라운드 가격만 있는 묶음은 뒤로)
+    function weak(side) {
+      var C = cluster(L.slice(), tol).filter(function (z) { return side > 0 ? z.lo > px * (1 + 0.0005) : z.hi < px * (1 - 0.0005); });
+      C.forEach(function (z) { z.dist = (z.mid - px) / px * 100; z.strength = 1; z.weak = true; z.real = z.score >= 2 && z.parts.some(function (p) { return p.kind !== 'round'; }); });   // 일봉급 선 하나 또는 작은 선 여럿
+      C.sort(function (a, b) { return (b.real - a.real) || (Math.abs(a.dist) - Math.abs(b.dist)); });
+      return C[0] ? [C[0]] : [];
+    }
+    if (!up.length && opt.weak !== false) up = weak(1);
+    if (!dn.length && opt.weak !== false) dn = weak(-1);
+    // 유효시각 — 장 시간 정보(cal)를 받았을 때만
+    if (opt.cal) {
+      var now = opt.now || Date.now();
+      up.concat(dn, at ? [at] : []).forEach(function (z) { z.x = zoneExpiry(z, { bars: bars, tol: tol, now: now, cal: opt.cal, F: [px, z.mid] }); });
+    }
     return { up: up, dn: dn, at: at, tol: tol, lines: L.length };
   }
 
@@ -6290,11 +6562,11 @@ html.at-lock,html.at-lock body{overflow:hidden}
     return out;
   }
 
-  var API = { zones: zones, linesOf: linesOf, cluster: cluster, agg: agg, TF: TF, MODE: MODE };
+  var API = { zones: zones, linesOf: linesOf, cluster: cluster, agg: agg, TF: TF, MODE: MODE, _ender: ender, _partExpiry: partExpiry };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.A99Zones = API;
 })(typeof self !== 'undefined' ? self : this);
 </script>
-<!-- ═════════ 핵심 가격대 (겹침 가격대) — 트레이딩 탭  v2026.10.04-A ═════════
+<!-- ═════════ 핵심 가격대 (겹침 가격대) — 트레이딩 탭  v2026.10.05-A ═════════
      여러 시간 단위(주·일·4시간·1시간·15분·5분)의 선이 한 가격 근처에 몰린 곳을 보여주고,
      닿으면 알림을 보낸다. 계산은 이 화면(폰)에서 하고, 서버는 매분 닿았는지만 본다.
      앞에 있어야 하는 것: alert-patch(A99Alert) · alert-tab(A99Tab) · zones.js(A99Zones, build.py 가 바로 앞에 넣는다) -->
@@ -6321,6 +6593,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
 .kz-r .x{font-family:var(--mono);font-size:12px;color:var(--tx2);text-align:right;font-variant-numeric:tabular-nums}
 .kz-r.at{background:var(--s1)}
 .kz-r.at .x{color:#E8A317;font-family:inherit;font-weight:600}
+.kz-r.weak .p{color:var(--tx2)} .kz-r.weak .g{opacity:.55}
 .kz-r[aria-expanded="true"]{border-bottom-color:transparent}
 .kz-r:focus-visible,.kz-seg button:focus-visible,.kz-sw:focus-visible,.kz-d .act button:focus-visible,.kz-msg button:focus-visible{outline:2px solid var(--tx2);outline-offset:-2px}
 .kz-now{display:flex;align-items:center;gap:8px;min-height:30px;font-size:11.5px;color:var(--tx3)}
@@ -6331,6 +6604,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
 .kz-d li{list-style:none;display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--tx2);padding:3px 0}
 .kz-d li span{font-family:var(--mono);color:var(--tx3);font-variant-numeric:tabular-nums}
 .kz-d .act{display:flex;gap:6px;margin-top:8px}
+.kz-d .kz-v{margin:6px 0 0;font-size:11px;color:var(--tx3)}
 .kz-d .act button{min-height:34px;padding:0 12px;border:1px solid var(--line);border-radius:8px;color:var(--tx);font-size:12px;font-weight:600}
 .kz-d .act button:disabled{opacity:.5}
 .kz-none,.kz-msg{font-size:12px;color:var(--tx3);padding:12px 0;border-bottom:1px solid var(--line)}
@@ -6360,17 +6634,22 @@ html.at-lock,html.at-lock body{overflow:hidden}
   var TFKO = { W: '주', D: '일', H4: '4시간', H1: '1시간', M15: '15분', M5: '5분' }, ORDER = ['W', 'D', 'H4', 'H1', 'M15', 'M5'];
   var MIN = 60000, H = 3600000, DAY = 86400000;
   // 받을 봉 — 1분봉은 쓰지 않는다. 주봉은 일봉을, 4시간은 1시간봉을 합쳐 만든다.
-  //   age: 다시 받는 간격. 주식은 정규장 봉만 쓰므로 일수를 늘려 200선까지 채운다.
+  //   age: 다시 받는 간격. 일수는 계산에 쓰는 최대 길이(200봉)에 여유를 둔 만큼만 — 더 받아도 결과가 같다.
+  //   dc 코인 일수 · ds 주식 일수 · rth 주식은 정규장 봉만 (프리·애프터는 계산에 안 쓴다)
+  //   5분봉은 현재가와 같은 주소를 써서 서버 캐시를 나눠 쓴다.
   var FEED = {
     d1:  { iv: '1d',  dc: 0,  ds: 0,   age: 30 * MIN },
-    h1:  { iv: '1h',  dc: 60, ds: 100, age: 30 * MIN },
-    m15: { iv: '15m', dc: 4,  ds: 10,  age: 5 * MIN },
+    h1:  { iv: '1h',  dc: 40, ds: 110, age: 30 * MIN, rth: 1 },
+    m15: { iv: '15m', dc: 4,  ds: 10,  age: 5 * MIN, rth: 1 },
     m5:  { iv: '5m',  dc: 2,  ds: 2,   age: 5 * MIN }
   };
+  var KEYS = ['d1', 'h1', 'm15', 'm5'];
 
   function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function isCoin(s) { return /-USD$/.test(s || ''); }
+  function isFut(s) { return /=F$/.test(s || ''); }            // 선물(연속월) — 거의 24시간, 정규장 구분 없음
+  function is24(s) { return isCoin(s) || isFut(s); }
   function fmt(v) { return v >= 1000 ? Math.round(v).toLocaleString('en-US') : n4(v); }
   function pc(v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + '%'; }
   function rnd(v) { return Math.abs(v) >= 1 ? Math.round(v * 100) / 100 : +(+v).toPrecision(4); }
@@ -6378,7 +6657,8 @@ html.at-lock,html.at-lock body{overflow:hidden}
   var K = {
     sym: null, raw: {}, at: {}, bars: null, err: null, busy: false, seq: 0,
     mode: ({ all: 1, day: 1, swing: 1 })[ls('a99_kz_mode')] ? ls('a99_kz_mode') : 'all',
-    open: null, res: null, sig: '', watch: {}, wBusy: false, posted: {}, timer: 0, done: {}, hold: 0, later: 0
+    open: null, res: null, sig: '', watch: {}, wBusy: false, posted: {}, timer: 0, done: {}, hold: 0, later: 0,
+    mem: {}, memOrder: [], failAt: 0
   };
   var BOXEL = null;
 
@@ -6392,41 +6672,76 @@ html.at-lock,html.at-lock body{overflow:hidden}
     return out;
   }
   function pull(sym, key) {
-    var f = FEED[key], d = isCoin(sym) ? f.dc : f.ds;
-    return fetch(API + '/bars?symbol=' + encodeURIComponent(sym) + '&iv=' + f.iv + (d ? '&d=' + d : ''))
+    var f = FEED[key], coin = is24(sym), d = coin ? f.dc : f.ds;
+    return fetch(API + '/bars?symbol=' + encodeURIComponent(sym) + '&iv=' + f.iv + (d ? '&d=' + d : '') + (f.rth && !coin ? '&rth=1' : ''))
       .then(function (r) { return r.json(); })
       .then(function (j) {
         if (!j || !j.ok || !j.t || !j.t.length) throw new Error((j && j.오류) || '빈 자료');
         return j;
       });
   }
-  function assemble() {
-    var R = K.raw, coin = isCoin(K.sym);
-    if (!R.d1 || !R.h1) return null;
+  // 실패하면 1.5초 쉬고 한 번 더
+  function pullRetry(sym, key) {
+    return pull(sym, key).catch(function () {
+      return new Promise(function (ok) { setTimeout(ok, 1500); }).then(function () { return pull(sym, key); });
+    });
+  }
+  function assemble() { return assembleRaw(K.sym, K.raw); }
+  // 장 시간 정보 — 유효시각 계산용 (코인 24시간 · 주식 동부 정규장)
+  function calFor(sym, R) {
+    var et = (R && R.h1 && R.h1.et_offset_min != null) ? R.h1.et_offset_min : -240;
+    return isCoin(sym) ? { mode: '24h' } : isFut(sym) ? { mode: 'cme', et: et } : { mode: 'rth', et: et };
+  }
+  function assembleRaw(sym, R) {
+    var coin = is24(sym);                                     // 코인·선물은 정규장만 거르지 않는다
+    if (!R || !R.d1 || !R.h1) return null;
     var D = toBars(R.d1, false);
     var H1 = toBars(R.h1, !coin);
     var M15 = R.m15 ? toBars(R.m15, !coin) : [];
     var M5 = R.m5 ? toBars(R.m5, !coin) : [];
-    // 4시간 — 코인은 UTC 0·4·8시, 주식은 정규장 시작(동부 9:30)에 맞춘다
-    var off = coin ? 0 : ((570 - (R.h1.et_offset_min != null ? R.h1.et_offset_min : -240)) * MIN) % (4 * H);
+    // 4시간 — 코인은 UTC 0·4·8시, 선물은 개장(동부 18:00), 주식은 정규장 시작(동부 9:30)에 맞춘다
+    var et0 = R.h1.et_offset_min != null ? R.h1.et_offset_min : -240;
+    var off = isCoin(sym) ? 0 : (((isFut(sym) ? 1080 : 570) - et0) * MIN) % (4 * H);
     return { W: Z.agg(D, 7 * DAY, 4 * DAY), D: D, H4: Z.agg(H1, 4 * H, off), H1: H1, M15: M15, M5: M5 };
   }
+  /* 하나씩 차례로 받는다 (2026.10.04-B) — 한꺼번에 4개를 보내면 무료 서버가 CPU 한도에 걸려 같이 끊긴다.
+     일봉·1시간봉이 오면 먼저 그리고, 15분·5분이 오면 다시 그린다. 실패하면 30초 동안은 저절로 다시 부르지 않는다. */
   function load(force) {
     var sym = K.sym; if (!sym || K.busy) return;
-    var now = Date.now(), need = Object.keys(FEED).filter(function (k) { return force || !K.raw[k] || now - (K.at[k] || 0) > FEED[k].age; });
-    if (!need.length) { recompute(); return; }
+    if (!force && K.err && Date.now() - K.failAt < 30000) return;
+    var now = Date.now(), need = KEYS.filter(function (k) { return force || !K.raw[k] || now - (K.at[k] || 0) > FEED[k].age; });
+    if (!need.length) { if (!K.res) { K.bars = assemble(); recompute(); } return; }
     K.busy = true; var my = ++K.seq;
-    Promise.all(need.map(function (k) {
-      return pull(sym, k).then(function (j) { return [k, j, null]; }, function (e) { return [k, null, e]; });
-    })).then(function (rs) {
+    (function next(i) {
       if (my !== K.seq || sym !== K.sym) return;
-      var bad = 0;
-      rs.forEach(function (r) { if (r[1]) { K.raw[r[0]] = r[1]; K.at[r[0]] = Date.now(); } else bad++; });
+      if (i >= need.length) { done(); return; }
+      var k = need[i];
+      pullRetry(sym, k).then(function (j) {
+        if (my !== K.seq) return;
+        K.raw[k] = j; K.at[k] = Date.now();
+        if (k === 'h1' && K.raw.d1) { K.bars = assemble(); K.err = null; recompute(false); }
+        next(i + 1);
+      }, function () {
+        if (my !== K.seq) return;
+        if ((k === 'd1' || k === 'h1') && !K.raw[k]) { done(); return; }   // 꼭 있어야 하는 봉이 없으면 나머지는 받지 않고 바로 안내
+        next(i + 1);
+      });
+    })(0);
+    function done() {
+      K.busy = false;
       K.err = (!K.raw.d1 || !K.raw.h1) ? '가격대 자료를 받지 못했습니다' : null;
-      if (bad && !K.err) K.at.retry = Date.now();
+      if (K.err) K.failAt = Date.now();
+      remember(sym);
       K.bars = assemble();
       recompute(true);
-    }).then(function () { if (my === K.seq) K.busy = false; }, function () { if (my === K.seq) K.busy = false; });
+    }
+  }
+  // 최근 6종목은 받은 봉을 기억해 둔다 — 종목을 오갈 때 다시 받지 않는다
+  function remember(sym) {
+    if (!K.raw.d1 || !K.raw.h1) return;
+    K.mem[sym] = { raw: K.raw, at: K.at };
+    K.memOrder = K.memOrder.filter(function (x) { return x !== sym; }); K.memOrder.push(sym);
+    while (K.memOrder.length > 6) delete K.mem[K.memOrder.shift()];
   }
 
   /* ═════════ 계산 ═════════ */
@@ -6438,7 +6753,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
   }
   function calc(mode, n) {
     var px = price(); if (!K.bars || !px) return null;
-    try { var r = Z.zones(K.bars, px, { mode: mode, n: n }); r.px = px; return r; } catch (e) { return null; }
+    try { var r = Z.zones(K.bars, px, { mode: mode, n: n, cal: calFor(K.sym, K.raw), now: Date.now() }); r.px = px; return r; } catch (e) { return null; }
   }
   function keyOf(z) { return String(Math.round(z.mid * 1e4)); }
   function recompute(fresh) {
@@ -6450,20 +6765,37 @@ html.at-lock,html.at-lock body{overflow:hidden}
   /* ═════════ 그리기 ═════════ */
   function dots(n) { var h = ''; for (var i = 1; i <= 5; i++) h += '<i class="' + (i <= n ? 'on' : '') + '"></i>'; return '<span class="s" role="img" aria-label="강도 ' + n + ' / 5">' + h + '</span>'; }
   function tfs(z) { return ORDER.filter(function (t) { return z.tfs.indexOf(t) >= 0; }).map(function (t) { return TFKO[t]; }).join(' · '); }
+  // 줄 아래 한 줄 — 무게가 큰 선부터 짧은 이름 3개 (예: 일 200선 · 4h 매물대 · 1h 고점)
+  function names(z, n) {
+    var seen = {}, out = [];
+    z.parts.slice().sort(function (a, b) { return b.w - a.w; }).forEach(function (p) {
+      var k = p.sh || p.name; if (out.length < n && !seen[k]) { seen[k] = 1; out.push(k); } });
+    return out.join(' · ');
+  }
   function row(z, side) {
     var k = keyOf(z), on = K.open === k;
     var g = side === 'up' ? '<span class="g u" aria-hidden="true">▲</span>' : side === 'dn' ? '<span class="g d" aria-hidden="true">▼</span>' : '<span class="g a" aria-hidden="true">●</span>';
-    var lab = (side === 'up' ? '위 ' : side === 'dn' ? '아래 ' : '지금 닿은 ') + fmt(z.mid) + ' 부근, ' + tfs(z) + ' 겹침, 강도 ' + z.strength + (side === 'at' ? '' : ', ' + pc(z.dist));
-    var h = '<button type="button" class="kz-r' + (side === 'at' ? ' at' : '') + '" data-k="' + k + '" aria-expanded="' + on + '" aria-label="' + esc(lab) + '">' + g +
-      '<span class="p">' + fmt(z.mid) + '<span class="t">' + tfs(z) + '</span></span>' + dots(z.strength) +
+    var sub = z.weak ? '약함 · ' + names(z, 2) : names(z, 3);
+    var lab = (side === 'up' ? '위 ' : side === 'dn' ? '아래 ' : '지금 닿은 ') + fmt(z.mid) + ' 부근, ' + sub + (z.weak ? '' : ' 겹침') + ', 강도 ' + z.strength + (side === 'at' ? '' : ', ' + pc(z.dist));
+    var h = '<button type="button" class="kz-r' + (side === 'at' ? ' at' : '') + (z.weak ? ' weak' : '') + '" data-k="' + k + '" aria-expanded="' + on + '" aria-label="' + esc(lab) + '">' + g +
+      '<span class="p">' + fmt(z.mid) + '<span class="t">' + esc(sub) + '</span></span>' + dots(z.strength) +
       '<span class="x">' + (side === 'at' ? '닿음' : pc(z.dist)) + '</span></button>';
     if (on) {
       // 무게 순 6개를 골라 가격 높은 것부터 (위 → 아래)
       var parts = z.parts.slice().sort(function (a, b) { return b.w - a.w; }).slice(0, 6).sort(function (a, b) { return b.p - a.p; });
       h += '<div class="kz-d"><ul>' + parts.map(function (p) { return '<li>' + esc(p.name) + '<span>' + fmt(p.p) + '</span></li>'; }).join('') + '</ul>' +
+        (z.x ? '<p class="kz-v">' + esc(until(z.x)) + '</p>' : '') +
         '<div class="act"><button type="button" data-one="' + side + '" data-k="' + k + '"' + (K.done[K.sym + k] ? ' disabled>등록됨' : '>' + (side === 'at' ? '벗어나면 알림' : '이 가격대만 알림')) + '</button></div></div>';
     }
     return h;
+  }
+  // 유효시각 글자 — 한국 시간 기준 「오늘 18:40까지」
+  function until(x) {
+    var now = Date.now();
+    if (x - now < 5 * MIN) return '선이 움직이고 있어 곧 다시 계산합니다';
+    var k = new Date(x + 9 * H), n = new Date(now + 9 * H), hm = ('0' + k.getUTCHours()).slice(-2) + ':' + ('0' + k.getUTCMinutes()).slice(-2);
+    var dd = Math.round((Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()) - Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate())) / DAY);
+    return '이 가격대 기준 유효 · ' + (dd === 0 ? '오늘 ' : dd === 1 ? '내일 ' : (k.getUTCMonth() + 1) + '/' + k.getUTCDate() + ' ') + hm + '까지';
   }
   function head() {
     return '<div class="kz-h"><h2>핵심 가격대</h2><div class="kz-seg" role="group" aria-label="보는 기준">' + MODES.map(function (m) {
@@ -6518,15 +6850,18 @@ html.at-lock,html.at-lock body{overflow:hidden}
     var r = calc(mode, 4); if (!r) return null;
     var L = r.up.concat(r.at ? [r.at] : [], r.dn);
     return L.slice(0, 10).map(function (z) {
-      return { lo: z.lo, hi: z.hi, mid: z.mid, s: z.strength, tfs: z.tfs,
-        names: z.parts.slice().sort(function (a, b) { return b.w - a.w; }).slice(0, 3).map(function (p) { return p.name; }) };
+      return toZ(z);
     });
   }
-  // 켜 둔 종목이면 다시 계산한 가격대를 올린다 (같으면 30분에 한 번만 — 서버는 36시간 지난 가격대를 버린다)
+  function toZ(z) {
+    return { lo: z.lo, hi: z.hi, mid: z.mid, s: z.strength, tfs: z.tfs, x: z.x ? Math.round(z.x) : undefined,
+      names: z.parts.slice().sort(function (a, b) { return b.w - a.w; }).slice(0, 3).map(function (p) { return p.name; }) };
+  }
+  // 켜 둔 종목이면 다시 계산한 가격대를 올린다 — 가격대나 유효시각(10분 단위)이 바뀌었거나 30분이 지났을 때
   function syncWatch(force) {
     var sym = K.sym, w = K.watch[sym]; if (!w || K.wBusy) return;
     var mode = w.보기 || K.mode, zs = payload(mode); if (!zs || !zs.length) return;
-    var sig = JSON.stringify(zs.map(function (z) { return [rnd(z.lo), rnd(z.hi), z.s]; })), last = K.posted[sym];
+    var sig = JSON.stringify(zs.map(function (z) { return [rnd(z.lo), rnd(z.hi), z.s, Math.round((z.x || 0) / 600000)]; })), last = K.posted[sym];
     if (!force && last && last.sig === sig && Date.now() - last.at < 30 * MIN) return;
     K.posted[sym] = { sig: sig, at: Date.now() };
     AL.call('/zones', { device_id: AL.device, symbol: sym, zones: zs, min_s: w.기준강도 || MIN_S, mode: mode })
@@ -6573,13 +6908,76 @@ html.at-lock,html.at-lock body{overflow:hidden}
     }).catch(function (e) { AL.toast((e && e.message) || '등록하지 못했습니다'); btn.disabled = false; });
   }
 
+  /* ═════════ 켜 둔 다른 종목도 앱을 열면 새로 맞춘다 (2026.10.05) ═════════
+     트레이딩 탭을 안 열어도, 앱이 화면에 떠 있으면 켜 둔 종목의 가격대를 30분마다 다시 계산해 올린다.
+     한 종목씩 차례로 — 서버에 한꺼번에 몰리지 않게. 지금 트레이딩 탭에서 보는 종목은 원래 흐름이 맡는다. */
+  function fetchSet(sym) {
+    var m = K.mem[sym] || { raw: {}, at: {} }, R = {}, A = {}, now = Date.now();
+    Object.keys(m.raw).forEach(function (k) { R[k] = m.raw[k]; A[k] = m.at[k]; });
+    var need = KEYS.filter(function (k) { return !R[k] || now - (A[k] || 0) > FEED[k].age; });
+    return need.reduce(function (pr, k) {
+      return pr.then(function () { return pullRetry(sym, k).then(function (j) { R[k] = j; A[k] = Date.now(); }, function () {}); });
+    }, Promise.resolve()).then(function () {
+      if (R.d1 && R.h1) {
+        K.mem[sym] = { raw: R, at: A };
+        K.memOrder = K.memOrder.filter(function (x) { return x !== sym; }); K.memOrder.push(sym);
+        while (K.memOrder.length > 6) delete K.mem[K.memOrder.shift()];
+      }
+      return R;
+    });
+  }
+  function zonesFor(sym, R, mode, n) {
+    var bars = assembleRaw(sym, R); if (!bars) return null;
+    var m = bars.M5.length ? bars.M5 : bars.H1, px = m[m.length - 1].c;
+    var r = Z.zones(bars, px, { mode: mode, n: n, cal: calFor(sym, R), now: Date.now() }); r.px = px; return r;
+  }
+  var BG = { busy: false, last: 0 };
+  function bgSync() {
+    if (BG.busy || K.busy || document.hidden || Date.now() - BG.last < 10 * MIN) return;
+    var list = Object.keys(K.watch).filter(function (sym) {
+      if (sym === K.sym && active()) return false;
+      var c = Date.parse(K.watch[sym].계산시각 || '');
+      return !isFinite(c) || Date.now() - c > 30 * MIN;
+    });
+    if (!list.length) return;
+    BG.busy = true; BG.last = Date.now();
+    (function next(i) {
+      if (i >= list.length) { BG.busy = false; if (AL.refresh) AL.refresh(); return; }
+      var sym = list[i], w = K.watch[sym];
+      if (!w) { next(i + 1); return; }
+      fetchSet(sym).then(function (R) {
+        var r = zonesFor(sym, R, w.보기 || 'all', 4); if (!r) return;
+        var zs = r.up.concat(r.at ? [r.at] : [], r.dn).slice(0, 10).map(toZ); if (!zs.length) return;
+        return AL.call('/zones', { device_id: AL.device, symbol: sym, zones: zs, min_s: w.기준강도 || MIN_S, mode: w.보기 || 'all' });
+      }).catch(function () {}).then(function () { setTimeout(function () { next(i + 1); }, 800); });
+    })(0);
+  }
+  /* 운영 화면의 「계산 자료 내보내기」 — 받은 봉 원본 + 세 기준의 가격대·구성 선·유효시각 */
+  function snapshot(sym) {
+    sym = String(sym || '').toUpperCase();
+    return fetchSet(sym).then(function (R) {
+      if (!R.d1 || !R.h1) throw new Error(sym + ' 자료를 받지 못했습니다');
+      var out = { 종목: sym, 만든시각: new Date().toISOString(), 장: calFor(sym, R), 원본: R, 가격대: {} };
+      ['all', 'day', 'swing'].forEach(function (md) {
+        var r = zonesFor(sym, R, md, 4); if (!r) return;
+        var ser = function (z) { return z && { lo: z.lo, hi: z.hi, mid: z.mid, 강도: z.strength, 점수: z.score, 약함: !!z.weak, 유효까지: z.x ? new Date(z.x).toISOString() : null,
+          선: z.parts.map(function (p) { return { 이름: p.name, 가격: p.p, 무게: p.w, 시간단위: p.tf, 종류: p.kind, 유효까지: p.x ? new Date(p.x).toISOString() : null }; }) }; };
+        out.가격대[md] = { 현재가: r.px, 허용오차: r.tol, 선개수: r.lines, 위: r.up.map(ser), 닿음: ser(r.at), 아래: r.dn.map(ser) };
+      });
+      return out;
+    });
+  }
+
   /* ═════════ 연결 ═════════ */
   function setSym(sym) {
     sym = String(sym || '').toUpperCase();
     if (sym === K.sym) return;
-    K.sym = sym; K.raw = {}; K.at = {}; K.bars = null; K.res = null; K.err = null; K.open = null; K.busy = false; K.seq++;
+    K.sym = sym; K.raw = {}; K.at = {}; K.bars = null; K.res = null; K.err = null; K.open = null; K.busy = false; K.seq++; K.failAt = 0;
+    var m = K.mem[sym];
+    if (m) { K.raw = m.raw; K.at = m.at; K.bars = assemble(); K.res = calc(K.mode); }
     paint(true);
-    if (sym && active()) load(true);
+    // 현재가 요청이 먼저 나가도록 잠깐 뒤에 시작 (동시에 몰리지 않게)
+    if (sym) setTimeout(function () { if (K.sym === sym && active()) load(false); }, 400);
   }
   function active() { var S = window.A99Tab && window.A99Tab._S; return !!(S && S.active) && !document.hidden; }
   function onPrice() {
@@ -6589,6 +6987,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
     K.res = calc(K.mode); paint();
   }
   function tick() {
+    bgSync();
     if (!active()) return;
     var S = window.A99Tab._S;
     if (S.sym && S.sym !== K.sym) { setSym(S.sym); return; }
@@ -6600,6 +6999,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
     if (!(st && st.등록됨)) m = {};
     K.watch = m; paint(true);
     if (m[K.sym] && K.bars) syncWatch(false);
+    setTimeout(bgSync, 1500);
   }
 
   function mount() {
@@ -6629,7 +7029,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
     AL.onChange(onState);
     var page = document.getElementById('p-my');
     if (page) new MutationObserver(function () { if (active()) tick(); }).observe(page, { attributes: true, attributeFilter: ['class'] });
-    document.addEventListener('visibilitychange', function () { if (active()) tick(); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
     K.timer = setInterval(tick, MIN);
     var S = window.A99Tab._S; if (S.sym) setSym(S.sym);
     paint(true);
@@ -6640,7 +7040,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 0); });
   else setTimeout(boot, 0);
 
-  window.A99Zone = { _K: K, refresh: function () { load(true); } };
+  window.A99Zone = { _K: K, refresh: function () { load(true); }, snapshot: snapshot, _bg: function () { BG.last = 0; bgSync(); } };
 })();
 </script>
 <!-- ══════════════════════════════════════════════════════════════
@@ -7390,19 +7790,18 @@ html.at-lock,html.at-lock body{overflow:hidden}
 })();
 </script>
 <!-- ══════════════════════════════════════════════════════════════
-  안드레99 — 운영자 모드 · 데이터 점검  v2026.09.30-A
+  안드레99 — 운영 화면 (버전·감시 · 핵심 가격대 계산 자료 · 데이터 점검)  v2026.10.05-A
+  (10.05) 화면에 버튼을 두지 않는다. 버전 글자(v2026…)를 3초 안에 5번 누를 때마다 운영 화면이 바로 열린다.
+          예전 「점검」 버튼 · 운영자 모드 기억 · 주소 ?admin=1 은 없앴다.
+          「핵심 가격대 계산 자료」 — 받은 봉 원본 + 계산 결과를 파일로 저장 (강도 기준을 실데이터로 맞출 때)
   (09.30 추가) 패널 맨 위에 앱 · 알림 처리 파일(sw.js) · 서버(워커) 버전 한 줄 비교
   붙여넣는 곳: stock-flat 뒤 (</body> 앞)
 
-  들어가는 법: 화면 오른쪽 위 버전 글자(v2026…)를 3초 안에 5번 누른다 → 운영자 모드 켜짐/꺼짐
-             켜지면 버전 글자 옆에 「점검」 버튼이 생긴다. (주소 뒤 ?admin=1 로도 켜진다)
   하는 일   : 대표 종목들을 워커로 조회해서, 화면에 틀린 숫자가 나갈 수 있는 자리를 목록으로 뽑는다.
              읽기만 한다. 아무것도 바꾸지 않는다.
 ═══════════════════════════════════════════════════════════════ -->
 
 <style>
-.ad-btn{margin-left:6px;min-height:28px;padding:0 9px;border:1px solid #E8A317;border-radius:6px;background:transparent;
-  color:#E8A317;font-size:11px;font-weight:700}
 .ad-wrap{position:fixed;inset:0;z-index:2050;background:var(--bg);display:flex;flex-direction:column;
   padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 .ad-wrap[hidden]{display:none!important}
@@ -7430,6 +7829,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
 .ad-ver b{font-family:inherit}
 .ad-ver .ok{color:var(--tx2)} .ad-ver .bad{color:var(--up);font-weight:700}
 .ad-note{margin-top:14px;font-size:11.5px;color:var(--tx3);line-height:1.6}
+.ad-h3{margin:18px 0 6px;font-size:13px;font-weight:700;color:var(--tx)}
 </style>
 
 <script>
@@ -7440,7 +7840,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
   var KEY = 'a99_admin';
   var DAY = 86400000;
   // 이번 배포에서 짝이 맞아야 하는 버전 — 배포 파일을 만들 때 함께 올린다
-  var EXPECT = { worker: '2026.10.04-A', sw: '2026.09.30-A' };
+  var EXPECT = { worker: '2026.10.05-B', sw: '2026.09.30-A' };
   var LIST = 'AAPL MSFT NVDA GOOGL AMZN META TSLA AVGO BRK-B JPM V MA UNH LLY JNJ XOM KO PEP WMT COST ' +
              'NFLX AMD INTC PLTR SNOW CRWD NET SHOP UBER ABNB COIN MSTR SOFI RKLB IONQ HOOD ARM SMCI TSM ASML';
 
@@ -7448,7 +7848,6 @@ html.at-lock,html.at-lock body{overflow:hidden}
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
   function toast(t) { if (window.A99Alert && window.A99Alert.toast) window.A99Alert.toast(t); }
-  function on() { return ls(KEY) === '1'; }
   function t(x) { var v = Date.parse(String(x || '').slice(0, 10)); return isFinite(v) ? v : null; }
   function get(u, ms) {
     return new Promise(function (ok) {
@@ -7458,20 +7857,13 @@ html.at-lock,html.at-lock body{overflow:hidden}
     });
   }
 
-  /* ── 운영자 모드 켜기: 버전 글자 5번 · ?admin=1 ── */
-  function paintBtn() {
-    var v = $('verTag'); if (!v) return;
-    var b = $('adBtn');
-    if (on() && !b) { b = document.createElement('button'); b.id = 'adBtn'; b.type = 'button'; b.className = 'ad-btn'; b.textContent = '점검';
-      b.addEventListener('click', openPanel); v.parentNode.insertBefore(b, v.nextSibling); }
-    if (!on() && b) b.remove();
-  }
+  /* ── 운영 화면 열기: 버전 글자를 3초 안에 5번 → 바로 열림 (화면에 버튼 없음) ── */
   function hookVer() {
     var v = $('verTag'); if (!v || v.dataset.ad) return; v.dataset.ad = '1';
     var taps = [];
     v.addEventListener('click', function () {
       var n = Date.now(); taps = taps.filter(function (x) { return n - x < 3000; }); taps.push(n);
-      if (taps.length >= 5) { taps = []; ls(KEY, on() ? null : '1'); paintBtn(); toast(on() ? '운영자 모드 켜짐' : '운영자 모드 꺼짐'); }
+      if (taps.length >= 5) { taps = []; openPanel(); }
     });
   }
 
@@ -7532,20 +7924,56 @@ html.at-lock,html.at-lock body{overflow:hidden}
   function openPanel() {
     if (!P) {
       P = document.createElement('div'); P.className = 'ad-wrap'; P.id = 'adWrap';
-      P.innerHTML = '<div class="ad-h"><b>데이터 점검</b><span>운영자 모드</span><button type="button" id="adX" aria-label="닫기">✕</button></div>' +
-        '<div class="ad-body"><div class="ad-ver" id="adVer">버전 확인 중…</div><textarea id="adList" aria-label="점검할 티커">' + LIST + '</textarea>' +
-        '<div class="ad-row"><button type="button" class="pri" id="adGo">점검 시작</button><button type="button" id="adCopy" disabled>결과 복사</button>' +
-        '<button type="button" id="adOff">운영자 모드 끄기</button></div>' +
+      P.setAttribute('role', 'dialog'); P.setAttribute('aria-modal', 'true'); P.setAttribute('aria-label', '운영 화면');
+      P.innerHTML = '<div class="ad-h"><b>운영 화면</b><span>버전 · 감시 · 계산 자료 · 데이터 점검</span><button type="button" id="adX" aria-label="닫기">✕</button></div>' +
+        '<div class="ad-body"><div class="ad-ver" id="adVer">버전 확인 중…</div>' +
+        '<h3 class="ad-h3">모의선물 관리</h3><div class="ad-row"><button type="button" class="pri" id="adPaper">회원 · 초대코드 · 초기화 · 용량 · 속도</button></div>' +
+        '<h3 class="ad-h3">핵심 가격대 계산 자료</h3>' +
+        '<div class="ad-row"><button type="button" id="adExCur">지금 종목</button><button type="button" class="pri" id="adEx4">BTC · 금 · 유가 · PLTR</button></div>' +
+        '<p class="ad-st" id="adExSt">받은 봉 원본과 계산 결과(가격대 · 구성 선 · 유효시각)를 파일 하나로 저장합니다. 이 파일로 강도 기준을 실제 데이터에 맞춥니다.</p>' +
+        '<h3 class="ad-h3">데이터 점검</h3><textarea id="adList" aria-label="점검할 티커">' + LIST + '</textarea>' +
+        '<div class="ad-row"><button type="button" class="pri" id="adGo">점검 시작</button><button type="button" id="adCopy" disabled>결과 복사</button></div>' +
         '<p class="ad-st" id="adSt">종목마다 워커를 3번 부릅니다(기본·분기·SEC). 40개면 2~4분 걸립니다.</p><div id="adRes"></div>' +
         '<p class="ad-note">빨강 = 화면에 틀린 숫자가 나갈 수 있음 · 노랑 = 빈칸이나 출처 차이. 읽기만 하며 아무것도 바꾸지 않습니다.</p></div>';
       document.body.appendChild(P);
       $('adX').addEventListener('click', function () { P.hidden = true; });
       $('adGo').addEventListener('click', run);
+      $('adPaper').addEventListener('click', function () { if (window.A99PaperAdmin) window.A99PaperAdmin.open(); else toast('모의선물 관리 모듈이 없습니다'); });
       $('adCopy').addEventListener('click', copy);
-      $('adOff').addEventListener('click', function () { ls(KEY, null); paintBtn(); P.hidden = true; toast('운영자 모드 꺼짐'); });
+      $('adExCur').addEventListener('click', function () {
+        var S = window.A99Tab && window.A99Tab._S, sym = (S && S.sym) || ls('a99_tab_sym');
+        if (!sym) { toast('트레이딩 탭에서 종목을 먼저 고르세요'); return; }
+        exportZones([sym]);
+      });
+      $('adEx4').addEventListener('click', function () { exportZones(['BTC-USD', 'GC=F', 'CL=F', 'PLTR']); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && P && !P.hidden) P.hidden = true; });
     }
     P.hidden = false;
     checkVer();
+  }
+
+  /* ── 핵심 가격대 계산 자료 내보내기 — 한 종목씩 차례로 받아 파일 하나로 ── */
+  var EX = false;
+  function exportZones(list) {
+    if (EX) return;
+    if (!window.A99Zone || !window.A99Zone.snapshot) { toast('가격대 계산 모듈이 없습니다'); return; }
+    EX = true; $('adExCur').disabled = $('adEx4').disabled = true;
+    var st = $('adExSt'), out = { 앱: window.BUILD_VER || '', 만든시각: new Date().toISOString(), 종목: [] }, errs = [];
+    list.reduce(function (pr, sym, i) {
+      return pr.then(function () {
+        st.textContent = sym + ' 받는 중 (' + (i + 1) + ' / ' + list.length + ')';
+        return window.A99Zone.snapshot(sym).then(function (d) { out.종목.push(d); }, function () { errs.push(sym); });
+      });
+    }, Promise.resolve()).then(function () {
+      if (!out.종목.length) { st.textContent = '자료를 받지 못했습니다 (' + errs.join(', ') + ') · 잠시 뒤 다시 눌러 주세요'; return; }
+      var k = new Date(Date.now() + 9 * 3600000).toISOString(), stamp = k.slice(0, 10).replace(/-/g, '') + '_' + k.slice(11, 16).replace(':', '');
+      var name = 'andre99_zones_' + stamp + '.json';   // 파일 이름에 한글을 넣으면 크롬이 무시하고 「download」로 저장한다
+      var blob = new Blob([JSON.stringify(out)], { type: 'application/json' }), url = URL.createObjectURL(blob);
+      var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 4000);
+      window.__adLastExport = out;
+      st.textContent = name + ' 저장 · ' + out.종목.length + '종목 · ' + Math.round(blob.size / 1024) + 'KB' + (errs.length ? ' · 못 받음: ' + errs.join(', ') : '');
+    }).then(function () { EX = false; $('adExCur').disabled = $('adEx4').disabled = false; });
   }
 
   /* ── 버전 한 줄 비교 — 셋 중 하나라도 어긋나면 빨강 ── */
@@ -7626,11 +8054,361 @@ html.at-lock,html.at-lock body{overflow:hidden}
   }
 
   function boot() {
-    try { if (/[?&]admin=1\b/.test(location.search)) ls(KEY, '1'); } catch (e) {}
-    hookVer(); paintBtn();
+    ls(KEY, null);                                   // 예전 「운영자 모드」 기억은 지운다 (10.05 부터 버튼 없음)
+    var old = $('adBtn'); if (old) old.remove();
+    hookVer();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
   window.A99Audit = { open: openPanel, _audit: audit };
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+  안드레99 — 모의선물 관리 (회원 · 초대코드 · 초기화 승인 · 설정 · 용량 · 속도)  v2026.10.11-A
+  여는 길: 운영 화면(버전 글자 5번) → 「모의선물 관리」
+  관리 키 : 모의선물 서버의 PAPER_ADMIN_KEY. 이 기기에만 저장(a99_paper_ak). 「키 지우기」로 지운다.
+  붙여넣는 곳: 운영 화면 블록 뒤 (</body> 앞)
+═══════════════════════════════════════════════════════════════ -->
+<style>
+.pa-wrap{position:fixed;inset:0;z-index:2060;background:var(--bg);display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.pa-wrap[hidden]{display:none!important}
+.pa-h{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line)}
+.pa-h b{font-size:15px}
+.pa-h span{font-size:11.5px;color:var(--tx3)}
+.pa-h button{margin-left:auto;width:40px;height:40px;background:transparent;color:var(--tx2);font-size:18px;border:0}
+.pa-tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);padding:0 8px;scrollbar-width:none}
+.pa-tabs::-webkit-scrollbar{display:none}
+.pa-tabs button{flex:0 0 auto;min-height:42px;padding:0 12px;background:transparent;border:0;border-bottom:2px solid transparent;color:var(--tx2);font-size:13.5px}
+.pa-tabs button.on{color:var(--tx);font-weight:700;border-bottom-color:var(--tx)}
+.pa-tabs i{font-style:normal;font-size:11px;margin-left:3px;color:var(--up)}
+.pa-body{flex:1;overflow:auto;padding:12px 16px 32px}
+.pa-h3{margin:16px 0 6px;font-size:13px;font-weight:700}
+.pa-h3:first-child{margin-top:0}
+.pa-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pa-c{border:1px solid var(--line);border-radius:8px;padding:9px 11px;min-width:0}
+.pa-c span{display:block;font-size:11.5px;color:var(--tx3)}
+.pa-c b{display:block;font-size:16px;font-variant-numeric:tabular-nums;margin-top:1px}
+.pa-c small{display:block;font-size:11px;color:var(--tx3);margin-top:2px}
+.pa-c.bad{border-color:var(--up)} .pa-c.bad b{color:var(--up)}
+.pa-c.warn{border-color:#E8A317}
+.pa-bar{height:6px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}
+.pa-bar>i{display:block;height:100%;background:var(--tx2)}
+.pa-c.bad .pa-bar>i{background:var(--up)} .pa-c.warn .pa-bar>i{background:#E8A317}
+.pa-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.pa-row button,.pa-b{min-height:38px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--tx);font-size:12.5px;font-weight:600}
+.pa-row button.pri,.pa-b.pri{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.pa-row button.red{border-color:var(--up);color:var(--up)}
+.pa-row button:disabled{opacity:.4}
+.pa-in{min-height:38px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--tx);font-size:13px;min-width:0}
+.pa-in.w{flex:1}
+select.pa-in{padding-right:6px}
+.pa-st{font-size:12px;color:var(--tx2);margin:6px 0;line-height:1.55}
+.pa-st.err{color:var(--up)}
+.pa-list{border-top:1px solid var(--line)}
+.pa-u{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:4px 8px;align-items:start;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.pa-u input{width:18px;height:18px;margin:2px 0 0}
+.pa-u b{font-size:13.5px}
+.pa-u .m{color:var(--tx3);font-size:11.5px;line-height:1.5}
+.pa-u .r{text-align:right;font-variant-numeric:tabular-nums}
+.pa-tag{display:inline-block;font-size:10.5px;padding:0 5px;border-radius:5px;border:1px solid var(--line);color:var(--tx2);margin-left:4px;vertical-align:1px}
+.pa-tag.red{border-color:var(--up);color:var(--up)}
+.pa-sel{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:8px 0 4px;margin-top:8px}
+.pa-codes{font-family:var(--mono);font-size:14px;line-height:1.8;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;white-space:pre-wrap;user-select:all}
+.pa-tbl{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.pa-tbl th,.pa-tbl td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.pa-tbl th:first-child,.pa-tbl td:first-child{text-align:left}
+.pa-tbl th{color:var(--tx3);font-weight:500}
+.pa-scroll{overflow-x:auto}
+.pa-spark{display:flex;align-items:flex-end;gap:1px;height:36px;margin-top:6px}
+.pa-spark i{flex:1;background:var(--tx3);min-height:1px}
+.pa-spark i.e{background:var(--up)}
+.pa-set{display:grid;gap:10px}
+.pa-set label{display:flex;align-items:center;gap:10px;font-size:13px;justify-content:space-between;border-bottom:1px solid var(--line);padding:8px 0}
+.pa-set label small{display:block;color:var(--tx3);font-size:11.5px}
+.pa-set input[type=checkbox]{width:20px;height:20px}
+</style>
+<script>
+(function () {
+  'use strict';
+  if (window.A99PaperAdmin) return;
+  var PAPER = window.A99P_API || 'https://andre99-paper.jhw5282435.workers.dev';
+  var MAIN = window.API || 'https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
+  var KEY = 'a99_paper_ak';
+  var WARN = 0.7;
+  var POL = { 'default': '기본', approve: '승인 필요', free: '쿠폰 없이', block: '초기화 막기' };
+  function $(i) { return document.getElementById(i); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
+  function toast(t) { if (window.A99Alert && window.A99Alert.toast) window.A99Alert.toast(t); else { var s = $('paMsg'); if (s) s.textContent = t; } }
+  function n0(v) { return v == null || !isFinite(v) ? '—' : Math.round(v).toLocaleString('en-US'); }
+  function n2(v) { return v == null || !isFinite(v) ? '—' : (+v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function mb(b) { return b == null ? '—' : b >= 1048576 ? (b / 1048576).toFixed(1) + 'MB' : (b / 1024).toFixed(0) + 'KB'; }
+  function ago(t) { if (!t) return '—'; var s = Math.round((Date.now() - t) / 1000); return s < 60 ? s + '초 전' : s < 3600 ? Math.round(s / 60) + '분 전' : s < 86400 ? Math.round(s / 3600) + '시간 전' : Math.round(s / 86400) + '일 전'; }
+  function kst(t) { if (!t) return '—'; var d = new Date(t + 9 * 3600e3); return (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + ' ' + ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
+  function key() { return ls(KEY) || ''; }
+  function call(path, body) {
+    return new Promise(function (ok) {
+      var done = false, tm = setTimeout(function () { if (!done) { done = true; ok({ s: 0, j: { err: '시간 초과' } }); } }, 20000);
+      fetch(PAPER + '/p/admin/' + path, { method: body ? 'POST' : 'GET', headers: { 'content-type': 'application/json', 'x-admin-key': key() }, body: body ? JSON.stringify(body) : undefined })
+        .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j || {} }; }, function () { return { s: r.status, j: {} }; }); })
+        .then(function (x) { if (!done) { done = true; clearTimeout(tm); ok(x); } }, function () { if (!done) { done = true; clearTimeout(tm); ok({ s: 0, j: { err: '연결 실패' } }); } });
+    });
+  }
+  function ping(url) {
+    var t0 = performance.now();
+    return fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + '_=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text().then(function () { return r.ok ? Math.round(performance.now() - t0) : null; }); }, function () { return null; });
+  }
+  function median(a) { a = a.filter(function (x) { return x != null; }).sort(function (x, y) { return x - y; }); return a.length ? a[Math.floor(a.length / 2)] : null; }
+  function ping3(url) { return ping(url).then(function (a) { return ping(url).then(function (b) { return ping(url).then(function (c) { return median([a, b, c]); }); }); }); }
+
+  var P = null, TAB = 'home', SEL = {}, UQ = { q: '', status: '', policy: '', page: 0 }, LAST = { users: [], ov: null };
+  function open() {
+    if (!P) {
+      P = document.createElement('div'); P.className = 'pa-wrap'; P.id = 'paWrap';
+      P.setAttribute('role', 'dialog'); P.setAttribute('aria-modal', 'true'); P.setAttribute('aria-label', '모의선물 관리');
+      P.innerHTML = '<div class="pa-h"><b>모의선물 관리</b><span>회원 · 용량 · 속도</span><button type="button" id="paX" aria-label="닫기">✕</button></div>' +
+        '<div class="pa-tabs" role="tablist">' + [['home', '현황'], ['users', '회원'], ['invites', '초대코드'], ['resets', '초기화 요청'], ['settings', '설정']].map(function (t) {
+          return '<button type="button" data-pt="' + t[0] + '">' + t[1] + (t[0] === 'resets' ? '<i id="paRc"></i>' : '') + '</button>';
+        }).join('') + '</div><div class="pa-body" id="paBody"></div>';
+      document.body.appendChild(P);
+      $('paX').addEventListener('click', function () { P.hidden = true; });
+      P.addEventListener('click', onClick);
+      P.addEventListener('change', onChange);
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && P && !P.hidden) P.hidden = true; });
+    }
+    P.hidden = false;
+    go(key() ? TAB : 'key');
+  }
+  function go(t) {
+    TAB = t;
+    Array.prototype.forEach.call(P.querySelectorAll('[data-pt]'), function (b) { b.classList.toggle('on', b.dataset.pt === t); });
+    var B = $('paBody');
+    if (t === 'key') return keyView(B);
+    B.innerHTML = '<p class="pa-st">불러오는 중…</p>';
+    ({ home: home, users: users, invites: invites, resets: resets, settings: settingsView })[t](B);
+  }
+  function denied(B, x) {
+    if (x.s === 403 || x.s === 500 && x.j.err === 'no_admin_key') { ls(KEY, null); keyView(B, x.j.err === 'no_admin_key' ? '서버에 관리 키(PAPER_ADMIN_KEY)가 아직 없어요.' : '관리 키가 맞지 않아요.'); return true; }
+    if (x.s !== 200) { B.innerHTML = '<p class="pa-st err">모의선물 서버에 연결하지 못했어요 (' + esc(x.j.err || x.s) + ').</p><div class="pa-row"><button type="button" data-re="1">다시</button></div>'; return true; }
+    return false;
+  }
+  function keyView(B, msg) {
+    B.innerHTML = '<h3 class="pa-h3">관리 키</h3><p class="pa-st">모의선물 서버에 넣은 PAPER_ADMIN_KEY를 한 번 넣으면 이 기기에만 저장돼요.</p>' +
+      '<div class="pa-row"><input class="pa-in w" id="paKey" type="password" autocomplete="off" placeholder="관리 키"><button type="button" class="pri" id="paKeyGo">확인</button></div>' +
+      (msg ? '<p class="pa-st err">' + esc(msg) + '</p>' : '');
+  }
+
+  /* ── 현황: 속도 · 용량 · 회원 ── */
+  function home(B) {
+    Promise.all([call('overview'), call('usage'), ping3(MAIN + '/version'), ping3(PAPER + '/p/health')]).then(function (r) {
+      var x = r[0]; if (denied(B, x)) return;
+      var o = x.j, u = r[1].j || {}; LAST.ov = o;
+      $('paRc').textContent = o.pendingResets ? o.pendingResets : '';
+      var h = '';
+      h += '<h3 class="pa-h3">속도 (이 기기에서 잰 응답 시간 · 3번 중 가운데)</h3><div class="pa-grid">' +
+        card('안드레99 서버', r[2] == null ? '응답 없음' : r[2] + 'ms', '/version', r[2] == null ? 'bad' : r[2] > 1500 ? 'warn' : '') +
+        card('모의선물 서버', r[3] == null ? '응답 없음' : r[3] + 'ms', '/p/health · ' + esc(o.ver), r[3] == null ? 'bad' : r[3] > 1500 ? 'warn' : '') + '</div>';
+      var cr = o.cron, last = cr && cr.last;
+      var late = !last || Date.now() - last.at > 5 * 60000;
+      h += '<h3 class="pa-h3">1분 감시 (모의선물)</h3><div class="pa-grid">' +
+        card('마지막 실행', last ? ago(last.at) : '기록 없음', last ? kst(last.at) : '크론 설정 확인', late ? 'bad' : '') +
+        card('한 번 걸린 시간', last ? last.ms + 'ms' : '—', last ? '외부 호출 ' + last.calls + ' / 40' : '', last && last.calls > 36 ? 'warn' : '') +
+        card('처리한 체결', last ? last.events + '건' : '—', last ? '계좌 ' + last.accts + ' · 종목 ' + last.syms : '', '') +
+        card('오류', last ? last.err.length + '개' : '—', last && last.err.length ? esc(last.err.slice(0, 3).join(' · ')) : (cr ? '다시 시도 대기 ' + cr.retry + '계좌' : ''), last && last.err.length ? 'warn' : '') + '</div>';
+      if (cr && cr.hist && cr.hist.length) {
+        var mx = Math.max.apply(null, cr.hist.map(function (x) { return x[1]; }).concat([50]));
+        h += '<div class="pa-spark" aria-label="최근 60번 실행 시간">' + cr.hist.map(function (x) { return '<i class="' + (x[4] ? 'e' : '') + '" style="height:' + Math.max(3, Math.round(x[1] / mx * 100)) + '%" title="' + kst(x[0]) + ' ' + x[1] + 'ms"></i>'; }).join('') + '</div><p class="pa-st">최근 ' + cr.hist.length + '번 실행 시간 (빨강 = 오류 있던 회차) · 최대 ' + mx + 'ms</p>';
+      }
+      var us = o.users || {};
+      h += '<h3 class="pa-h3">회원 (모의선물)</h3><div class="pa-grid">' +
+        card('전체', n0(us.n) + '명', '활성 ' + n0(us.act) + ' · 정지 ' + n0(us.sus), '') +
+        card('최근 7일 가입', n0(us.new7) + '명', '', '') +
+        card('하루 안 접속', n0(us.seen1) + '명', '7일 안 ' + n0(us.seen7) + '명', '') +
+        card('초기화 요청', n0(o.pendingResets) + '건', o.pendingResets ? '「초기화 요청」 탭에서 처리' : '', o.pendingResets ? 'warn' : '') +
+        card('열린 포지션 · 주문', n0(o.positions) + ' · ' + n0(o.orders), '', '') +
+        card('체결 기록', n0(o.fills24h) + '건 / 24시간', '누적 ' + n0(o.fillsTotal) + '건 · 180일 보관', '') + '</div>';
+      var dbw = o.dbBytes ? o.dbBytes / (500 * 1048576) : null;
+      h += '<h3 class="pa-h3">용량</h3><div class="pa-grid">' + card('모의선물 DB', mb(o.dbBytes), '한 DB 한도 500MB', lvl(dbw), dbw) +
+        card('종목', (o.specs.n || 0) + '개', o.specs.fallback ? '기본값 사용 중 (거래소 자료 못 받음)' : '갱신 ' + esc(o.specs.day || '—'), o.specs.fallback ? 'warn' : '') + '</div>';
+      h += usageHtml(u);
+      h += '<div class="pa-row"><button type="button" data-re="1">새로 고침</button><button type="button" id="paKeyDel">키 지우기</button></div><p class="pa-st" id="paMsg"></p>';
+      B.innerHTML = h;
+    });
+  }
+  function lvl(f) { return f == null ? '' : f >= 0.9 ? 'bad' : f >= WARN ? 'warn' : ''; }
+  function card(k, v, sub, cl, frac) {
+    return '<div class="pa-c ' + (cl || '') + '"><span>' + k + '</span><b>' + v + '</b>' + (sub ? '<small>' + sub + '</small>' : '') +
+      (frac != null ? '<div class="pa-bar"><i style="width:' + Math.min(100, Math.round(frac * 100)) + '%"></i></div>' : '') + '</div>';
+  }
+  /* Cloudflare 계정 전체(안드레99 + 모의선물) — 무료 한도 대비 오늘 사용량 */
+  function usageHtml(u) {
+    var h = '<h3 class="pa-h3">Cloudflare 무료 한도 (계정 전체 · 오늘 · 세계 표준시 기준)</h3>';
+    if (!u.ok) return h + '<p class="pa-st">' + (u.why === 'no_token' ? '읽기 전용 통계 키(CF_API_TOKEN · CF_ACCOUNT_ID)를 모의선물 서버에 넣으면 여기에 요청 수 · DB 읽기/쓰기 · 저장 용량이 나와요.' : '통계를 받지 못했어요 (' + esc(u.msg || u.why) + ').') + '</p>';
+    var L = u.limits, today = new Date().toISOString().slice(0, 10);
+    var w = (u.workers || []).filter(function (x) { return x.dimensions.date === today; });
+    var req = 0, err = 0, by = {};
+    w.forEach(function (x) { req += x.sum.requests; err += x.sum.errors; var k = x.dimensions.scriptName; by[k] = by[k] || { r: 0, e: 0, p50: 0, p99: 0 }; by[k].r += x.sum.requests; by[k].e += x.sum.errors; by[k].p50 = Math.max(by[k].p50, x.quantiles.cpuTimeP50 || 0); by[k].p99 = Math.max(by[k].p99, x.quantiles.cpuTimeP99 || 0); });
+    var d = (u.d1 || []).filter(function (x) { return x.dimensions.date === today; });
+    var rr = 0, rw = 0; d.forEach(function (x) { rr += x.sum.rowsRead; rw += x.sum.rowsWritten; });
+    var sz = {}; (u.storage || []).forEach(function (x) { var k = x.dimensions.databaseId; if (!sz[k] || x.dimensions.date >= sz[k].d) sz[k] = { d: x.dimensions.date, b: x.max.databaseSizeBytes }; });
+    var tot = 0; Object.keys(sz).forEach(function (k) { tot += sz[k].b; });
+    h += '<div class="pa-grid">' + card('요청', n0(req), '하루 ' + n0(L.requests) + ' · 오류 ' + n0(err), lvl(req / L.requests), req / L.requests) +
+      card('DB 읽은 줄', n0(rr), '하루 ' + n0(L.rowsRead), lvl(rr / L.rowsRead), rr / L.rowsRead) +
+      card('DB 쓴 줄', n0(rw), '하루 ' + n0(L.rowsWritten), lvl(rw / L.rowsWritten), rw / L.rowsWritten) +
+      card('DB 저장 합계', mb(tot), '전체 5GB', lvl(tot / L.totalBytes), tot / L.totalBytes) + '</div>';
+    var names = Object.keys(by).sort(function (a, b) { return by[b].r - by[a].r; });
+    if (names.length) h += '<div class="pa-scroll"><table class="pa-tbl"><thead><tr><th>서버</th><th>요청</th><th>오류</th><th>계산 P50</th><th>계산 P99</th></tr></thead><tbody>' +
+      names.map(function (k) { var x = by[k], hot = x.p99 > 8000; return '<tr><td>' + esc(k) + '</td><td>' + n0(x.r) + '</td><td>' + n0(x.e) + '</td><td>' + (x.p50 / 1000).toFixed(1) + 'ms</td><td style="' + (hot ? 'color:var(--up);font-weight:700' : '') + '">' + (x.p99 / 1000).toFixed(1) + 'ms</td></tr>'; }).join('') +
+      '</tbody></table></div><p class="pa-st">무료 플랜은 요청 하나당 계산 10ms까지예요. P99가 8ms를 넘으면 빨강.</p>';
+    var ids = Object.keys(sz);
+    if (ids.length) h += '<div class="pa-scroll"><table class="pa-tbl"><thead><tr><th>DB</th><th>크기</th><th>한도 대비</th></tr></thead><tbody>' + ids.map(function (k) { var f = sz[k].b / L.dbBytes; return '<tr><td>' + esc(k.slice(0, 8)) + '…</td><td>' + mb(sz[k].b) + '</td><td style="' + (f >= WARN ? 'color:var(--up);font-weight:700' : '') + '">' + Math.round(f * 100) + '%</td></tr>'; }).join('') + '</tbody></table></div>';
+    var hist = {}; (u.workers || []).forEach(function (x) { hist[x.dimensions.date] = (hist[x.dimensions.date] || 0) + x.sum.requests; });
+    var days = Object.keys(hist).sort();
+    if (days.length > 1) h += '<p class="pa-st">지난 7일 요청: ' + days.map(function (k) { return k.slice(5) + ' ' + n0(hist[k]); }).join(' · ') + '</p>';
+    h += '<p class="pa-st">70%를 넘으면 노랑, 90%를 넘으면 빨강이에요. 5분마다 새로 받아요(' + kst(u.at) + ').</p>';
+    return h;
+  }
+
+  /* ── 회원 ── */
+  function users(B) {
+    var q = 'users?q=' + encodeURIComponent(UQ.q) + '&status=' + UQ.status + '&policy=' + UQ.policy + '&page=' + UQ.page;
+    call(q).then(function (x) {
+      if (denied(B, x)) return;
+      LAST.users = x.j.rows || [];
+      var n = x.j.n || 0, pages = Math.max(1, Math.ceil(n / 50));
+      var h = '<div class="pa-row"><input class="pa-in w" id="paQ" placeholder="닉네임 찾기" value="' + esc(UQ.q) + '"><button type="button" id="paQGo">찾기</button></div>' +
+        '<div class="pa-row"><select class="pa-in" id="paFs"><option value="">모든 상태</option><option value="active"' + (UQ.status === 'active' ? ' selected' : '') + '>활성</option><option value="suspended"' + (UQ.status === 'suspended' ? ' selected' : '') + '>정지</option></select>' +
+        '<select class="pa-in" id="paFp"><option value="">모든 초기화 정책</option>' + Object.keys(POL).map(function (k) { return '<option value="' + k + '"' + (UQ.policy === k ? ' selected' : '') + '>' + POL[k] + '</option>'; }).join('') + '</select></div>' +
+        '<p class="pa-st">' + n0(n) + '명 · ' + (UQ.page + 1) + ' / ' + pages + '쪽</p>';
+      h += '<div class="pa-list">' + (LAST.users.length ? LAST.users.map(function (u) {
+        return '<label class="pa-u"><input type="checkbox" data-uid="' + esc(u.id) + '"' + (SEL[u.id] ? ' checked' : '') + '>' +
+          '<div><b>' + esc(u.nick) + '</b>' + (u.status !== 'active' ? '<span class="pa-tag red">정지</span>' : '') + (u.policy !== 'default' ? '<span class="pa-tag">' + POL[u.policy] + '</span>' : '') +
+          '<div class="m">가입 ' + kst(u.created_at) + ' · 접속 ' + ago(u.last_seen) + ' · 코드 ' + esc(u.invite || '—') + (u.note ? ' · ' + esc(u.note) : '') + '</div>' +
+          '<div class="m">거래 ' + n0(u.trades) + ' · 청산 ' + n0(u.liqs) + ' · 초기화 ' + n0(u.resets) + ' · 쿠폰 ' + n0(u.coupons) + ' · 포지션 ' + n0(u.npos) + '</div></div>' +
+          '<div class="r"><b>' + n2(u.bal) + '</b><div class="m">' + (u.npos ? '현금(포지션 제외)' : '순자산') + '</div></div></label>';
+      }).join('') : '<p class="pa-st">회원이 없어요.</p>') + '</div>';
+      h += '<div class="pa-row">' + (UQ.page > 0 ? '<button type="button" data-pg="-1">이전 쪽</button>' : '') + (UQ.page + 1 < pages ? '<button type="button" data-pg="1">다음 쪽</button>' : '') + '<button type="button" id="paAll">이 쪽 모두 고르기</button></div>';
+      h += '<div class="pa-sel"><p class="pa-st" id="paSelN"></p>' +
+        '<div class="pa-row"><button type="button" data-bk="coupons" data-v="1">쿠폰 +1</button><button type="button" data-bk="coupons" data-v="2">쿠폰 +2</button><button type="button" data-bk="coupons" data-v="-1">쿠폰 −1</button><button type="button" data-bk="reset" class="red">지금 초기화</button></div>' +
+        '<div class="pa-row"><select class="pa-in" id="paPol">' + Object.keys(POL).map(function (k) { return '<option value="' + k + '">' + POL[k] + '</option>'; }).join('') + '</select><button type="button" data-bk="policy">정책 바꾸기</button></div>' +
+        '<div class="pa-row"><button type="button" data-bk="suspend" class="red">정지</button><button type="button" data-bk="unsuspend">정지 풀기</button><button type="button" data-bk="logout">모든 기기 로그아웃</button><button type="button" data-bk="note">메모</button><button type="button" id="paPw">비밀번호 재설정</button></div>' +
+        '<p class="pa-st" id="paMsg">정책: 기본 = 설정의 승인 모드를 따름 · 승인 필요 = 이 사람만 승인 후 초기화 · 쿠폰 없이 = 쿠폰 없이 바로 · 초기화 막기 = 못 함. 「지금 초기화」는 열린 포지션·주문이 없는 사람만 바로 1,000으로 되돌려요(쿠폰 안 씀).</p></div>';
+      B.innerHTML = h; selN();
+    });
+  }
+  function selIds() { return Object.keys(SEL).filter(function (k) { return SEL[k]; }); }
+  function selN() { var e = $('paSelN'); if (e) e.textContent = selIds().length ? selIds().length + '명 고름' : '아래 작업은 고른 회원에게만 적용돼요.'; }
+  function bulk(act, v) {
+    var ids = selIds(); if (!ids.length) return toast('회원을 먼저 고르세요');
+    if (ids.length > 90) return toast('한 번에 90명까지예요');
+    var body = { ids: ids, action: act };
+    if (act === 'coupons') body.value = +v;
+    if (act === 'policy') body.value = $('paPol').value;
+    if (act === 'note') { var t = prompt('메모 (120자)'); if (t == null) return; body.value = t; }
+    if ((act === 'suspend' || act === 'reset') && !confirm(ids.length + '명을 ' + (act === 'reset' ? '1,000으로 초기화' : '정지') + '할까요?')) return;
+    call('bulk', body).then(function (x) {
+      if (x.s !== 200) { toast('실패: ' + (x.j.err || x.s)); return; }
+      var m = (x.j.changed || 0) + '명 처리' + (x.j.fail && x.j.fail.length ? ' · 못 함 ' + x.j.fail.length + '명(포지션·주문 있음)' : '');
+      toast(m); SEL = {}; go('users');
+    });
+  }
+  function resetPw() {
+    var ids = selIds(); if (ids.length !== 1) return toast('한 명만 고르세요');
+    var u = LAST.users.filter(function (x) { return x.id === ids[0]; })[0];
+    var pw = prompt((u ? u.nick : '') + ' 님의 새 비밀번호 (8자 이상). 인스타그램 DM으로 알려 주세요.');
+    if (!pw) return; if (pw.length < 8) return toast('8자 이상이어야 해요');
+    call('pw', { id: ids[0], pw: pw }).then(function (x) { toast(x.j.ok ? '바꿨어요. 그 사람의 다른 기기는 로그아웃돼요.' : '실패'); });
+  }
+
+  /* ── 초대코드 ── */
+  function invites(B, fresh) {
+    call('invites').then(function (x) {
+      if (denied(B, x)) return;
+      var rows = x.j.rows || [], now = Date.now();
+      var h = '<h3 class="pa-h3">새 초대코드</h3><div class="pa-row"><label class="pa-st">개수 <input class="pa-in" id="paIc" type="number" min="1" max="50" value="1" style="width:64px"></label>' +
+        '<label class="pa-st">한 코드로 가입 <input class="pa-in" id="paIu" type="number" min="1" max="500" value="1" style="width:64px">명</label>' +
+        '<label class="pa-st">유효 <input class="pa-in" id="paId" type="number" min="0" max="365" value="14" style="width:64px">일(0=무기한)</label></div>' +
+        '<div class="pa-row"><input class="pa-in w" id="paIn" maxlength="60" placeholder="메모 (예: 인스타 10월 이벤트)"><button type="button" class="pri" id="paIgo">만들기</button></div>' +
+        (fresh ? '<div class="pa-codes" id="paCodes">' + fresh.map(esc).join('\n') + '</div><div class="pa-row"><button type="button" id="paCopy">복사</button></div>' : '') +
+        '<h3 class="pa-h3">최근 100개</h3><div class="pa-scroll"><table class="pa-tbl"><thead><tr><th>코드</th><th>사용</th><th>만료</th><th>메모</th><th></th></tr></thead><tbody>' +
+        rows.map(function (r) {
+          var dead = r.disabled || r.used >= r.max_uses || (r.expires_at && r.expires_at < now);
+          return '<tr style="' + (dead ? 'opacity:.45' : '') + '"><td style="font-family:var(--mono)">' + esc(r.code) + '</td><td>' + r.used + '/' + r.max_uses + '</td><td>' + (r.expires_at ? kst(r.expires_at) : '없음') + '</td><td style="text-align:left;white-space:normal">' + esc(r.note || '') + '</td><td>' +
+            (r.disabled ? '꺼짐' : dead ? '끝남' : '<button type="button" class="pa-b" data-dis="' + esc(r.code) + '">끄기</button>') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+      B.innerHTML = h;
+    });
+  }
+
+  /* ── 초기화 요청 ── */
+  function resets(B) {
+    call('resets').then(function (x) {
+      if (denied(B, x)) return;
+      var rows = x.j.rows || [];
+      $('paRc').textContent = rows.length ? rows.length : '';
+      B.innerHTML = '<h3 class="pa-h3">승인 기다리는 요청 ' + rows.length + '건</h3>' + (rows.length ? '<div class="pa-list">' + rows.map(function (r) {
+        return '<div class="pa-u" style="grid-template-columns:minmax(0,1fr) auto"><div><b>' + esc(r.nick) + '</b><div class="m">' + kst(r.ts) + ' 요청 · 현금 ' + n2(r.bal) + ' · 쿠폰 ' + r.coupons + ' · 지금까지 초기화 ' + r.resets + '번</div></div>' +
+          '<div class="pa-row" style="margin:0"><button type="button" class="pri" data-rs="' + r.id + '" data-ok="1">승인</button><button type="button" data-rs="' + r.id + '" data-ok="0">거절</button></div></div>';
+      }).join('') + '</div>' : '<p class="pa-st">없어요.</p>') + '<p class="pa-st">승인하면 쿠폰 1장을 쓰고 1,000으로 되돌려요. 그사이 포지션을 열었거나 순자산이 500 이상이면 승인이 실패해요.</p><p class="pa-st" id="paMsg"></p>';
+    });
+  }
+
+  /* ── 설정 ── */
+  function settingsView(B) {
+    call('overview').then(function (x) {
+      if (denied(B, x)) return;
+      var s = x.j.settings || {};
+      B.innerHTML = '<div class="pa-set">' +
+        '<label><span>초기화 승인 모드<small>켜면 모든 회원(정책 「기본」)의 초기화를 운영자가 승인해야 해요. 끄면 쿠폰만 있으면 바로.</small></span><input type="checkbox" id="psAp"' + (s.approval ? ' checked' : '') + '></label>' +
+        '<label><span>새 가입 받기<small>끄면 초대코드가 있어도 가입이 막혀요.</small></span><input type="checkbox" id="psSu"' + (s.signup ? ' checked' : '') + '></label>' +
+        '<label><span>순위 기준<small>바꾸면 이번 달 순위가 바로 다시 계산돼요.</small></span><select class="pa-in" id="psRm"><option value="ret"' + (s.rankMetric !== 'gain' ? ' selected' : '') + '>수익률</option><option value="gain"' + (s.rankMetric === 'gain' ? ' selected' : '') + '>자산 증가액</option></select></label>' +
+        '<label><span>매달 주는 초기화 쿠폰<small>새 달 첫 접속 때 이 수로 다시 채워요.</small></span><input class="pa-in" id="psCp" type="number" min="0" max="10" value="' + (s.coupons != null ? s.coupons : 2) + '" style="width:70px"></label>' +
+        '<label><span>문의 창구<small>가입 · 비밀번호 분실 안내에 나와요. 예: @andre99</small></span><input class="pa-in" id="psCt" maxlength="60" value="' + esc(s.contact || '') + '" style="width:150px"></label>' +
+        '</div><div class="pa-row"><button type="button" class="pri" id="psGo">저장</button></div><p class="pa-st" id="paMsg"></p>';
+    });
+  }
+
+  function onClick(e) {
+    var t = e.target, d = t.dataset || {};
+    var tab = t.closest('[data-pt]'); if (tab) { if (key()) go(tab.dataset.pt); return; }
+    if (d.re) return go(TAB);
+    if (t.id === 'paKeyGo') { var k = $('paKey').value.trim(); if (!k) return; ls(KEY, k); return go('home'); }
+    if (t.id === 'paKeyDel') { if (confirm('이 기기에서 관리 키를 지울까요?')) { ls(KEY, null); go('key'); } return; }
+    if (t.id === 'paQGo') { UQ.q = $('paQ').value.trim(); UQ.page = 0; return go('users'); }
+    if (d.pg) { UQ.page = Math.max(0, UQ.page + +d.pg); return go('users'); }
+    if (t.id === 'paAll') { LAST.users.forEach(function (u) { SEL[u.id] = true; }); Array.prototype.forEach.call(P.querySelectorAll('[data-uid]'), function (c) { c.checked = true; }); return selN(); }
+    if (d.bk) return bulk(d.bk, d.v);
+    if (t.id === 'paPw') return resetPw();
+    if (t.id === 'paIgo') {
+      t.disabled = true;
+      return call('invites', { count: +$('paIc').value, uses: +$('paIu').value, days: +$('paId').value, note: $('paIn').value }).then(function (x) {
+        t.disabled = false; if (x.s !== 200) return toast('실패');
+        invites($('paBody'), x.j.codes);
+      });
+    }
+    if (t.id === 'paCopy') { var txt = $('paCodes').textContent; (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('복사했어요'); }, function () { toast('코드를 길게 눌러 복사하세요'); }); return; }
+    if (d.dis) { if (!confirm(d.dis + ' 코드를 끌까요?')) return; return call('invites', { disable: d.dis }).then(function () { go('invites'); }); }
+    if (d.rs) {
+      t.disabled = true;
+      return call('resets', { id: +d.rs, approve: d.ok === '1' }).then(function (x) {
+        toast(x.s === 200 ? (d.ok === '1' ? '승인했어요' : '거절했어요') : '실패: ' + ({ has_pos: '포지션·주문이 있어요', not_low: '순자산이 500 이상이에요', no_coupon: '쿠폰이 없어요', gone: '이미 처리됐어요' }[x.j.err] || x.j.err));
+        go('resets');
+      });
+    }
+    if (t.id === 'psGo') {
+      t.disabled = true;
+      return call('settings', { approval: $('psAp').checked, signup: $('psSu').checked, rankMetric: $('psRm').value, coupons: +$('psCp').value, contact: $('psCt').value.trim() }).then(function (x) {
+        t.disabled = false; toast(x.s === 200 ? '저장했어요' : '실패');
+      });
+    }
+  }
+  function onChange(e) {
+    var t = e.target;
+    if (t.dataset && t.dataset.uid) { SEL[t.dataset.uid] = t.checked; return selN(); }
+    if (t.id === 'paFs') { UQ.status = t.value; UQ.page = 0; return go('users'); }
+    if (t.id === 'paFp') { UQ.policy = t.value; UQ.page = 0; return go('users'); }
+  }
+  window.A99PaperAdmin = { open: open, _usageHtml: usageHtml };
 })();
 </script>
 
