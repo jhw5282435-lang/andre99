@@ -1073,7 +1073,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.10.12-G';
+var BUILD_VER='v2026.10.12-H';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -1115,7 +1115,7 @@ function show(t){
   if(t==='paper'){ paperOpen(); } else if(window.A99Paper){ window.A99Paper.hide(); }
 }
 /* 모의투자 탭: 처음 누를 때만 paper/paper.js(차트 · 계산 엔진 · 화면)를 받아 온다 — 앱 첫 화면은 가볍게 */
-var PAPER_JS='paper/paper.js?v=2026.10.12-G', PAPER_LOADING=false;
+var PAPER_JS='paper/paper.js?v=2026.10.12-H', PAPER_LOADING=false;
 function paperOpen(){
   var host=$('paperHost');
   if(window.A99Paper){ window.A99Paper.mount(host); window.A99Paper.show(); return; }
@@ -8105,6 +8105,10 @@ select.pa-in{padding-right:6px}
 .pa-st{font-size:12px;color:var(--tx2);margin:6px 0;line-height:1.55}
 .pa-st.err{color:var(--up)}
 .pa-list{border-top:1px solid var(--line)}
+.pa-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+.pa-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 4px 3px 9px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;font-weight:600}
+.pa-chip small{color:var(--tx3);font-weight:500;font-size:10.5px}
+.pa-chip button{min-width:26px;min-height:26px;border:0;background:transparent;color:var(--tx3);font-size:12px}
 .pa-u{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:4px 8px;align-items:start;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px}
 .pa-u input{width:18px;height:18px;margin:2px 0 0}
 .pa-u b{font-size:13.5px}
@@ -8167,13 +8171,14 @@ select.pa-in{padding-right:6px}
       P = document.createElement('div'); P.className = 'pa-wrap'; P.id = 'paWrap';
       P.setAttribute('role', 'dialog'); P.setAttribute('aria-modal', 'true'); P.setAttribute('aria-label', '모의선물 관리');
       P.innerHTML = '<div class="pa-h"><b>모의선물 관리</b><span>회원 · 용량 · 속도</span><button type="button" id="paX" aria-label="닫기">✕</button></div>' +
-        '<div class="pa-tabs" role="tablist">' + [['home', '현황'], ['users', '회원'], ['invites', '초대코드'], ['resets', '초기화 요청'], ['settings', '설정']].map(function (t) {
+        '<div class="pa-tabs" role="tablist">' + [['home', '현황'], ['users', '회원'], ['syms', '종목'], ['invites', '초대코드'], ['resets', '초기화 요청'], ['settings', '설정']].map(function (t) {
           return '<button type="button" data-pt="' + t[0] + '">' + t[1] + (t[0] === 'resets' ? '<i id="paRc"></i>' : '') + '</button>';
         }).join('') + '</div><div class="pa-body" id="paBody"></div>';
       document.body.appendChild(P);
       $('paX').addEventListener('click', function () { P.hidden = true; });
       P.addEventListener('click', onClick);
       P.addEventListener('change', onChange);
+      P.addEventListener('input', function (e) { if (e.target.id === 'pyQ') { SYM.q = e.target.value; drawFind(); } });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && P && !P.hidden) P.hidden = true; });
     }
     P.hidden = false;
@@ -8185,7 +8190,7 @@ select.pa-in{padding-right:6px}
     var B = $('paBody');
     if (t === 'key') return keyView(B);
     B.innerHTML = '<p class="pa-st">불러오는 중…</p>';
-    ({ home: home, users: users, invites: invites, resets: resets, settings: settingsView })[t](B);
+    ({ home: home, users: users, syms: symsView, invites: invites, resets: resets, settings: settingsView })[t](B);
   }
   function denied(B, x) {
     if (x.s === 403 || x.s === 500 && x.j.err === 'no_admin_key') { ls(KEY, null); keyView(B, x.j.err === 'no_admin_key' ? '서버에 관리 키(PAPER_ADMIN_KEY)가 아직 없어요.' : '관리 키가 맞지 않아요.'); return true; }
@@ -8389,9 +8394,77 @@ select.pa-in{padding-right:6px}
         '<label><span>문의 창구<small>가입 · 비밀번호 분실 안내에 나와요. 예: @andre99</small></span><input class="pa-in" id="psCt" maxlength="60" value="' + esc(s.contact || '') + '" style="width:150px"></label>' +
         '<label><span>최대 레버리지 · 1군 (BTC · ETH)<small>1~200배. 저장하면 바로 적용돼요(이미 연 포지션은 그대로).</small></span><input class="pa-in" id="psL1" type="number" min="1" max="200" value="' + ((s.levCaps || [])[0] || 125) + '" style="width:70px"></label>' +
         '<label><span>최대 레버리지 · 2군 (거래대금 3~10위)</span><input class="pa-in" id="psL2" type="number" min="1" max="200" value="' + ((s.levCaps || [])[1] || 75) + '" style="width:70px"></label>' +
-        '<label><span>최대 레버리지 · 3군 (나머지 · 금)</span><input class="pa-in" id="psL3" type="number" min="1" max="200" value="' + ((s.levCaps || [])[2] || 50) + '" style="width:70px"></label>' +
+        '<label><span>최대 레버리지 · 3군 (나머지 크립토)</span><input class="pa-in" id="psL3" type="number" min="1" max="200" value="' + ((s.levCaps || [])[2] || 50) + '" style="width:70px"></label>' +
+        '<label><span>최대 레버리지 · 4군 (주식 · 지수 · 원자재 · 외환)<small>0 = 종목마다 실제 시장 한도(지수 50배 · 금·은 25배 · 원유 20배 · 개별주 10~20배). 숫자를 넣으면 모두 그 배수로.</small></span><input class="pa-in" id="psL4" type="number" min="0" max="200" value="' + ((s.levCaps || [])[3] || 0) + '" style="width:70px"></label>' +
         '</div><div class="pa-row"><button type="button" class="pri" id="psGo">저장</button></div><p class="pa-st" id="paMsg"></p>';
     });
+  }
+
+  /* ── 종목 편집 ── */
+  var SYM = { cfg: null, uni: [], cur: [], q: '', xerr: null };
+  var CN = { crypto: '크립토', stock: '주식', index: '지수', metal: '금속', energy: '에너지', fx: '외환' };
+  function nm(k) { var i = String(k).indexOf(':'); return i >= 0 ? k.slice(i + 1) : k; }
+  function catK(k) { for (var i = 0; i < SYM.uni.length; i++) if (SYM.uni[i].k === k) return SYM.uni[i].cat; return String(k).indexOf(':') < 0 ? 'crypto' : 'stock'; }
+  function symsView(B) {
+    Promise.all([call('overview'), call('universe')]).then(function (r) {
+      var x = r[0]; if (denied(B, x)) return;
+      var d = { cryptoTop: 5, stockTop: 10, index: true, metal: true, energy: true, fx: false, include: [], exclude: [] };
+      SYM.cfg = Object.assign(d, JSON.parse(JSON.stringify((x.j.settings || {}).symCfg || {})));
+      SYM.uni = (r[1].j && r[1].j.rows) || []; SYM.xerr = r[1].j && (r[1].j.xerr || r[1].j.err) || null;
+      SYM.cur = (x.j.specs && x.j.specs.list) || []; SYM.q = '';
+      drawSyms();
+    });
+  }
+  function syncCfg() {
+    var c = SYM.cfg; if (!c || !$('pyC')) return;
+    c.cryptoTop = +$('pyC').value || 0; c.stockTop = +$('pyS').value || 0;
+    c.index = $('pyI').checked; c.metal = $('pyM').checked; c.energy = $('pyE').checked; c.fx = $('pyF').checked;
+  }
+  function chipOf(k, attr, label) { return '<span class="pa-chip">' + esc(nm(k)) + ' <small>' + (CN[catK(k)] || '') + '</small><button type="button" ' + attr + '="' + esc(k) + '" aria-label="' + label + '">' + (attr === 'data-sx' || attr === 'data-si' ? '✕' : '↺') + '</button></span>'; }
+  function drawSyms() {
+    var B = $('paBody'), c = SYM.cfg; if (!B || !c) return;
+    var ck = function (id, v, t, sub) { return '<label><span>' + t + (sub ? '<small>' + sub + '</small>' : '') + '</span><input type="checkbox" id="' + id + '"' + (v ? ' checked' : '') + '></label>'; };
+    B.innerHTML = '<h3 class="pa-h3">지금 목록 ' + SYM.cur.length + '개 <small class="pa-st">✕ = 빼기 (저장해야 적용)</small></h3><div class="pa-chips">' + SYM.cur.map(function (k) { return chipOf(k, 'data-sx', '빼기'); }).join('') + '</div>' +
+      (SYM.xerr ? '<p class="pa-st err">주식 · 원자재 시장 자료를 못 받았어요: ' + esc(SYM.xerr) + '</p>' : '') +
+      '<div class="pa-set">' +
+      '<label><span>크립토 상위<small>거래대금 순 · BTC · ETH가 먼저 들어가요</small></span><input class="pa-in" id="pyC" type="number" min="0" max="30" value="' + c.cryptoTop + '" style="width:70px"></label>' +
+      '<label><span>주식 상위<small>미국 · 아시아 개별주 · ETF, 거래대금 순</small></span><input class="pa-in" id="pyS" type="number" min="0" max="40" value="' + c.stockTop + '" style="width:70px"></label>' +
+      ck('pyI', c.index, '지수 모두', 'S&P 500 · 나스닥 100 · 닛케이 · 코스피 200') + ck('pyM', c.metal, '금속 모두', '금 · 은 · 백금 · 구리') + ck('pyE', c.energy, '에너지 모두', 'WTI · 브렌트유 · 천연가스') + ck('pyF', c.fx, '외환 모두', '유로 · 파운드 · 엔') +
+      '</div><h3 class="pa-h3">직접 추가</h3><div class="pa-row"><input class="pa-in w" id="pyQ" placeholder="NVDA, 삼성, GOLD, SOL…" value="' + esc(SYM.q) + '" autocomplete="off"></div><div class="pa-list" id="pyL"></div>' +
+      (c.include.length ? '<h3 class="pa-h3">직접 추가한 종목</h3><div class="pa-chips">' + c.include.map(function (k) { return chipOf(k, 'data-si', '추가 취소'); }).join('') + '</div>' : '') +
+      (c.exclude.length ? '<h3 class="pa-h3">뺀 종목 <small class="pa-st">↺ = 되돌리기</small></h3><div class="pa-chips">' + c.exclude.map(function (k) { return chipOf(k, 'data-se', '되돌리기'); }).join('') + '</div>' : '') +
+      '<div class="pa-row"><button type="button" class="pri" id="pyGo">저장하고 바로 적용</button></div><p class="pa-st" id="paMsg">열린 포지션 · 주문이 있는 종목은 목록에서 빠지지 않아요. 매일 한 번 거래대금 순위로 다시 골라요.</p>';
+    drawFind();
+  }
+  function drawFind() {
+    var L = $('pyL'); if (!L) return;
+    var q = SYM.q.trim().toUpperCase(); if (!q) { L.innerHTML = ''; return; }
+    var rows = SYM.uni.filter(function (u) { return nm(u.k).toUpperCase().indexOf(q) >= 0 || (u.ko || '').indexOf(SYM.q.trim()) >= 0; }).slice(0, 12);
+    L.innerHTML = rows.length ? rows.map(function (u) {
+      var on = SYM.cur.indexOf(u.k) >= 0;
+      return '<div class="pa-u" style="grid-template-columns:minmax(0,1fr) auto"><div><b>' + esc(nm(u.k)) + '</b> <span class="pa-tag">' + (CN[u.cat] || '') + '</span><div class="m">' + esc(u.ko || '') + ' · 최대 ' + u.max + '배 · 24시간 거래대금 ' + n0(u.vol) + '</div></div>' +
+        (on ? '<span class="pa-st">목록에 있음</span>' : '<button type="button" class="pa-b" data-sa="' + esc(u.k) + '">+ 추가</button>') + '</div>';
+    }).join('') : '<p class="pa-st">찾는 종목이 없어요.</p>';
+  }
+  function symClick(t) {
+    var c = SYM.cfg, el;
+    if (!c) return false;
+    var rm = function (a, k) { var i = a.indexOf(k); if (i >= 0) a.splice(i, 1); };
+    if ((el = t.closest('[data-sx]'))) { syncCfg(); var k = el.dataset.sx; rm(c.include, k); if (c.exclude.indexOf(k) < 0) c.exclude.push(k); rm(SYM.cur, k); drawSyms(); return true; }
+    if ((el = t.closest('[data-sa]'))) { syncCfg(); k = el.dataset.sa; rm(c.exclude, k); if (c.include.indexOf(k) < 0) c.include.push(k); if (SYM.cur.indexOf(k) < 0) SYM.cur.push(k); drawSyms(); return true; }
+    if ((el = t.closest('[data-si]'))) { syncCfg(); k = el.dataset.si; rm(c.include, k); rm(SYM.cur, k); drawSyms(); return true; }
+    if ((el = t.closest('[data-se]'))) { syncCfg(); rm(c.exclude, el.dataset.se); drawSyms(); return true; }
+    if (t.id === 'pyGo') {
+      syncCfg(); t.disabled = true; toast('적용하는 중…');
+      call('settings', { symCfg: c }).then(function (x) {
+        t.disabled = false;
+        if (x.s !== 200) return toast('실패: ' + (x.j.err || x.s));
+        if (x.j.specErr) return toast('저장은 했지만 종목을 못 받았어요: ' + x.j.specErr);
+        toast('종목 ' + x.j.specs.n + '개로 적용했어요'); go('syms');
+      });
+      return true;
+    }
+    return false;
   }
 
   function onClick(e) {
@@ -8424,9 +8497,10 @@ select.pa-in{padding-right:6px}
         go('resets');
       });
     }
+    if (TAB === 'syms' && symClick(t)) return;
     if (t.id === 'psGo') {
       t.disabled = true;
-      return call('settings', { approval: $('psAp').checked, signup: $('psSu').checked, rankMetric: $('psRm').value, coupons: +$('psCp').value, contact: $('psCt').value.trim(), levCaps: [+$('psL1').value, +$('psL2').value, +$('psL3').value] }).then(function (x) {
+      return call('settings', { approval: $('psAp').checked, signup: $('psSu').checked, rankMetric: $('psRm').value, coupons: +$('psCp').value, contact: $('psCt').value.trim(), levCaps: [+$('psL1').value, +$('psL2').value, +$('psL3').value, +$('psL4').value] }).then(function (x) {
         t.disabled = false; toast(x.s === 200 ? '저장했어요' : '실패');
       });
     }

@@ -369,11 +369,13 @@ window.A99E = A99E;
 'use strict';
 if (window.A99Paper) return;
 
-var VER = '2026.10.12-G';
+var VER = '2026.10.12-H';
 var Q = 'US' + 'DT';                              // 모의 계좌 단위 표기 (가상 · 실제 돈 아님). 가격은 하이퍼리퀴드 달러 시세
 var WSURL = 'wss://api.hyperliquid.xyz/ws';      // 실시간 시세: 하이퍼리퀴드 공개 자료
 var HLI = 'https://api.hyperliquid.xyz/info';
-function BS(k) { return k === 'PAXG' ? 'XAU' : /^k[A-Z]/.test(k) ? '1000' + k.slice(1) : k; }   // 화면 표기: 금 = XAU · k로 시작 = 1000단위
+var DSP = { GOLD: 'XAU', SILVER: 'XAG', PLATINUM: 'XPT', PALLADIUM: 'XPD' };
+function bare(k) { var i = String(k).indexOf(':'); return i >= 0 ? k.slice(i + 1) : k; }
+function BS(k) { var b = bare(k); if (b !== k) return DSP[b] || b; return /^k[A-Z]/.test(k) ? '1000' + k.slice(1) : k; }   // 화면 표기: 금 = XAU · 은 = XAG · k로 시작 = 1000단위 · xyz: 접두어는 숨김   // 화면 표기: 금 = XAU · k로 시작 = 1000단위
 function NM(k) { return BS(k) + Q; }
 var API = window.A99P_API || 'https://andre99-paper.jhw5282435.workers.dev';
 var H9 = 9 * 3600e3;
@@ -609,6 +611,11 @@ face('651 950', 'd09GMgABAAAAAFkwABIAAAAA3oQAAFjHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 '.pp-pk button .v{font-family:var(--mono);font-size:13px;text-align:right}',
 '.pp-pk button .c{font-family:var(--mono);font-size:12.5px;text-align:right;font-weight:600}',
 '.pp-pk button.on{background:var(--s1)}',
+'.pp-pk .pp-pkc{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}',
+'.pp-pk .pp-pkc button{display:inline-flex;width:auto;min-height:32px;padding:0 12px;border:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:2px;font-size:12.5px;font-weight:600;color:var(--tx2);white-space:nowrap}',
+'.pp-pk .pp-pkc button.on{color:var(--tx);border-color:var(--tx);background:transparent}',
+'.pp-mc{display:inline-block;margin-left:6px;padding:1px 5px;font-style:normal;font-size:10px;font-weight:600;color:var(--tx3);border:1px solid var(--line);vertical-align:2px;letter-spacing:0}',
+'.pp-cseg.s4{grid-template-columns:repeat(4,minmax(0,1fr))}',
 '.pp-pk button i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#E8A317;margin-left:6px;vertical-align:2px}',
 '.pp-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h,60px) + 56px + env(safe-area-inset-bottom));z-index:2020;display:flex;flex-direction:column;gap:6px;width:min(92vw,420px);pointer-events:none}',
 '.pp-toast div{background:#2A2A2E;border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.45;box-shadow:0 6px 20px rgba(0,0,0,.4);transition:opacity .25s}',
@@ -655,14 +662,25 @@ function getJSON(url, ms) {
 
 /* ── 종목 규칙 ── */
 var SP = {}, IDS = [], INFO = { contact: '', signup: true, start: 1000, resetBelow: 500, metric: 'ret' };
-function chip(id) { return id === 'PAXG' || id === 'XAU' ? '금' : id === 'CL' ? '원유' : id === 'XAG' ? '은' : id; }
+function chip(id) { return (SP[id] && SP[id].ko) || BS(id); }
 function setSpecs(j) {
   var sp = {};
   (j.list || []).forEach(function (k) { if (j.map[k]) sp[k] = E.prep(Object.assign({}, j.map[k])); });
-  if (sp.PAXG) sp.PAXG.ko = '금 · PAXG 기준';
   SP = sp; IDS = (j.list || []).filter(function (k) { return SP[k]; });
   if (j.info) INFO = Object.assign(INFO, j.info);
   IDS.forEach(function (k) { if (!M[k]) M[k] = { last: null, mark: null, bid: null, ask: null, chg: null, fr: null, nft: null, dir: 0, book: null, trades: [], rx: 0 }; });
+}
+
+/* 주식 · 지수: 실제 증시가 닫힌 시간이면 「장 마감」 (공휴일은 모름) */
+var KRX = ['KR200', 'SMSN', 'SKHX', 'SKHY'];
+function mktState(k) {
+  var s = SP[k]; if (!s || (s.cat !== 'stock' && s.cat !== 'index')) return '';
+  var b = bare(k), z = KRX.indexOf(b) >= 0 ? ['Asia/Seoul', 540, 930] : b === 'JP225' ? ['Asia/Tokyo', 540, 930] : ['America/New_York', 570, 960];
+  try {
+    var o = {}; new Intl.DateTimeFormat('en-US', { timeZone: z[0], weekday: 'short', hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(new Date()).forEach(function (x) { o[x.type] = x.value; });
+    var mins = (+o.hour % 24) * 60 + +o.minute;
+    return o.weekday === 'Sat' || o.weekday === 'Sun' || mins < z[1] || mins >= z[2] ? 'closed' : 'open';
+  } catch (e) { return ''; }
 }
 
 /* ── 상태 ── */
@@ -729,24 +747,33 @@ function applyServer(j) {
   return fresh;
 }
 var KIND = { open: 'Open', close: 'Close', tp: 'TP filled', sl: 'SL filled', liq: 'Liquidated', fund: 'Funding' };
-/* 체결음: 소리 파일 없이 기기에서 바로 만든다 (Web Audio). 처음 누를 때 소리가 켜진다(브라우저 규칙) */
-var AC = null, SND = lsGet('a99p.snd'), lastBeep = 0;
-if (SND == null) SND = 1;
+/* 체결음: 소리 파일 없이 기기에서 바로 만든다 (Web Audio) · 처음 누를 때 소리가 켜진다(브라우저 규칙)
+   종류: 틱(짧고 또렷한 클릭) · 마림바(맑은 나무 소리) · 벨(은은한 종소리) · 끄기 */
+var AC = null, lastBeep = 0, SND = lsGet('a99p.snd');
+if (SND === 0 || SND === '0') SND = 'off'; else if (['off', 'tick', 'mar', 'bell'].indexOf(SND) < 0) SND = 'tick';
+var SNDS = {
+  tick: { p: [], w: 'square', g: .045, n: { fill: [[2093, 0, .035], [2637, .045, .05]], close: [[2637, 0, .035], [1760, .045, .06]], place: [[2349, 0, .03]], liq: [[330, 0, .12], [220, .13, .22]] } },
+  mar: { p: [[4, .22]], w: 'sine', g: .17, n: { fill: [[1047, 0, .3], [1568, .08, .34]], close: [[1568, 0, .3], [1047, .08, .34]], place: [[1319, 0, .24]], liq: [[262, 0, .45], [196, .16, .55]] } },
+  bell: { p: [[2.76, .3], [5.4, .12]], w: 'sine', g: .13, n: { fill: [[1319, 0, .75], [1976, .1, .85]], close: [[1976, 0, .75], [1319, .1, .85]], place: [[1568, 0, .65]], liq: [[330, 0, .95], [247, .22, 1.05]] } }
+};
 function audioUnlock() {
-  if (!SND) return;
+  if (SND === 'off') return;
   try { if (!AC) { var C = window.AudioContext || window.webkitAudioContext; if (C) AC = new C(); } if (AC && AC.state === 'suspended') AC.resume(); } catch (e) {}
 }
-function beep(kind) {
-  if (!SND || !AC || AC.state !== 'running') return;
-  var now = Date.now(); if (now - lastBeep < 250) return; lastBeep = now;
-  var N = { fill: [[880, 0, .06], [1320, .06, .12]], close: [[1046, 0, .06], [784, .06, .12]], place: [[740, 0, .07]], liq: [[220, 0, .16], [165, .15, .24]] }[kind] || [[880, 0, .08]];
+function voice(f, t0, dur, w, g) {
+  var o = AC.createOscillator(), v = AC.createGain();
+  o.type = w; o.frequency.value = f;
+  v.gain.setValueAtTime(0.0001, t0); v.gain.exponentialRampToValueAtTime(g, t0 + 0.008); v.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(v); v.connect(AC.destination); o.start(t0); o.stop(t0 + dur + 0.03);
+}
+function beep(kind, force) {
+  var S = SNDS[SND]; if (!S || !AC || AC.state !== 'running') return;
+  var now = Date.now(); if (!force && now - lastBeep < 250) return; lastBeep = now;
   try {
-    var t = AC.currentTime;
-    N.forEach(function (n) {
-      var o = AC.createOscillator(), g = AC.createGain();
-      o.type = kind === 'liq' ? 'triangle' : 'sine'; o.frequency.value = n[0];
-      g.gain.setValueAtTime(0.0001, t + n[1]); g.gain.exponentialRampToValueAtTime(0.16, t + n[1] + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + n[1] + n[2]);
-      o.connect(g); g.connect(AC.destination); o.start(t + n[1]); o.stop(t + n[1] + n[2] + 0.03);
+    var t = AC.currentTime, w = kind === 'liq' && SND === 'tick' ? 'sawtooth' : S.w;
+    (S.n[kind] || S.n.fill).forEach(function (n) {
+      voice(n[0], t + n[1], n[2], w, S.g);
+      S.p.forEach(function (h) { voice(n[0] * h[0], t + n[1], n[2] * .6, 'sine', S.g * h[1]); });
     });
   } catch (e) {}
 }
@@ -1059,7 +1086,7 @@ function rankHTML() {
 }
 function refreshRank(force) {
   var m = U.month || monthKST();
-  if (!force && board[m] && board[m].at && Date.now() - board[m].at < 60000) { renderList(); return; }
+  if (!force && board[m] && board[m].at && Date.now() - board[m].at < 60000 && (!ME || myRow(board[m]))) { renderList(); return; }
   loadBoard(m).then(function () { renderList(); dirty.acct = true; kick(); });
 }
 
@@ -1092,6 +1119,7 @@ function changed(all) {
 function renderHead() {
   var id = U.sym, m = M[id], sp = SP[id]; if (!sp || !m) return;
   $('hname').textContent = NM(id);
+  var hm = $('hmk'); if (hm) hm.hidden = mktState(id) !== 'closed';
   var c = $('hchg'); c.textContent = m.chg != null ? pct(m.chg) : '—'; c.className = cls(m.chg || 0);
   var b = $('me');
   if (ME) { b.textContent = ME.nick; b.className = 'pp-me'; } else { b.textContent = 'Log In'; b.className = 'pp-me cta'; }
@@ -1284,15 +1312,19 @@ function stepPx(d) {
 var PK = false, PKQ = '';
 function pickerSheet() {
   PK = true; PKQ = '';
-  openSheet('Symbols', '<div class="pp-pk"><input id="pp-pkq" placeholder="Search (SOL, 금…)" autocomplete="off"><div id="pp-pkl"></div></div>');
+  openSheet('Symbols', '<div class="pp-pk"><input id="pp-pkq" placeholder="Search (BTC, NVDA, 금…)" autocomplete="off"><div class="pp-pkc" id="pp-pkc"></div><div id="pp-pkl"></div></div>');
   renderPicker();
 }
+var PKC = 'all', PKCS = [['all', '전체'], ['crypto', '크립토'], ['stock', '주식'], ['index', '지수'], ['cmd', '원자재'], ['fx', '외환']];
+function catGrp(k) { var c = (SP[k] && SP[k].cat) || 'crypto'; return c === 'metal' || c === 'energy' ? 'cmd' : c; }
 function renderPicker() {
   var l = $('pkl'); if (!l) { PK = false; return; }
-  var q = PKQ.trim().toUpperCase();
-  l.innerHTML = IDS.filter(function (k) { return !q || NM(k).toUpperCase().indexOf(q) >= 0 || (SP[k].ko || '').indexOf(PKQ.trim()) >= 0; }).map(function (k) {
+  var q = PKQ.trim().toUpperCase(), have = {};
+  IDS.forEach(function (k) { have[catGrp(k)] = 1; });
+  var cb = $('pkc'); if (cb) cb.innerHTML = PKCS.filter(function (x) { return x[0] === 'all' || have[x[0]]; }).map(function (x) { return '<button type="button" data-pkc="' + x[0] + '" class="' + (PKC === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('');
+  l.innerHTML = IDS.filter(function (k) { return (PKC === 'all' || catGrp(k) === PKC) && (!q || NM(k).toUpperCase().indexOf(q) >= 0 || (SP[k].ko || '').indexOf(PKQ.trim()) >= 0); }).map(function (k) {
     var m = M[k] || {};
-    return '<button type="button" data-psym="' + k + '" class="' + (k === U.sym ? 'on' : '') + '"><b>' + NM(k) + '<small>' + esc(SP[k].ko || '') + '</small>' + (ME && exposed(k) ? '<i></i>' : '') + '</b>' +
+    return '<button type="button" data-psym="' + k + '" class="' + (k === U.sym ? 'on' : '') + '"><b>' + NM(k) + '<small>' + esc(SP[k].ko || '') + '</small>' + (mktState(k) === 'closed' ? '<em class="pp-mc">장 마감</em>' : '') + (ME && exposed(k) ? '<i></i>' : '') + '</b>' +
       '<span class="v">' + (m.last ? fp(k, m.last) : '—') + '</span><span class="c ' + cls(m.chg || 0) + '">' + (m.chg != null ? pct(m.chg) : '') + '</span></button>';
   }).join('') || '<p class="hint" style="padding:12px 0">찾는 종목이 없어요.</p>';
 }
@@ -1518,6 +1550,7 @@ var GLOSS = [
   ['cost', 'Cost', '필요 증거금', '이 주문을 열 때 묶이는 증거금이에요. 수량 × 가격 ÷ 레버리지.'],
   ['tpsl', 'TP / SL', '익절 / 손절', 'TP(Take Profit)는 이익을 확정하는 가격, SL(Stop Loss)은 손실을 끊는 가격이에요. 닿으면 자동으로 포지션을 닫아요.'],
   ['liq', 'Est. Liq. Price', '예상 청산가', 'Mark 가격이 여기에 닿으면 강제 청산돼 그 포지션의 증거금을 잃어요.'],
+  ['mkt', 'Market Closed', '장 마감', '주식 · 지수 종목은 실제 증시가 닫힌 시간(주말 포함)에도 거래되지만 기준 가격이 거의 멈춰 있어요. 다음 개장 때 크게 움직일 수 있어요. 공휴일은 따로 표시하지 않아요.'],
   ['fund', 'Funding / Countdown', '펀딩비 / 남은 시간', '무기한 선물 가격을 현물에 붙여 두려고 롱·숏이 매시 정각(1시간마다) 주고받는 비용이에요. 양수면 롱이 숏에게 내요. 정각에 포지션을 들고 있을 때만 정산돼요.'],
   ['upnl', 'Unrealized PnL', '미실현 손익', '아직 닫지 않은 포지션의 가격 차이 손익이에요(Mark 가격 기준). 대형 거래소처럼 수수료는 넣지 않아요. 낸 수수료는 거래 기록에서 확인할 수 있어요.'],
   ['roe', 'ROE', '증거금 대비 수익률', '미실현 손익 ÷ 증거금. 레버리지가 높으면 같은 가격 변화에도 크게 움직여요.'],
@@ -1537,10 +1570,10 @@ function termSheet(k) {
     '<button type="button" class="pp-b gh" id="pp-gall">용어 전체 보기</button>');
 }
 function guideSheet() {
-  openSheet('용어 · 설정',
+  openSheet('설정 · 용어집',
     '<div class="pp-box"><b>상승 · 롱 색</b><div class="pp-cseg"><button type="button" data-pcol="g" class="' + (COL === 'g' ? 'on' : '') + '"><i style="background:#22C083"></i>Green Up</button><button type="button" data-pcol="r" class="' + (COL === 'r' ? 'on' : '') + '"><i style="background:#FF5B5B"></i>Red Up</button></div>' +
     '<p class="hint">Green Up = 세계 거래소 표준(초록 = 상승 · 롱). Red Up = 한국 증권 앱 방식(빨강 = 상승 · 롱). 이 기기에 저장돼요.</p></div>' +
-    '<div class="pp-box"><b>체결음</b><div class="pp-cseg"><button type="button" data-psnd="1" class="' + (SND ? 'on' : '') + '">켜기</button><button type="button" data-psnd="0" class="' + (SND ? '' : 'on') + '">끄기</button></div><p class="hint">체결 · 익절/손절 · 청산 때 짧은 소리가 나요. 휴대폰이 무음(진동) 모드면 안 들릴 수 있어요.</p></div>' +
+    '<div class="pp-box"><b>체결음</b><div class="pp-cseg s4">' + [['tick', '틱'], ['mar', '마림바'], ['bell', '벨'], ['off', '끄기']].map(function (x) { return '<button type="button" data-psnd="' + x[0] + '" class="' + (SND === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div><p class="hint">누르면 미리 들려줘요. 체결 · 익절/손절 · 청산 때 울려요. 휴대폰이 무음(진동) 모드면 안 들릴 수 있어요.</p></div>' +
     '<dl class="pp-gl">' + GLOSS.map(function (g) { return '<div><dt>' + esc(g[1]) + '<small>' + esc(g[2]) + '</small></dt><dd>' + esc(g[3]) + '</dd></div>'; }).join('') + '</dl>');
 }
 function setCol(c) {
@@ -1578,7 +1611,8 @@ function onClick(e) {
   var t = e.target, c;
   audioUnlock();
   if ((c = t.closest('[data-pbk]'))) { U.bk = (U.bk + 1) % BKS.length; saveUI(); if (M[U.sym]) M[U.sym].book = null; syncSubs(); dirty.book = true; kick(); return; }
-  if ((c = t.closest('[data-psnd]'))) { SND = c.dataset.psnd === '1' ? 1 : 0; lsSet('a99p.snd', SND); $$('[data-psnd]').forEach(function (b) { b.classList.toggle('on', +b.dataset.psnd === SND); }); var sh = document.querySelectorAll('#pp-sheet [data-psnd]'); Array.prototype.forEach.call(sh, function (b) { b.classList.toggle('on', +b.dataset.psnd === SND); }); if (SND) beep('fill'); return; }
+  if ((c = t.closest('[data-psnd]'))) { SND = c.dataset.psnd; lsSet('a99p.snd', SND); Array.prototype.forEach.call(document.querySelectorAll('[data-psnd]'), function (b) { b.classList.toggle('on', b.dataset.psnd === SND); }); if (SND !== 'off') { audioUnlock(); setTimeout(function () { beep('fill', true); }, 60); } return; }
+  if ((c = t.closest('[data-pkc]'))) { PKC = c.dataset.pkc; renderPicker(); return; }
   if ((c = t.closest('[data-pclose]'))) { closeSheet(); return; }
   if ((c = t.closest('[data-pterm]'))) { e.preventDefault(); termSheet(c.dataset.pterm); return; }
   if ((c = t.closest('[data-pcol]'))) { setCol(c.dataset.pcol); return; }
@@ -1622,9 +1656,9 @@ function onClick(e) {
 /* ── 탭 뼈대 ── */
 var CHEV = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3h8L5 8z"/></svg>';
 function skeleton() {
-  return '<div class="pp-hd"><button type="button" class="pp-pick" id="pp-hsym" aria-label="종목 바꾸기"><b><span id="pp-hname">BTC' + Q + '</span><small>Perp</small>' + CHEV + '</b><span id="pp-hchg">—</span></button><span class="sp"></span>' +
+  return '<div class="pp-hd"><button type="button" class="pp-pick" id="pp-hsym" aria-label="종목 바꾸기"><b><span id="pp-hname">BTC' + Q + '</span><small>Perp</small><em class="pp-mc" id="pp-hmk" hidden>장 마감</em>' + CHEV + '</b><span id="pp-hchg">—</span></button><span class="sp"></span>' +
     '<button type="button" class="pp-ib" data-pchart="full" aria-label="차트 크게 보기"><svg viewBox="0 0 24 24"><path d="M8 3v3M8 16v5M16 3v5M16 17v4"/><rect x="5.5" y="6" width="5" height="10" rx="1"/><rect x="13.5" y="8" width="5" height="9" rx="1"/></svg></button>' +
-    '<button type="button" class="pp-ib" id="pp-guide" aria-label="용어 설명 · 설정"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 014.8.9c0 1.7-2.4 2.1-2.4 3.6"/><path d="M12 17h.01" stroke-width="2.4" stroke-linecap="round"/></svg></button>' +
+    '<button type="button" class="pp-ib" id="pp-guide" aria-label="설정 · 용어집"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>' +
     '<button type="button" class="pp-me cta" id="pp-me">Log In</button></div>' +
     '<div id="pp-ban" class="pp-ban" hidden></div>' +
     '<div id="pp-acct"></div>' +
@@ -1690,7 +1724,7 @@ function mount(host) {
     $('qtyu').textContent = BS(U.sym);
     setOt(U.ot); setSym(U.sym);
     changed(true);
-    if (!lsGet('a99p.tip1') && !BAN) { lsSet('a99p.tip1', 1); banner('점선 밑줄 용어를 누르면 한국어 설명이 나와요. 전체 용어집과 색 설정은 오른쪽 위 ? 에 있어요.', 'tip', '용어집'); }
+    if (!lsGet('a99p.tip1') && !BAN) { lsSet('a99p.tip1', 1); banner('점선 밑줄 용어를 누르면 한국어 설명이 나와요. 전체 용어집 · 색 · 체결음 설정은 오른쪽 위 톱니바퀴(⚙)에 있어요.', 'tip', '용어집'); }
     loadMe();
     loadBoard(monthKST()).then(function () { dirty.acct = true; kick(); if (U.tab === 'rank') renderList(); });
   });
