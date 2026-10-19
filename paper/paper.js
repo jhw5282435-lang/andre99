@@ -9,8 +9,9 @@
 
 ;
 /* 안드레99 모의선물 계산 엔진 — 서버(워커)와 화면이 같은 파일을 쓴다.
-   비트겟 테더 무기한 규칙 기준 · 1단계: 단방향 · 격리 (헷지 · 교차는 다음 단계)
-   상태 st = { bal, pos: { 종목: 포지션 }, ord: [지정가], fills: [이번에 생긴 체결], trades, liqs, ev: [알림] } */
+   비트겟 테더 무기한 규칙 기준 · 2단계: 단방향/양방향(헷지) · 격리/교차 · 조건부 · 트레일링 · 감소 전용 · 메이커 전용
+   상태 st = { bal, mode: 'one'|'hedge', pos: { 키: 포지션 }, ord: [주문], fills: [이번에 생긴 체결], trades, liqs, ev: [알림] }
+   포지션 키: 단방향이면 종목, 양방향이면 종목|L · 종목|S. 포지션마다 sym · side · mm('isolated'|'cross') */
 var A99E = (function () {
   'use strict';
   var MIN = 60000;
@@ -44,6 +45,8 @@ var A99E = (function () {
     return lp > 0 && isFinite(lp) ? lp : 0;
   }
   function posLiq(s, p) { return liqPrice(s, p.side, p.qty, p.entry, p.margin); }
+  /* 유지증거금(청산 수수료 포함) */
+  function mmOf(s, p, mk) { var n = p.qty * mk, t = tierOf(s, n); return Math.max(0, n * (t.mmr + s.taker) - t.off); }
   /* 소수 자릿수로 한 번 더 맞춰 0.009999… 같은 값이 남지 않게 */
   function roundQty(s, q) { return +(Math.floor(q / s.step + 1e-9) * s.step).toFixed(s.vp); }
   function roundPx(s, p) { return +(Math.round(p / s.tick) * s.tick).toFixed(s.pp); }
@@ -74,90 +77,255 @@ var A99E = (function () {
   }
 
   /* ── 상태 ── */
-  function newState(bal) { return { bal: bal, pos: {}, ord: [], fills: [], trades: 0, liqs: 0, ev: [] }; }
+  function newState(bal, mode) { return { bal: bal, mode: mode === 'hedge' ? 'hedge' : 'one', pos: {}, ord: [], fills: [], trades: 0, liqs: 0, ev: [] }; }
   function addFill(st, f) { st.fills.push(f); }
-  function openPart(st, sym, side, qty) { var p = st.pos[sym]; return (!p || p.side === side) ? qty : Math.max(0, qty - p.qty); }
-  function sameSideResting(st, sym, side) { var q = 0; st.ord.forEach(function (o) { if (o.sym === sym && o.side === side) q += o.qty; }); return q; }
-  function exposed(st, sym) { if (st.pos[sym]) return true; for (var i = 0; i < st.ord.length; i++) if (st.ord[i].sym === sym) return true; return false; }
-
-  /* 한 방향 포지션(종목당 1개): 같은 방향이면 늘리고, 반대 방향이면 줄이거나 뒤집는다 */
-  function applyFill(st, SP, sym, side, qty, price, feeRate, lev, kind, ts) {
-    var s = SP[sym], p = st.pos[sym];
-    if (!p || p.side === side) {
-      var margin = qty * price / lev, fee = qty * price * feeRate;
-      st.bal -= margin + fee;
-      if (!p) p = st.pos[sym] = { side: side, qty: 0, entry: 0, lev: lev, margin: 0, fee: 0, tp: null, sl: null, tpslAt: 0, ts: ts, fundAt: ts };
-      p.entry = (p.entry * p.qty + price * qty) / (p.qty + qty);
-      p.qty = cleanQ(s, p.qty + qty); p.margin += margin; p.fee += fee;
-      addFill(st, { ts: ts, sym: sym, side: side, qty: qty, price: price, fee: fee, pnl: 0, kind: 'open' });
-    } else {
-      var cq = Math.min(qty, p.qty);
-      var pnl = (price - p.entry) * cq * p.side;
-      var feeC = cq * price * feeRate;
-      var rel = p.margin * cq / p.qty;
-      var back = rel + pnl - feeC;
-      if (back < 0) { pnl = -rel + feeC; back = 0; }
-      st.bal += back;
-      var keep = (p.qty - cq) / p.qty;
-      p.margin -= rel; p.fee *= keep; p.qty = cleanQ(s, p.qty - cq);
-      addFill(st, { ts: ts, sym: sym, side: side, qty: cq, price: price, fee: feeC, pnl: pnl, kind: kind && kind !== 'open' ? kind : 'close' });
-      if (p.qty <= s.step / 2) delete st.pos[sym];
-      var rest = cleanQ(s, qty - cq);
-      if (rest > s.step / 2) applyFill(st, SP, sym, side, rest, price, feeRate, lev, 'open', ts);
-    }
-    st.trades++;
+  function hedge(st) { return st.mode === 'hedge'; }
+  function pkey(st, sym, side) { return hedge(st) ? sym + (side === 1 ? '|L' : '|S') : sym; }
+  function psym(st, k) { var p = st.pos[k]; return (p && p.sym) || String(k).split('|')[0]; }
+  function keysOf(st, sym) { var out = []; for (var k in st.pos) if (psym(st, k) === sym) out.push(k); return out; }
+  /* 이 방향(side)으로 사고팔 때 같은 방향으로 늘어나는 포지션 */
+  function samePos(st, sym, side) { if (hedge(st)) return st.pos[pkey(st, sym, side)] || null; var p = st.pos[sym]; return p && p.side === side ? p : null; }
+  /* 이 방향으로 사고팔 때 줄어드는 포지션 */
+  function oppPos(st, sym, side) { if (hedge(st)) return st.pos[pkey(st, sym, -side)] || null; var p = st.pos[sym]; return p && p.side === -side ? p : null; }
+  function closable(st, sym, side) { var p = oppPos(st, sym, side); return p ? p.qty : 0; }
+  function openPart(st, sym, side, qty, ro) {
+    if (ro) return 0;
+    if (hedge(st)) return qty;
+    var p = st.pos[sym]; return (!p || p.side === side) ? qty : Math.max(0, qty - p.qty);
   }
-  function liquidate(st, SP, sym, price, ts) {
-    var p = st.pos[sym]; if (!p) return;
-    addFill(st, { ts: ts, sym: sym, side: -p.side, qty: p.qty, price: price, fee: 0, pnl: -p.margin, kind: 'liq' });
-    st.ev.push({ k: 'liq', sym: sym, side: p.side, lev: p.lev, margin: p.margin, price: price, ts: ts });
-    delete st.pos[sym];
+  function kindOf(o) { return o.k || 'limit'; }
+  function sameSideResting(st, sym, side) { var q = 0; st.ord.forEach(function (o) { if (o.sym === sym && o.side === side && !o.ro && kindOf(o) === 'limit') q += o.qty; }); return q; }
+  function exposed(st, sym) { if (keysOf(st, sym).length) return true; for (var i = 0; i < st.ord.length; i++) if (st.ord[i].sym === sym) return true; return false; }
+  /* 그 종목에 이미 정해진 증거금 방식(포지션 기준) */
+  function symMM(st, sym) { var ks = keysOf(st, sym); return ks.length ? (st.pos[ks[0]].mm || 'isolated') : null; }
+  function frozenSum(st) { var f = 0; for (var i = 0; i < st.ord.length; i++) f += st.ord[i].frozen || 0; return f; }
+  function markOf(marks, p) { return (marks && marks[p.sym]) || p.entry; }
+
+  /* 포지션 열기 · 늘리기 */
+  function openFill(st, SP, sym, side, qty, price, feeRate, lev, mm, ts) {
+    var s = SP[sym], k = pkey(st, sym, side), p = st.pos[k];
+    var margin = qty * price / lev, fee = qty * price * feeRate;
+    st.bal -= margin + fee;
+    if (!p) p = st.pos[k] = { sym: sym, side: side, mm: mm === 'cross' ? 'cross' : 'isolated', qty: 0, entry: 0, lev: lev, margin: 0, fee: 0, tp: null, sl: null, tpslAt: 0, ts: ts, fundAt: ts };
+    p.entry = (p.entry * p.qty + price * qty) / (p.qty + qty);
+    p.qty = cleanQ(s, p.qty + qty); p.margin += margin; p.fee += fee;
+    addFill(st, { ts: ts, sym: sym, side: side, qty: qty, price: price, fee: fee, pnl: 0, kind: 'open' });
+  }
+  /* 포지션 줄이기 · 닫기. 격리는 증거금 이상 잃지 않고, 교차는 모자란 만큼 잔고에서 */
+  function closeFill(st, SP, k, qty, price, feeRate, kind, ts) {
+    var p = st.pos[k]; if (!p) return 0;
+    var s = SP[p.sym];
+    var cq = Math.min(qty, p.qty);
+    var pnl = (price - p.entry) * cq * p.side;
+    var feeC = cq * price * feeRate;
+    var rel = p.margin * cq / p.qty;
+    var back = rel + pnl - feeC;
+    if (p.mm !== 'cross' && back < 0) { pnl = -rel + feeC; back = 0; }
+    st.bal += back;
+    var keep = (p.qty - cq) / p.qty;
+    p.margin -= rel; p.fee *= keep; p.qty = cleanQ(s, p.qty - cq);
+    addFill(st, { ts: ts, sym: p.sym, side: -p.side, qty: cq, price: price, fee: feeC, pnl: pnl, kind: kind && kind !== 'open' ? kind : 'close' });
+    if (p.qty <= s.step / 2) dropPos(st, k, ts);
+    return cq;
+  }
+  /* 포지션이 사라지면 더 줄일 게 없어진 감소 전용 주문은 같이 취소 */
+  function dropPos(st, k, ts) {
+    var sym = psym(st, k);
+    delete st.pos[k];
+    for (var i = st.ord.length - 1; i >= 0; i--) {
+      var o = st.ord[i];
+      if (o.sym === sym && o.ro && closable(st, sym, o.side) <= 0) {
+        st.bal += o.frozen || 0; st.ord.splice(i, 1);
+        st.ev.push({ k: 'ocancel', why: 'nopos', sym: sym, id: o.id, ts: ts });
+      }
+    }
+  }
+  /* 체결 하나 반영. o = { ro: 감소 전용, mm: 새로 열 때 증거금 방식 }
+     단방향: 같은 방향이면 늘리고, 반대면 줄이거나 (감소 전용이 아니면) 뒤집는다.
+     양방향: 감소 전용이면 반대쪽 포지션을 닫고, 아니면 이쪽 포지션을 연다. */
+  function applyFill(st, SP, sym, side, qty, price, feeRate, lev, kind, ts, o) {
+    o = o || {};
+    var s = SP[sym], done = 0;
+    if (hedge(st)) {
+      if (o.ro) { var ck = pkey(st, sym, -side); if (st.pos[ck]) { done = closeFill(st, SP, ck, qty, price, feeRate, kind, ts); st.trades++; } }
+      else { openFill(st, SP, sym, side, qty, price, feeRate, lev, o.mm || symMM(st, sym), ts); done = qty; st.trades++; }
+      return done;
+    }
+    var p = st.pos[sym];
+    if (p && p.side !== side) {
+      var mm = p.mm;
+      done = closeFill(st, SP, sym, qty, price, feeRate, kind, ts); st.trades++;
+      var rest = cleanQ(s, qty - done);
+      if (rest > s.step / 2 && !o.ro) { openFill(st, SP, sym, side, rest, price, feeRate, lev, mm, ts); done = qty; st.trades++; }
+    } else if (!o.ro) {
+      openFill(st, SP, sym, side, qty, price, feeRate, lev, p ? p.mm : o.mm, ts); done = qty; st.trades++;
+    }
+    return done;
+  }
+  /* 격리 청산: 그 포지션 증거금만 잃는다 */
+  function liquidate(st, SP, k, price, ts) {
+    var p = st.pos[k]; if (!p) return;
+    addFill(st, { ts: ts, sym: p.sym, side: -p.side, qty: p.qty, price: price, fee: 0, pnl: -p.margin, kind: 'liq' });
+    st.ev.push({ k: 'liq', sym: p.sym, side: p.side, lev: p.lev, margin: p.margin, price: price, ts: ts });
+    dropPos(st, k, ts);
     st.liqs++; st.trades++;
   }
-  function closeAt(st, SP, sym, px, kind, ts) {
-    var p = st.pos[sym]; if (!p) return null;
-    var side = p.side;
-    applyFill(st, SP, sym, -side, p.qty, px, SP[sym].taker, p.lev, kind, ts);
+  /* 교차: 잔고 + 걸어 둔 주문 + 교차 포지션(증거금 + 미실현) 이 교차 유지증거금 합 이하가 되면 교차 전체 청산 */
+  function crossKeys(st) { var out = []; for (var k in st.pos) if (st.pos[k].mm === 'cross') out.push(k); return out; }
+  function crossState(st, SP, marks) {
+    var eq = st.bal + frozenSum(st), mm = 0, n = 0;
+    crossKeys(st).forEach(function (k) { var p = st.pos[k], mk = markOf(marks, p); eq += p.margin + (mk - p.entry) * p.qty * p.side; mm += mmOf(SP[p.sym], p, mk); n++; });
+    return { eq: eq, mm: mm, n: n };
+  }
+  function liqCross(st, SP, marks, ts, hitKey, hitPx) {
+    var lost = crossState(st, SP, marks).eq;
+    st.ord.slice().forEach(function (o) { st.bal += o.frozen || 0; st.ev.push({ k: 'ocancel', why: 'liq', sym: o.sym, id: o.id, ts: ts }); });
+    st.ord = [];
+    crossKeys(st).forEach(function (k) {
+      var p = st.pos[k], px = k === hitKey && hitPx ? hitPx : markOf(marks, p);
+      addFill(st, { ts: ts, sym: p.sym, side: -p.side, qty: p.qty, price: px, fee: 0, pnl: -p.margin, kind: 'liq' });
+      st.ev.push({ k: 'liq', cross: 1, sym: p.sym, side: p.side, lev: p.lev, margin: p.margin, price: px, lost: Math.max(0, lost), ts: ts });
+      delete st.pos[k];
+      st.liqs++; st.trades++;
+    });
+    st.bal = 0;
+  }
+  function crossCheck(st, SP, marks, ts) {
+    var c = crossState(st, SP, marks);
+    if (c.n && c.eq <= c.mm + EPS) { liqCross(st, SP, marks, ts); return true; }
+    return false;
+  }
+  /* 포지션 하나의 청산가 — 교차면 다른 교차 포지션은 지금 가격 그대로라고 보고 계산 */
+  function liqOf(st, SP, k, marks) {
+    var p = st.pos[k]; if (!p) return 0;
+    var s = SP[p.sym]; if (!s) return 0;
+    if (p.mm !== 'cross') return posLiq(s, p);
+    var extra = st.bal + frozenSum(st);
+    crossKeys(st).forEach(function (j) { if (j === k) return; var q = st.pos[j], mk = markOf(marks, q); extra += q.margin + (mk - q.entry) * q.qty * q.side - mmOf(SP[q.sym], q, mk); });
+    return liqPrice(s, p.side, p.qty, p.entry, p.margin + extra);
+  }
+  function closeAt(st, SP, k, px, kind, ts) {
+    var p = st.pos[k]; if (!p) return null;
+    var side = p.side, sym = p.sym;
+    closeFill(st, SP, k, p.qty, px, SP[sym].taker, kind, ts); st.trades++;
     var f = st.fills[st.fills.length - 1];
     st.ev.push({ k: kind, sym: sym, side: side, price: px, net: f.pnl - f.fee, ts: ts });
     return f;
   }
-  function placeLimit(st, SP, sym, side, qty, px, lev, tp, sl, ts, id) {
-    var oq = openPart(st, sym, side, qty);
+  function placeLimit(st, SP, sym, side, qty, px, lev, tp, sl, ts, id, x) {
+    x = x || {};
+    var oq = openPart(st, sym, side, qty, x.ro);
     var frozen = oq * px / lev + oq * px * SP[sym].taker;
     st.bal -= frozen;
     var o = { id: id, sym: sym, side: side, qty: qty, px: px, lev: lev, frozen: frozen, tp: tp, sl: sl, ts: ts };
+    if (x.ro) o.ro = 1;
+    if (x.po) o.po = 1;
+    if (x.mm) o.mm = x.mm;
     st.ord.push(o);
     return o;
   }
   function cancelOrder(st, id) {
-    for (var i = 0; i < st.ord.length; i++) if (st.ord[i].id === id) { st.bal += st.ord[i].frozen; st.ord.splice(i, 1); return true; }
+    for (var i = 0; i < st.ord.length; i++) if (st.ord[i].id === id) { st.bal += st.ord[i].frozen || 0; st.ord.splice(i, 1); return true; }
     return false;
   }
-  function fillLimit(st, SP, o, px, ts) {
-    var i = st.ord.indexOf(o); if (i < 0) return;
-    var s = SP[o.sym];
-    st.ord.splice(i, 1);
-    st.bal += o.frozen;
-    var p = st.pos[o.sym];
-    var lev = p ? p.lev : o.lev;
-    var oq = openPart(st, o.sym, o.side, o.qty);
-    var newQty = (!p || p.side !== o.side) ? oq : p.qty + o.qty;
-    if (oq > 0 && newQty * px > maxNotional(s, lev) + 1e-6) { st.ev.push({ k: 'lcancel', why: 'cap', sym: o.sym, id: o.id, ts: ts }); return; }
-    var need = oq * px / lev + oq * px * s.maker;
-    if (need > st.bal + EPS) { st.ev.push({ k: 'lcancel', why: 'funds', sym: o.sym, id: o.id, ts: ts }); return; }
-    applyFill(st, SP, o.sym, o.side, o.qty, px, s.maker, lev, null, ts);
-    var q = st.pos[o.sym];
-    if (q && q.side === o.side && (o.tp != null || o.sl != null)) { if (o.tp != null) q.tp = o.tp; if (o.sl != null) q.sl = o.sl; q.tpslAt = ts; }
-    st.ev.push({ k: 'lfill', sym: o.sym, side: o.side, qty: o.qty, price: px, id: o.id, ts: ts });
+  function cancelAll(st, sym) {
+    var n = 0;
+    for (var i = st.ord.length - 1; i >= 0; i--) if (!sym || st.ord[i].sym === sym) { st.bal += st.ord[i].frozen || 0; st.ord.splice(i, 1); n++; }
+    return n;
   }
-  /* 펀딩비: 낼 돈은 사용 가능 금액에서, 모자라면 포지션 증거금에서 */
-  function payFunding(st, sym, mk, fr, ts) {
-    var p = st.pos[sym]; if (!p) return;
+  /* 사용 가능 금액: 교차 미실현 손실은 빼고, 이익은 쓰지 않는다 */
+  function avail(st, marks) {
+    var u = 0;
+    for (var k in st.pos) { var p = st.pos[k]; if (p.mm === 'cross') u += (markOf(marks, p) - p.entry) * p.qty * p.side; }
+    return st.bal + Math.min(0, u);
+  }
+  /* 체결 직전 확인: 감소 전용 수량 · 한도 · 잔고 → { q, lev } 또는 { why } */
+  function preFill(st, SP, o, px, fee) {
+    var s = SP[o.sym], q = o.qty;
+    if (o.ro) { var c = closable(st, o.sym, o.side); if (c <= 0) return { why: 'nopos' }; q = roundQty(s, Math.min(q, c)); if (q < s.step / 2) return { why: 'nopos' }; }
+    var p = samePos(st, o.sym, o.side), lev = p ? p.lev : o.lev;
+    var oq = openPart(st, o.sym, o.side, q, o.ro);
+    if (oq > 0) {
+      var newQty = (p ? p.qty : 0) + oq;
+      if (newQty * px > maxNotional(s, lev) + 1e-6) return { why: 'cap' };
+      if (oq * px / lev + oq * px * fee > avail(st) + EPS) return { why: 'funds' };
+    }
+    return { q: q, lev: lev, oq: oq };
+  }
+  function takeOrd(st, o) { var i = st.ord.indexOf(o); if (i < 0) return false; st.ord.splice(i, 1); st.bal += o.frozen || 0; return true; }
+  function attachTpsl(st, o, ts) {
+    var q = samePos(st, o.sym, o.side);
+    if (q && (o.tp != null || o.sl != null)) { if (o.tp != null) q.tp = o.tp; if (o.sl != null) q.sl = o.sl; q.tpslAt = ts; }
+  }
+  function fillLimit(st, SP, o, px, ts) {
+    if (!takeOrd(st, o)) return;
+    var s = SP[o.sym], c = preFill(st, SP, o, px, s.maker);
+    if (c.why) { st.ev.push({ k: 'lcancel', why: c.why, sym: o.sym, id: o.id, ts: ts }); return; }
+    applyFill(st, SP, o.sym, o.side, c.q, px, s.maker, c.lev, null, ts, { ro: o.ro, mm: o.mm });
+    if (c.oq > 0) attachTpsl(st, o, ts);
+    st.ev.push({ k: 'lfill', sym: o.sym, side: o.side, qty: c.q, price: px, id: o.id, ts: ts });
+  }
+  /* 조건부 · 트레일링이 걸렸을 때: 시장가로 그 가격에 */
+  function execTrig(st, SP, o, px, ts, kind) {
+    if (!takeOrd(st, o)) return;
+    var s = SP[o.sym]; px = roundPx(s, px);
+    var c = preFill(st, SP, o, px, s.taker);
+    if (c.why) { st.ev.push({ k: 'tcancel', why: c.why, kind: kind, sym: o.sym, id: o.id, ts: ts }); return; }
+    applyFill(st, SP, o.sym, o.side, c.q, px, s.taker, c.lev, kind, ts, { ro: o.ro, mm: o.mm });
+    if (c.oq > 0) attachTpsl(st, o, ts);
+    st.ev.push({ k: 'tfill', kind: kind, sym: o.sym, side: o.side, qty: c.q, price: px, id: o.id, ts: ts });
+  }
+  /* 조건부 지정가: 걸리면 지정가 주문으로 바뀐다(유리한 쪽이면 바로 체결) */
+  function trigStop(st, SP, o, ts) {
+    if (!(o.px > 0)) return execTrig(st, SP, o, o.trig, ts, 'stop');
+    if (o.side === 1 ? o.px >= o.trig : o.px <= o.trig) return execTrig(st, SP, o, o.trig, ts, 'stop');
+    if (!takeOrd(st, o)) return;
+    var s = SP[o.sym], oq = openPart(st, o.sym, o.side, o.qty, o.ro);
+    var p = samePos(st, o.sym, o.side), lev = p ? p.lev : o.lev;
+    if (o.ro && closable(st, o.sym, o.side) <= 0) { st.ev.push({ k: 'tcancel', why: 'nopos', kind: 'stop', sym: o.sym, id: o.id, ts: ts }); return; }
+    var need = oq * o.px / lev + oq * o.px * s.taker;
+    if (need > avail(st) + EPS) { st.ev.push({ k: 'tcancel', why: 'funds', kind: 'stop', sym: o.sym, id: o.id, ts: ts }); return; }
+    var n = placeLimit(st, SP, o.sym, o.side, o.qty, o.px, lev, o.tp, o.sl, ts + 1, o.id, { ro: o.ro, mm: o.mm });
+    st.ev.push({ k: 'trig', sym: o.sym, side: o.side, px: n.px, trig: o.trig, id: o.id, ts: ts });
+  }
+  /* 트레일링: 팔기(롱 보호)는 최고가에서 cb만큼 내려오면, 사기(숏 보호)는 최저가에서 cb만큼 올라오면 */
+  function trailStep(st, SP, o, ts, h, l) {
+    var sell = o.side === -1;
+    if (!o.armed) {
+      if (o.act == null || (sell ? h >= o.act : l <= o.act)) { o.armed = 1; o.peak = sell ? h : l; }
+      return;
+    }
+    var stop = sell ? o.peak * (1 - o.cb) : o.peak * (1 + o.cb);
+    if (sell ? l <= stop : h >= stop) return execTrig(st, SP, o, stop, ts, 'trail');
+    if (sell ? h > o.peak : l < o.peak) o.peak = sell ? h : l;
+  }
+  function trailStop(o) { return o.armed && o.peak > 0 ? (o.side === -1 ? o.peak * (1 - o.cb) : o.peak * (1 + o.cb)) : 0; }
+  /* 주문 하나를 가격 범위(봉의 고가 h ~ 저가 l, 체결 한 건이면 h = l)에 비춰 보기.
+     트레일링은 기준 가격을 고를 수 있다: 최근 체결가(기본) 또는 Mark 가격(o.pt = 'mark') */
+  /* 조건부 · 트레일링은 기준 가격을 고를 수 있다: 최근 체결가(기본) 또는 Mark 가격(o.pt = 'mark') */
+  function isMarkBased(o) { var k = kindOf(o); return (k === 'trail' || k === 'stop') && o.pt === 'mark'; }
+  function ordStep(st, SP, o, ts, h, l) {
+    var k = kindOf(o);
+    if (k === 'limit') { if (o.side === 1 ? l <= o.px : h >= o.px) fillLimit(st, SP, o, o.px, ts); }
+    else if (k === 'stop') { if (o.dir === 1 ? h >= o.trig : l <= o.trig) trigStop(st, SP, o, ts); }
+    else if (k === 'trail') trailStep(st, SP, o, ts, h, l);
+  }
+  /* mh · ml 을 주면 Mark 기준 트레일링은 그 범위로, 안 주면(체결 한 건) Mark 기준 트레일링은 건너뛴다 */
+  function ordersStep(st, SP, sym, ts, h, l, mh, ml) {
+    st.ord.slice().forEach(function (o) {
+      if (o.sym !== sym || ts < o.ts || st.ord.indexOf(o) < 0) return;
+      if (isMarkBased(o)) { if (mh != null && ml != null && isFinite(mh) && isFinite(ml)) ordStep(st, SP, o, ts, mh, ml); return; }
+      ordStep(st, SP, o, ts, h, l);
+    });
+  }
+  /* 펀딩비: 격리는 낼 돈을 사용 가능 금액에서, 모자라면 포지션 증거금에서 · 교차는 잔고에서 */
+  function payFunding(st, k, mk, fr, ts) {
+    var p = st.pos[k]; if (!p) return;
     var pay = p.qty * mk * fr * p.side;
-    if (pay > 0) { var fromBal = Math.min(pay, Math.max(0, st.bal)); st.bal -= fromBal; p.margin -= pay - fromBal; }
+    if (p.mm === 'cross') st.bal -= pay;
+    else if (pay > 0) { var fromBal = Math.min(pay, Math.max(0, st.bal)); st.bal -= fromBal; p.margin -= pay - fromBal; }
     else st.bal -= pay;
-    addFill(st, { ts: ts, sym: sym, side: p.side, qty: p.qty, price: mk, fee: 0, pnl: -pay, kind: 'fund' });
+    addFill(st, { ts: ts, sym: p.sym, side: p.side, qty: p.qty, price: mk, fee: 0, pnl: -pay, kind: 'fund' });
     p.fundAt = ts;
   }
   /* 펀딩 시각: 세계 표준시 0시 기준 fi시간마다 */
@@ -169,93 +337,153 @@ var A99E = (function () {
 
   /* ── 판정 ── */
   function liqHit(s, p, mark) { var lp = posLiq(s, p); return lp > 0 && mark > 0 && (p.side === 1 ? mark <= lp : mark >= lp) ? lp : 0; }
-  /* 1분봉 하나: 청산(표시가격) → 손절 → 익절 → 지정가.
+  function tpslStep(st, SP, k, ts, h, l) {
+    var p = st.pos[k]; if (!p || ts < (p.tpslAt || 0)) return;
+    if (p.sl != null && (p.side === 1 ? l <= p.sl : h >= p.sl)) closeAt(st, SP, k, p.sl, 'sl', ts);
+    else if (p.tp != null && (p.side === 1 ? h >= p.tp : l <= p.tp)) closeAt(st, SP, k, p.tp, 'tp', ts);
+  }
+  /* 1분봉 하나: 청산(표시가격) → 손절 → 익절 → 주문.
      그 봉이 시작된 뒤에 연 포지션 · 건 주문 · 바꾼 익절손절은 그 봉에 쓰지 않는다
-     (봉 안에서 언제 움직였는지 모르므로 억울한 청산을 막는다. 그 분 안의 일은 실제 체결 증거로 따로 확인) */
-  function replayBar(st, SP, sym, t, h, l, mh, ml) {
-    var s = SP[sym], p = st.pos[sym];
-    if (p && t >= p.ts) {
-      var lp = posLiq(s, p);
-      if (lp > 0 && (p.side === 1 ? ml <= lp : mh >= lp)) liquidate(st, SP, sym, lp, t);
-      else if (p.sl != null && t >= (p.tpslAt || 0) && (p.side === 1 ? l <= p.sl : h >= p.sl)) closeAt(st, SP, sym, p.sl, 'sl', t);
-      else if (p.tp != null && t >= (p.tpslAt || 0) && (p.side === 1 ? h >= p.tp : l <= p.tp)) closeAt(st, SP, sym, p.tp, 'tp', t);
-    }
-    for (var i = st.ord.length - 1; i >= 0; i--) {
-      var o = st.ord[i];
-      if (o && o.sym === sym && t >= o.ts && (o.side === 1 ? l <= o.px : h >= o.px)) fillLimit(st, SP, o, o.px, t);
-    }
+     (봉 안에서 언제 움직였는지 모르므로 억울한 청산을 막는다. 그 분 안의 일은 실제 체결 증거로 따로 확인)
+     marks = 다른 종목의 지금 표시가격(교차 계산용) */
+  function replayBar(st, SP, sym, t, h, l, mh, ml, marks) {
+    keysOf(st, sym).forEach(function (k) {
+      var p = st.pos[k]; if (!p || t < p.ts) return;
+      var lp = liqOf(st, SP, k, marks);
+      if (lp > 0 && (p.side === 1 ? ml <= lp : mh >= lp)) {
+        if (p.mm === 'cross') liqCross(st, SP, marks, t, k, lp); else liquidate(st, SP, k, lp, t);
+        return;
+      }
+      tpslStep(st, SP, k, t, h, l);
+    });
+    ordersStep(st, SP, sym, t, h, l, mh, ml);
   }
   /* 실제 체결 한 건(증거): 그 시각 이후에 건 것만 */
   function onTrade(st, SP, sym, ts, px) {
-    var p = st.pos[sym];
-    if (p) {
-      if (p.sl != null && ts >= (p.tpslAt || 0) && (p.side === 1 ? px <= p.sl : px >= p.sl)) closeAt(st, SP, sym, p.sl, 'sl', ts);
-      else if (p.tp != null && ts >= (p.tpslAt || 0) && (p.side === 1 ? px >= p.tp : px <= p.tp)) closeAt(st, SP, sym, p.tp, 'tp', ts);
-    }
-    for (var i = st.ord.length - 1; i >= 0; i--) {
-      var o = st.ord[i];
-      if (o && o.sym === sym && ts >= o.ts && (o.side === 1 ? px <= o.px : px >= o.px)) fillLimit(st, SP, o, o.px, ts);
-    }
+    keysOf(st, sym).forEach(function (k) { var p = st.pos[k]; if (p && ts >= (p.ts || 0)) tpslStep(st, SP, k, ts, px, px); });
+    ordersStep(st, SP, sym, ts, px, px);
   }
-  function onMark(st, SP, sym, ts, mark) {
-    var p = st.pos[sym]; if (!p || ts < p.ts) return;
-    var lp = liqHit(SP[sym], p, mark);
-    if (lp) liquidate(st, SP, sym, lp, ts);
+  /* 표시가격: 격리는 그 포지션만, marks(전 종목 표시가격)를 주면 교차 계좌 전체도 확인 */
+  function onMark(st, SP, sym, ts, mark, marks) {
+    keysOf(st, sym).forEach(function (k) {
+      var p = st.pos[k]; if (!p || ts < p.ts || p.mm === 'cross') return;
+      var lp = liqHit(SP[sym], p, mark);
+      if (lp) liquidate(st, SP, k, lp, ts);
+    });
+    if (mark > 0) st.ord.slice().forEach(function (o) {
+      if (o.sym === sym && isMarkBased(o) && ts >= o.ts && st.ord.indexOf(o) >= 0) ordStep(st, SP, o, ts, mark, mark);
+    });
+    if (marks) { marks[sym] = mark; crossCheck(st, SP, marks, ts); }
   }
   /* 여러 종목의 1분봉 + 펀딩을 시간 순서대로 한 번에.
-     data = { 종목: [{ t, h, l, c, mh, ml, mc }] } · rateAt(종목, 시각) → 그 시각에 정산된 펀딩비율(모르면 null) */
-  function sweepBars(st, SP, data, rateAt, upto) {
+     data = { 종목: [{ t, h, l, c, mh, ml, mc }] } · rateAt(종목, 시각) → 그 시각에 정산된 펀딩비율(모르면 null)
+     marks0 = 시작할 때의 전 종목 표시가격(교차 계산용) */
+  function sweepBars(st, SP, data, rateAt, upto, marks0) {
     var ev = [];
     Object.keys(data).forEach(function (sym) {
       var bars = data[sym] || [];
       bars.forEach(function (b) { ev.push({ t: b.t, sym: sym, b: b }); });
-      var p = st.pos[sym], s = SP[sym];
+      var s = SP[sym];
       if (s && bars.length) {
         var from = bars[0].t, end = Math.min(upto || Infinity, bars[bars.length - 1].t + MIN);
-        fundTimes(s.fi || 8, Math.min(from, p ? p.fundAt : from) - 1, end).forEach(function (T) { ev.push({ t: T, sym: sym, fund: 1 }); });
+        keysOf(st, sym).forEach(function (k) { from = Math.min(from, st.pos[k].fundAt || from); });
+        fundTimes(s.fi || 8, from - 1, end).forEach(function (T) { ev.push({ t: T, sym: sym, fund: 1 }); });
       }
     });
     ev.sort(function (a, b) { return a.t - b.t || (b.fund ? 1 : 0) - (a.fund ? 1 : 0); });
     var lastMark = {};
+    if (marks0) for (var m in marks0) lastMark[m] = marks0[m];
     ev.forEach(function (e) {
       if (e.fund) {
-        var p = st.pos[e.sym];
-        if (p && p.ts < e.t && (p.fundAt || 0) < e.t) {
-          var fr = rateAt ? rateAt(e.sym, e.t) : null;
-          if (fr != null && isFinite(fr)) payFunding(st, e.sym, lastMark[e.sym] || p.entry, fr, e.t);
-        }
+        keysOf(st, e.sym).forEach(function (k) {
+          var p = st.pos[k];
+          if (p && p.ts < e.t && (p.fundAt || 0) < e.t) {
+            var fr = rateAt ? rateAt(e.sym, e.t) : null;
+            if (fr != null && isFinite(fr)) payFunding(st, k, lastMark[e.sym] || p.entry, fr, e.t);
+          }
+        });
         return;
       }
       var b = e.b;
-      replayBar(st, SP, e.sym, b.t, b.h, b.l, b.mh, b.ml);
-      lastMark[e.sym] = b.mc;
+      replayBar(st, SP, e.sym, b.t, b.h, b.l, b.mh, b.ml, lastMark);
+      if (b.mc > 0) lastMark[e.sym] = b.mc;
     });
     return lastMark;
   }
 
   /* ── 평가 ── */
-  function upnl(st, marks) { var u = 0; for (var k in st.pos) { var p = st.pos[k], mk = (marks && marks[k]) || p.entry; u += (mk - p.entry) * p.qty * p.side; } return u; }
+  function upnl(st, marks) { var u = 0; for (var k in st.pos) { var p = st.pos[k]; u += (markOf(marks, p) - p.entry) * p.qty * p.side; } return u; }
   function equity(st, marks) {
-    var e = st.bal;
-    for (var i = 0; i < st.ord.length; i++) e += st.ord[i].frozen;
-    for (var k in st.pos) { var p = st.pos[k], mk = (marks && marks[k]) || p.entry; e += p.margin + (mk - p.entry) * p.qty * p.side; }
+    var e = st.bal + frozenSum(st);
+    for (var k in st.pos) { var p = st.pos[k]; e += p.margin + (markOf(marks, p) - p.entry) * p.qty * p.side; }
     return e;
   }
 
   /* ── 주문 ──
-     req = { sym, side, type: 'market'|'limit', qty, px, lev, tp, sl }
-     book = { asks: [[가격, 수량]], bids } · mark = 표시가격 · 결과 { ok, err, … } */
-  function order(st, SP, req, book, mark, now, newId) {
+     req = { sym, side, type: 'market'|'limit'|'stop'|'trail', qty, px, lev, tp, sl,
+             ro: 감소 전용(양방향에선 '닫기'), po: 메이커 전용, mm: 새 포지션 증거금 방식,
+             trig: 조건 가격, cb: 트레일링 되돌림 비율(0.001~0.1), act: 트레일링 시작 가격, pt: 조건부 · 트레일링 기준 가격('mark' | 없으면 최근 체결가), last: 지금 체결가 }
+     book = { asks: [[가격, 수량]], bids } · mark = 표시가격 · marks = 전 종목 표시가격(교차 사용 가능 금액) · 결과 { ok, err, … } */
+  function order(st, SP, req, book, mark, now, newId, marks) {
     var sym = req.sym, s = SP[sym];
     if (!s || s.off) return { err: 'sym' };
     var side = req.side === 1 ? 1 : req.side === -1 ? -1 : 0;
     if (!side) return { err: 'side' };
+    var type = req.type === 'limit' || req.type === 'stop' || req.type === 'trail' ? req.type : 'market';
+    var ro = !!req.ro || type === 'trail', po = !!req.po && type === 'limit';
     var qty = roundQty(s, +req.qty);
+    if (ro) {
+      var c = closable(st, sym, side);
+      if (!(c > 0)) return { err: 'ro_none' };
+      qty = roundQty(s, Math.min(qty, c));
+    }
     if (!(qty >= s.min - 1e-12)) return { err: 'min', min: s.min };
-    var p = st.pos[sym];
-    var lev = p ? p.lev : Math.max(1, Math.min(Math.floor(+req.lev) || 10, s.max));
-    var isLimit = req.type === 'limit', px, marketable = false;
+    var mm = symMM(st, sym) || (req.mm === 'cross' ? 'cross' : 'isolated');
+    var sp0 = samePos(st, sym, side), any = st.pos[pkey(st, sym, side)];
+    var lev = sp0 ? sp0.lev : (!hedge(st) && any ? any.lev : Math.max(1, Math.min(Math.floor(+req.lev) || 10, s.max)));
     var asks = book && book.asks, bids = book && book.bids;
+    var last = +req.last > 0 ? +req.last : mark;
+    var px, marketable = false;
+    if (type === 'trail') {
+      var cb = +req.cb;
+      if (!(cb >= 0.001 - 1e-12 && cb <= 0.1 + 1e-12)) return { err: 'cb' };
+      var pt = req.pt === 'mark' ? 'mark' : null, ref0 = pt ? mark : last;
+      if (!(ref0 > 0)) return { err: 'book' };
+      var act = req.act == null || req.act === '' ? null : roundPx(s, +req.act);
+      if (act != null && !(act > 0)) return { err: 'act_num' };
+      if (act != null && (side === -1 ? act <= ref0 : act >= ref0)) return { err: 'act_side' };
+      if (qty * ref0 < s.minQ - EPS) return { err: 'min_q', min: s.minQ };
+      var t = { id: newId(), sym: sym, side: side, qty: qty, px: 0, lev: lev, frozen: 0, tp: null, sl: null, ts: now, k: 'trail', cb: fix(cb, 6), act: act, ro: 1, armed: act == null ? 1 : 0, peak: act == null ? ref0 : null };
+      if (pt) t.pt = pt;
+      st.ord.push(t);
+      return { ok: true, rested: qty, filled: 0, px: ref0, trail: true };
+    }
+    if (type === 'stop') {
+      var trig = roundPx(s, +req.trig), ptS = req.pt === 'mark' ? 'mark' : null, refS = ptS ? mark : last;
+      if (!(trig > 0)) return { err: 'trig_num' };
+      if (!(refS > 0)) return { err: 'book' };
+      if (Math.abs(trig - refS) < s.tick / 2) return { err: 'trig_now' };
+      var lpx = req.px == null || req.px === '' || !(+req.px > 0) ? 0 : roundPx(s, +req.px);
+      var ref = lpx || trig;
+      if (qty * ref < s.minQ - EPS) return { err: 'min_q', min: s.minQ };
+      var oqS = openPart(st, sym, side, qty, ro);
+      if (oqS > 0) {
+        var capS = maxNotional(s, lev), nqS = (sp0 ? sp0.qty : 0) + sameSideResting(st, sym, side) + oqS;
+        if (nqS * ref > capS + 1e-6) return { err: 'cap', cap: capS, lev: lev };
+      }
+      var tpS = req.tp == null || req.tp === '' || oqS <= 0 ? null : roundPx(s, +req.tp);
+      var slS = req.sl == null || req.sl === '' || oqS <= 0 ? null : roundPx(s, +req.sl);
+      if ((tpS != null && !(tpS > 0)) || (slS != null && !(slS > 0))) return { err: 'tpsl_num' };
+      if (tpS != null && (side === 1 ? tpS <= ref : tpS >= ref)) return { err: 'tp_side' };
+      if (slS != null && (side === 1 ? slS >= ref : slS <= ref)) return { err: 'sl_side' };
+      var so = { id: newId(), sym: sym, side: side, qty: qty, px: lpx, lev: lev, frozen: 0, tp: tpS, sl: slS, ts: now, k: 'stop', trig: trig, dir: trig > refS ? 1 : -1 };
+      if (ptS) so.pt = ptS;
+      if (ro) so.ro = 1;
+      if (mm === 'cross') so.mm = 'cross';
+      st.ord.push(so);
+      return { ok: true, rested: qty, filled: 0, px: trig, stop: true };
+    }
+    var isLimit = type === 'limit';
     if (isLimit) {
       px = roundPx(s, +req.px);
       if (!(px > 0)) return { err: 'px' };
@@ -263,6 +491,7 @@ var A99E = (function () {
       if (mark > 0 && s.bandBuy > 0 && side === 1 && px > mark * (1 + s.bandBuy) + EPS) return { err: 'band_hi', lim: mark * (1 + s.bandBuy) };
       if (mark > 0 && s.bandSell > 0 && side === -1 && px < mark * (1 - s.bandSell) - EPS) return { err: 'band_lo', lim: mark * (1 - s.bandSell) };
       marketable = side === 1 ? !!(asks && asks.length && px >= asks[0][0]) : !!(bids && bids.length && px <= bids[0][0]);
+      if (po && marketable) return { err: 'post_only' };
     } else {
       if (s.maxMkt && qty > s.maxMkt + 1e-12) return { err: 'max_mkt', max: s.maxMkt };
       var lv = side === 1 ? asks : bids;
@@ -271,53 +500,85 @@ var A99E = (function () {
       if (!(px > 0)) return { err: 'book' };
     }
     if (qty * px < s.minQ - EPS) return { err: 'min_q', min: s.minQ };
-    var oq = openPart(st, sym, side, qty);
-    var newQty = ((!p || p.side !== side) ? 0 : p.qty) + sameSideResting(st, sym, side) + oq;
+    var oq = openPart(st, sym, side, qty, ro);
+    var newQty = (sp0 ? sp0.qty : 0) + sameSideResting(st, sym, side) + oq;
     var cap = maxNotional(s, lev);
     if (oq > 0 && newQty * px > cap + 1e-6) return { err: 'cap', cap: cap, lev: lev };
-    var need = oq * px / lev + oq * px * s.taker;
-    if (need > st.bal + EPS) return { err: 'funds', need: need, bal: st.bal };
+    var need = oq * px / lev + oq * px * s.taker, av = avail(st, marks);
+    if (need > av + EPS) return { err: 'funds', need: need, bal: av };
     var tp = req.tp == null || req.tp === '' ? null : roundPx(s, +req.tp);
     var sl = req.sl == null || req.sl === '' ? null : roundPx(s, +req.sl);
     if (oq <= 0) { tp = null; sl = null; }
     if ((tp != null && !(tp > 0)) || (sl != null && !(sl > 0))) return { err: 'tpsl_num' };
     if (tp != null && (side === 1 ? tp <= px : tp >= px)) return { err: 'tp_side' };
     if (sl != null && (side === 1 ? sl >= px : sl <= px)) return { err: 'sl_side' };
-    function setTs(q) { if (q && q.side === side && (tp != null || sl != null)) { if (tp != null) q.tp = tp; if (sl != null) q.sl = sl; q.tpslAt = now; } }
+    var x = { ro: ro, mm: mm, po: po };
+    function setTs() { var q = samePos(st, sym, side); if (q && (tp != null || sl != null)) { if (tp != null) q.tp = tp; if (sl != null) q.sl = sl; q.tpslAt = now; } }
     if (isLimit && !marketable) {
-      placeLimit(st, SP, sym, side, qty, px, lev, tp, sl, now, newId());
+      placeLimit(st, SP, sym, side, qty, px, lev, tp, sl, now, newId(), x);
       return { ok: true, rested: qty, filled: 0, px: px };
     }
     if (isLimit) {
       var w = walkLimit(side === 1 ? asks : bids, qty, side, px);
       var fq0 = roundQty(s, w.q), filled = 0;
-      if (fq0 >= s.min - 1e-12) { applyFill(st, SP, sym, side, fq0, w.px, s.taker, lev, null, now); setTs(st.pos[sym]); filled = fq0; }
+      if (fq0 >= s.min - 1e-12) { applyFill(st, SP, sym, side, fq0, w.px, s.taker, lev, null, now, x); setTs(); filled = fq0; }
       var restQ = roundQty(s, qty - filled);
-      if (restQ >= s.min - 1e-12) placeLimit(st, SP, sym, side, restQ, px, st.pos[sym] ? st.pos[sym].lev : lev, tp, sl, now, newId());
+      if (ro) restQ = roundQty(s, Math.min(restQ, closable(st, sym, side)));
+      var q2 = samePos(st, sym, side);
+      if (restQ >= s.min - 1e-12) placeLimit(st, SP, sym, side, restQ, px, q2 ? q2.lev : lev, tp, sl, now, newId(), x);
       return { ok: true, filled: filled, rested: restQ >= s.min - 1e-12 ? restQ : 0, px: filled ? w.px : px };
     }
-    applyFill(st, SP, sym, side, qty, px, s.taker, lev, null, now);
-    setTs(st.pos[sym]);
+    applyFill(st, SP, sym, side, qty, px, s.taker, lev, null, now, x);
+    setTs();
     return { ok: true, filled: qty, rested: 0, px: px };
   }
-  function closeMarket(st, SP, sym, book, now) {
-    var p = st.pos[sym]; if (!p) return { err: 'no_pos' };
-    var s = SP[sym], lv = p.side === 1 ? book && book.bids : book && book.asks;
+  function closeMarket(st, SP, k, book, now) {
+    var p = st.pos[k]; if (!p) return { err: 'no_pos' };
+    var s = SP[p.sym], lv = p.side === 1 ? book && book.bids : book && book.asks;
     if (!lv || !lv.length) return { err: 'book' };
     var px = walk(lv, p.qty, -p.side, s.tick);
     if (!(px > 0)) return { err: 'book' };
-    var f = closeAt(st, SP, sym, px, 'close', now);
+    var f = closeAt(st, SP, k, px, 'close', now);
     return { ok: true, px: px, net: f ? f.pnl - f.fee : 0 };
   }
-  function setTpsl(st, SP, sym, tp, sl, ref, now) {
-    var p = st.pos[sym]; if (!p) return { err: 'no_pos' };
-    var s = SP[sym];
+  /* 전부 닫기: books = { 종목: 호가 } — 호가가 없는 종목은 남긴다 */
+  function closeAll(st, SP, books, now) {
+    var n = 0, left = 0, net = 0;
+    Object.keys(st.pos).forEach(function (k) {
+      var p = st.pos[k]; if (!p) return;
+      var r = closeMarket(st, SP, k, books && books[p.sym], now);
+      if (r.ok) { n++; net += r.net; } else left++;
+    });
+    if (!n && left) return { err: 'book' };
+    if (!n) return { err: 'no_pos' };
+    return { ok: true, n: n, left: left, net: net };
+  }
+  /* 반대로 뒤집기: 시장가로 닫고 같은 수량 · 같은 레버리지로 반대 방향 열기. 열 수 없으면 아무것도 안 한다 */
+  function reverse(st, SP, k, book, now, marks) {
+    var p = st.pos[k]; if (!p) return { err: 'no_pos' };
+    var c = JSON.parse(JSON.stringify(st));
+    var r1 = closeMarket(c, SP, k, book, now);
+    if (r1.err) return r1;
+    var r2 = order(c, SP, { sym: p.sym, side: -p.side, type: 'market', qty: p.qty, lev: p.lev, mm: p.mm }, book, 0, now, function () { return 'rv'; }, marks);
+    if (r2.err) return r2;
+    for (var x in c) st[x] = c[x];
+    return { ok: true, px: r2.px, net: r1.net };
+  }
+  function setTpsl(st, SP, k, tp, sl, ref, now) {
+    var p = st.pos[k]; if (!p) return { err: 'no_pos' };
+    var s = SP[p.sym];
     tp = tp == null || tp === '' ? null : roundPx(s, +tp);
     sl = sl == null || sl === '' ? null : roundPx(s, +sl);
     if ((tp != null && !(tp > 0)) || (sl != null && !(sl > 0))) return { err: 'tpsl_num' };
     if (ref > 0 && tp != null && (p.side === 1 ? tp <= ref : tp >= ref)) return { err: 'tp_now' };
     if (ref > 0 && sl != null && (p.side === 1 ? sl >= ref : sl <= ref)) return { err: 'sl_now' };
     p.tp = tp; p.sl = sl; p.tpslAt = now;
+    return { ok: true };
+  }
+  /* 포지션 모드 바꾸기 — 포지션 · 주문이 하나도 없을 때만 */
+  function setMode(st, mode) {
+    if (Object.keys(st.pos).length || st.ord.length) return { err: 'mode_busy' };
+    st.mode = mode === 'hedge' ? 'hedge' : 'one';
     return { ok: true };
   }
 
@@ -343,18 +604,31 @@ var A99E = (function () {
       case 'sl_now': return 'SL 가격이 이미 지금 가격을 지났어요.';
       case 'no_pos': return '열린 포지션이 없어요.';
       case 'side': return '방향을 골라 주세요.';
+      case 'ro_none': return '줄일 포지션이 없어요. 감소 전용(닫기) 주문은 반대 방향 포지션이 있을 때만 걸 수 있어요.';
+      case 'post_only': return '메이커 전용 주문이 바로 체결될 가격이라 취소했어요. 가격을 호가 안쪽으로 옮겨 주세요.';
+      case 'trig_num': return '조건 가격(Trigger)을 넣어 주세요.';
+      case 'trig_now': return '조건 가격이 지금 가격과 같아요. 조금 위나 아래로 넣어 주세요.';
+      case 'cb': return '되돌림 비율은 0.1% ~ 10% 사이로 넣어 주세요.';
+      case 'act_num': return '시작 가격은 숫자로 넣어 주세요.';
+      case 'act_side': return '시작 가격은 롱 보호(팔기)면 지금 기준 가격보다 높게, 숏 보호(사기)면 낮게 넣어 주세요.';
+      case 'mode_busy': return '포지션과 주문이 모두 없을 때만 바꿀 수 있어요.';
+      case 'mm_busy': return '이 종목에 포지션이나 주문이 있으면 증거금 방식을 바꿀 수 없어요.';
+      case 'has_pos': return '포지션이 있을 때는 레버리지를 바꿀 수 없어요.';
       default: return '처리하지 못했어요. 잠시 뒤 다시 해 주세요.';
     }
   }
 
   return {
-    MIN: MIN, prep: prep, tierOf: tierOf, maxNotional: maxNotional, liqPrice: liqPrice, posLiq: posLiq,
+    MIN: MIN, prep: prep, tierOf: tierOf, maxNotional: maxNotional, liqPrice: liqPrice, posLiq: posLiq, mmOf: mmOf,
     roundQty: roundQty, roundPx: roundPx, fix: fix, walk: walk, walkLimit: walkLimit,
-    newState: newState, openPart: openPart, sameSideResting: sameSideResting, exposed: exposed,
-    applyFill: applyFill, liquidate: liquidate, closeAt: closeAt, placeLimit: placeLimit, cancelOrder: cancelOrder,
-    fillLimit: fillLimit, payFunding: payFunding, fundTimes: fundTimes, liqHit: liqHit,
+    newState: newState, pkey: pkey, keysOf: keysOf, samePos: samePos, oppPos: oppPos, closable: closable, symMM: symMM,
+    openPart: openPart, sameSideResting: sameSideResting, exposed: exposed, avail: avail,
+    applyFill: applyFill, liquidate: liquidate, closeAt: closeAt, placeLimit: placeLimit, cancelOrder: cancelOrder, cancelAll: cancelAll,
+    fillLimit: fillLimit, payFunding: payFunding, fundTimes: fundTimes, liqHit: liqHit, liqOf: liqOf,
+    crossState: crossState, crossCheck: crossCheck, trailStop: trailStop,
     replayBar: replayBar, onTrade: onTrade, onMark: onMark, sweepBars: sweepBars,
-    upnl: upnl, equity: equity, order: order, closeMarket: closeMarket, setTpsl: setTpsl, errText: errText
+    upnl: upnl, equity: equity, order: order, closeMarket: closeMarket, closeAll: closeAll, reverse: reverse,
+    setTpsl: setTpsl, setMode: setMode, errText: errText
   };
 })();
 window.A99E = A99E;
@@ -369,7 +643,7 @@ window.A99E = A99E;
 'use strict';
 if (window.A99Paper) return;
 
-var VER = '2026.10.12-H';
+var VER = '2026.10.19-C';
 var Q = 'US' + 'DT';                              // 모의 계좌 단위 표기 (가상 · 실제 돈 아님). 가격은 하이퍼리퀴드 달러 시세
 var WSURL = 'wss://api.hyperliquid.xyz/ws';      // 실시간 시세: 하이퍼리퀴드 공개 자료
 var HLI = 'https://api.hyperliquid.xyz/info';
@@ -472,7 +746,7 @@ face('651 950', 'd09GMgABAAAAAFkwABIAAAAA3oQAAFjHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 '.pp-ob b{font-size:15px;font-weight:800}',
 '.pp-ob b small{font-size:11px;font-weight:600;opacity:.85;margin-left:1px}',
 '.pp-tag small{font-size:9.5px;opacity:.8;margin-left:1px}',
-'.pp-or .l small small{display:inline;font-size:10px;margin:0}',
+'.pp-or .l small small,.pp-or .l span small{display:inline;font-size:10px;margin:0}',
 '.pp-ob span{font-size:11px;opacity:.8;font-family:var(--pn)}',
 '.pp-ob.buy{background:var(--pbuy)} .pp-ob.sell{background:var(--psell)}',
 '.pp-b:disabled,.pp-ob:disabled{opacity:.45}',
@@ -545,6 +819,22 @@ face('651 950', 'd09GMgABAAAAAFkwABIAAAAA3oQAAFjHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 '.pp-rk .nk small{color:var(--pt3);font-size:11px;margin-left:4px;font-weight:500}',
 '.pp-off{display:inline-block;margin-left:6px;padding:1px 5px;border:1px solid currentColor;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.06em;color:#F5A524;vertical-align:2px}',
 '.pp-rk .e,.pp-rk .p{text-align:right;font-family:var(--pn)}',
+'.pp-rk li[data-pnick]{cursor:pointer}',
+'.pp-t5,.pp-pub{display:inline-block;margin-left:6px;padding:1px 5px;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.04em;vertical-align:2px;border:1px solid currentColor}',
+'.pp-t5{color:var(--pup,#22C083)} .pp-pub{color:var(--pt2,#A0A0A5)}',
+'.pp-per{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 6px}',
+'.pp-per button{min-height:34px;border-radius:8px;background:var(--pc2);color:var(--pt2);font-size:13px;font-weight:600}',
+'.pp-per button.on{background:var(--pc3);color:var(--pt1)}',
+'.pp-pfg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}',
+'.pp-pfg div{border-radius:10px;background:var(--s2);padding:9px 11px;min-width:0}',
+'.pp-pfg span{display:block;font-size:11.5px;color:var(--tx3)}',
+'.pp-pfg b{display:block;font-size:16px;font-family:var(--mono);margin-top:2px}',
+'.pp-pfg small{display:block;font-size:11px;color:var(--tx3);margin-top:1px}',
+'.pp-cv{width:100%;height:64px;display:block}',
+'.pp-pl{display:grid;gap:0}',
+'.pp-pl div{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px}',
+'.pp-pl div small{display:block;color:var(--tx3);font-size:11px;margin-top:1px}',
+'.pp-pl .r{text-align:right;font-family:var(--mono)}',
 '.pp-rk .p{font-size:12.5px;font-weight:600}',
 '.pp-mo{display:flex;gap:6px;overflow-x:auto;padding:12px 0 2px;scrollbar-width:none}',
 '.pp-mo::-webkit-scrollbar{display:none}',
@@ -621,6 +911,24 @@ face('651 950', 'd09GMgABAAAAAFkwABIAAAAA3oQAAFjHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 '.pp-toast div{background:#2A2A2E;border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.45;box-shadow:0 6px 20px rgba(0,0,0,.4);transition:opacity .25s}',
 '.pp-toast div.bad{box-shadow:inset 3px 0 0 #E8A317,0 6px 20px rgba(0,0,0,.4)}',
 '.pp-toast div.out{opacity:0}',
+'.pp-seg.s4{grid-template-columns:repeat(4,minmax(0,1fr))}',
+'.pp-seg.s4 button{font-size:11.5px;white-space:nowrap;padding:0 1px;letter-spacing:-.03em}',
+'.pp-opts{display:flex;flex-wrap:wrap;gap:0 14px}',
+'.pp-cbq{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}',
+'.pp-cbq button{min-height:28px;border-radius:7px;background:var(--pc2);font-size:11.5px;font-weight:700;color:var(--pt2)}',
+'.pp-cbq button.on{background:var(--pc3);color:var(--pt1)}',
+'.pp-pc .bt.b3{grid-template-columns:repeat(3,minmax(0,1fr))}',
+'.pp-lh{display:flex;justify-content:flex-end;gap:8px;padding:10px 0 2px}',
+'.pp-lh .pp-sb.arm{background:var(--pwarn);color:#111}',
+'.pp-mmo{display:grid;gap:8px}',
+'.pp-mmo button{text-align:left;padding:12px;border-radius:10px;background:var(--s2);display:grid;gap:4px;color:var(--tx)}',
+'.pp-mmo button b{font-size:14px}',
+'.pp-mmo button span{font-size:12.5px;color:var(--tx2);line-height:1.5}',
+'.pp-mmo button.on{box-shadow:inset 0 0 0 1.5px var(--tx)}',
+'.pp-mmo button:disabled{opacity:.5}',
+'.pp-box b small{font-size:11px;font-weight:600;color:var(--tx3);margin-left:6px}',
+'.pp-trpt{margin:0;font-size:11px;color:var(--pt3)} .pp-trpt b{color:var(--pt2);font-weight:600}',
+'.pp-ct{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:10px;background:var(--s2);color:var(--tx);font-weight:700;font-size:14px;text-decoration:none}',
 '@media(min-width:900px){.pp-tr{grid-template-columns:minmax(0,1fr) 260px}}'
 ].join('\n');
 /* ── 도우미 ── */
@@ -685,12 +993,17 @@ function mktState(k) {
 
 /* ── 상태 ── */
 var UIS = lsGet(LS_UI) || {};
-var U = { bk: UIS.bk >= 0 && UIS.bk <= 3 ? UIS.bk : 2, sym: UIS.sym || 'BTC', tf: ['1m', '15m', '1H'].indexOf(UIS.tf) >= 0 ? UIS.tf : '15m', ot: UIS.ot === 'limit' ? 'limit' : 'market', lev: UIS.lev || {}, tab: 'pos', month: null };
+var OTS = ['limit', 'market', 'stop', 'trail'];
+var U = { bk: UIS.bk >= 0 && UIS.bk <= 3 ? UIS.bk : 2, sym: UIS.sym || 'BTC', tf: ['1m', '15m', '1H'].indexOf(UIS.tf) >= 0 ? UIS.tf : '15m', ot: OTS.indexOf(UIS.ot) >= 0 ? UIS.ot : 'market', oc: 'open', lev: UIS.lev || {}, tab: 'pos', month: null };
 var TOK = lsGet(LS_TOK);
 var ME = null, st = E.newState(0), FILLS = [], lastFillTs = 0, busy = false;
 var ACTIVE = false, MOUNTED = false;
 function saveUI() { lsSet(LS_UI, { sym: U.sym, tf: U.tf, ot: U.ot, lev: U.lev, bk: U.bk }); }
-function levOf(id) { var p = st.pos[id]; if (p) return p.lev; var l = (ME && ME.acct.lev && ME.acct.lev[id]) || U.lev[id] || 10; return Math.min(Math.max(1, l), SP[id] ? SP[id].max : 125); }
+function posOfSym(id) { var ks = E.keysOf(st, id); return ks.length ? st.pos[ks[0]] : null; }
+function hedgeOn() { return st.mode === 'hedge'; }
+/* 그 종목 증거금 방식: 포지션이 있으면 그것, 없으면 계좌에 저장한 선택(기본 격리) */
+function mmOf(id) { var p = posOfSym(id); if (p) return p.mm === 'cross' ? 'cross' : 'isolated'; return ME && ME.acct && ME.acct.mm && ME.acct.mm[id] === 'cross' ? 'cross' : 'isolated'; }
+function levOf(id) { var p = posOfSym(id); if (p) return p.lev; var l = (ME && ME.acct.lev && ME.acct.lev[id]) || U.lev[id] || 10; return Math.min(Math.max(1, l), SP[id] ? SP[id].max : 125); }
 function exposed(id) { return E.exposed(st, id); }
 function anyExposed() { return Object.keys(st.pos).length > 0 || st.ord.length > 0; }
 
@@ -698,6 +1011,7 @@ function anyExposed() { return Object.keys(st.pos).length > 0 || st.ord.length >
 var M = {}, wsOpen = false;
 function marks() { var o = {}; IDS.forEach(function (k) { if (M[k] && M[k].mark) o[k] = M[k].mark; }); return o; }
 function equity() { return E.equity(st, marks()); }
+function availNow() { return E.avail(st, marks()); }
 function baseEq() { return ME ? ME.acct.mStart + ME.acct.mGrants : INFO.start; }
 
 /* ── 서버 ── */
@@ -736,9 +1050,10 @@ function applyServer(j) {
   if (j.policy) ME.policy = j.policy;
   if (j.rules) ME.rules = j.rules;
   if ('pending' in j) ME.pending = j.pending;
-  st = E.newState(j.acct.bal);
+  if ('pub' in j) ME.pub = !!j.pub;
+  st = E.newState(j.acct.bal, j.acct.pmode);
   st.trades = j.acct.trades; st.liqs = j.acct.liqs;
-  (j.pos || []).forEach(function (p) { st.pos[p.sym] = p; });
+  (j.pos || []).forEach(function (p) { st.pos[p.key || E.pkey(st, p.sym, p.side)] = p; });
   st.ord = j.ord || [];
   if (!j.fills) return [];
   var fresh = lastFillTs ? j.fills.filter(function (f) { return f.ts > lastFillTs; }) : [];
@@ -746,9 +1061,12 @@ function applyServer(j) {
   if (j.fills.length) lastFillTs = Math.max(lastFillTs, j.fills[0].ts);
   return fresh;
 }
-var KIND = { open: 'Open', close: 'Close', tp: 'TP filled', sl: 'SL filled', liq: 'Liquidated', fund: 'Funding' };
+var KIND = { open: 'Open', close: 'Close', tp: 'TP filled', sl: 'SL filled', stop: 'Trigger filled', trail: 'Trailing filled', liq: 'Liquidated', fund: 'Funding' };
 /* 체결음: 소리 파일 없이 기기에서 바로 만든다 (Web Audio) · 처음 누를 때 소리가 켜진다(브라우저 규칙)
    종류: 틱(짧고 또렷한 클릭) · 마림바(맑은 나무 소리) · 벨(은은한 종소리) · 끄기 */
+/* 조건부 · 트레일링 기준 가격: last = 최근 체결가(기본) · mark = 표시 가격. ⚙에서 고르고 이 기기에 저장 */
+var TPT = lsGet('a99p.tpt') === 'mark' ? 'mark' : 'last';
+function tptName() { return TPT === 'mark' ? 'Mark' : 'Last'; }
 var AC = null, lastBeep = 0, SND = lsGet('a99p.snd');
 if (SND === 0 || SND === '0') SND = 'off'; else if (['off', 'tick', 'mar', 'bell'].indexOf(SND) < 0) SND = 'tick';
 var SNDS = {
@@ -778,20 +1096,27 @@ function beep(kind, force) {
   } catch (e) {}
 }
 function toastEvents(ev) {
-  (ev || []).forEach(function (e) { if (e.k === 'liq') beep('liq'); else if (e.k === 'sl' || e.k === 'tp') beep('close'); else if (e.k === 'lfill') beep('fill'); });
+  (ev || []).forEach(function (e) { if (e.k === 'liq') beep('liq'); else if (e.k === 'sl' || e.k === 'tp') beep('close'); else if (e.k === 'lfill' || e.k === 'tfill') beep('fill'); });
+  var crossShown = false;
   (ev || []).forEach(function (e) {
     var nm = NM(e.sym), sd = e.side === 1 ? 'Long' : 'Short';
-    if (e.k === 'liq') toast(nm + ' ' + sd + ' ' + e.lev + 'x Liquidated · −' + fu(e.margin) + ' (강제 청산)', true);
+    if (e.k === 'liq' && e.cross) { if (!crossShown) { crossShown = true; toast('Cross 강제 청산 · 교차 포지션이 모두 닫히고 교차 잔고 ' + fu(e.lost || 0) + '을 잃었어요', true); } }
+    else if (e.k === 'liq') toast(nm + ' ' + sd + ' ' + e.lev + 'x Liquidated · −' + fu(e.margin) + ' (강제 청산)', true);
+    else if (e.k === 'tfill') toast(nm + ' ' + (e.kind === 'trail' ? 'Trailing' : 'Trigger') + ' ' + (e.side === 1 ? 'Buy' : 'Sell') + ' filled · ' + fq(e.sym, e.qty) + ' @ ' + fp(e.sym, e.price));
+    else if (e.k === 'trig') toast(nm + ' Trigger 도달 · 지정가 ' + fp(e.sym, e.px) + ' 주문으로 걸었어요');
+    else if (e.k === 'tcancel') toast(nm + ' ' + (e.kind === 'trail' ? '트레일링' : '조건부') + ' 주문을 ' + (e.why === 'nopos' ? '줄일 포지션이 없어' : e.why === 'cap' ? '레버리지 한도를 넘어' : '증거금이 모자라') + ' 취소했어요', true);
+    else if (e.k === 'ocancel' && e.why === 'nopos') toast(nm + ' 포지션이 닫혀서 감소 전용 주문도 취소했어요');
     else if (e.k === 'sl' || e.k === 'tp') toast(nm + ' ' + sd + ' ' + (e.k === 'tp' ? 'TP filled' : 'SL filled') + ' · ' + fp(e.sym, e.price) + ' · ' + sg(e.net), e.net < 0);
     else if (e.k === 'lfill') toast(nm + ' Limit ' + (e.side === 1 ? 'Long' : 'Short') + ' filled · ' + fq(e.sym, e.qty) + ' @ ' + fp(e.sym, e.price));
-    else if (e.k === 'lcancel') toast(nm + ' 지정가 주문을 ' + (e.why === 'cap' ? '레버리지 한도를 넘어' : '증거금이 모자라') + ' 취소했어요', true);
+    else if (e.k === 'lcancel') toast(nm + ' 지정가 주문을 ' + (e.why === 'cap' ? '레버리지 한도를 넘어' : e.why === 'nopos' ? '줄일 포지션이 없어' : '증거금이 모자라') + ' 취소했어요', true);
   });
 }
 function toastFills(list) {
-  if (list.some(function (f) { return f.kind === 'liq'; })) beep('liq'); else if (list.some(function (f) { return f.kind === 'tp' || f.kind === 'sl'; })) beep('close');
+  var auto = { tp: 1, sl: 1, stop: 1, trail: 1 };
+  if (list.some(function (f) { return f.kind === 'liq'; })) beep('liq'); else if (list.some(function (f) { return auto[f.kind]; })) beep('close');
   list.slice(0, 4).reverse().forEach(function (f) {
     if (f.kind === 'liq') toast(chip(f.sym) + ' 강제 청산됐어요 · ' + kstWhen(f.ts) + ' · ' + sg(f.pnl), true);
-    else if (f.kind === 'tp' || f.kind === 'sl') toast(chip(f.sym) + ' ' + KIND[f.kind] + ' · ' + kstWhen(f.ts) + ' · ' + sg(f.pnl - f.fee), f.pnl - f.fee < 0);
+    else if (auto[f.kind]) toast(chip(f.sym) + ' ' + KIND[f.kind] + ' · ' + kstWhen(f.ts) + ' · ' + sg(f.pnl - f.fee), f.pnl - f.fee < 0);
     else if (f.kind === 'fund') toast(chip(f.sym) + ' 펀딩비 ' + sg(f.pnl, 4));
   });
 }
@@ -818,13 +1143,28 @@ function logout(expired) {
 var sw = {};
 function triggerOf(id, px, mark) {
   var s = SP[id]; if (!s) return '';
-  var p = st.pos[id], now = Date.now();
-  if (p) {
-    if (mark > 0 && E.liqHit(s, p, mark)) return 'liq';
+  var now = Date.now(), ks = E.keysOf(st, id), mk = marks();
+  if (mark > 0) mk[id] = mark;
+  for (var i = 0; i < ks.length; i++) {
+    var p = st.pos[ks[i]];
+    if (mark > 0) { var lp = E.liqOf(st, SP, ks[i], mk); if (lp > 0 && (p.side === 1 ? mark <= lp : mark >= lp)) return 'liq'; }
     if (px > 0 && p.sl != null && now >= (p.tpslAt || 0) && (p.side === 1 ? px <= p.sl : px >= p.sl)) return 'sl';
     if (px > 0 && p.tp != null && now >= (p.tpslAt || 0) && (p.side === 1 ? px >= p.tp : px <= p.tp)) return 'tp';
   }
-  for (var i = 0; i < st.ord.length; i++) { var o = st.ord[i]; if (o.sym === id && px > 0 && (o.side === 1 ? px <= o.px : px >= o.px)) return 'lim'; }
+  for (var j = 0; j < st.ord.length; j++) {
+    var o = st.ord[j]; if (o.sym !== id) continue;
+    var k = o.k || 'limit';
+    var v = o.pt === 'mark' ? mark : px;              // Mark 기준 조건부 · 트레일링은 Mark 가격으로만 본다
+    if (k === 'stop') { if (v > 0 && (o.dir === 1 ? v >= o.trig : v <= o.trig)) return 'stop'; continue; }
+    if (k === 'trail') {
+      if (!(v > 0)) continue;
+      if (!o.armed) { if (o.act != null && (o.side === -1 ? v >= o.act : v <= o.act)) return 'trail'; }
+      else { var tl = E.trailStop(o); if (tl > 0 && (o.side === -1 ? v <= tl : v >= tl)) return 'trail'; }
+      continue;
+    }
+    if (!(px > 0)) continue;
+    if (k === 'limit' && (o.side === 1 ? px <= o.px : px >= o.px)) return 'lim';
+  }
   return '';
 }
 function sweep(id, evd) {
@@ -837,7 +1177,7 @@ function sweep(id, evd) {
   api('/p/sweep', evd ? { sym: id, px: evd.px, ts: evd.ts } : { sym: id }).then(function (x) {
     w.busy = false;
     if (x.s !== 200) return;
-    var sig = function () { return JSON.stringify([st.pos[id], st.ord.filter(function (o) { return o.sym === id; }).length]); };
+    var sig = function () { return JSON.stringify([E.keysOf(st, id).map(function (k) { return st.pos[k]; }), st.ord.filter(function (o) { return o.sym === id; })]); };
     var had = sig();
     applyServer(x.j); toastEvents(x.j.ev);
     w.miss = had === sig() ? w.miss + 1 : 0;
@@ -918,7 +1258,7 @@ function onCtx(id, c) {
   m.fr = c.funding != null && c.funding !== '' ? +c.funding : null;
   m.nft = Math.floor(Date.now() / 3600e3) * 3600e3 + 3600e3;
   m.rx = Date.now();
-  if (ME && exposed(id) && triggerOf(id, 0, m.mark) === 'liq') sweep(id, null);
+  if (ME && exposed(id)) { var tg = triggerOf(id, 0, m.mark); if (tg === 'liq' || tg === 'trail' || tg === 'stop') sweep(id, null); }
   dirty.quote = dirty.acct = dirty.pos = dirty.est = true;
   if (id === U.sym) dirty.mid = true;
   kick();
@@ -1003,15 +1343,22 @@ function onCandles(id, tf, data, action) {
 function drawLines() {
   if (!cs || !SP[U.sym] || !CHART) return;
   plines.forEach(function (l) { cs.removePriceLine(l); }); plines = [];
-  var id = U.sym, p = st.pos[id];
+  var id = U.sym, mk = marks();
   function add(price, color, title, style) { plines.push(cs.createPriceLine({ price: price, color: color, lineWidth: 1, lineStyle: style, axisLabelVisible: true, title: title, axisLabelColor: color, axisLabelTextColor: '#0B0B0C' })); }
-  if (p) {
-    add(p.entry, '#A0A0A5', 'Entry', LC.LineStyle.Dashed);
-    var lp = E.posLiq(SP[id], p); if (lp) add(lp, '#F5A524', 'Liq.', LC.LineStyle.Dashed);
-    if (p.tp != null) add(p.tp, '#F3F3F4', 'TP', LC.LineStyle.Dotted);
-    if (p.sl != null) add(p.sl, '#8A8A90', 'SL', LC.LineStyle.Dotted);
-  }
-  st.ord.forEach(function (o) { if (o.sym === id) add(o.px, o.side === 1 ? CUP : CDN, 'Limit', LC.LineStyle.Dotted); });
+  E.keysOf(st, id).forEach(function (k) {
+    var p = st.pos[k], g = hedgeOn() ? (p.side === 1 ? 'L ' : 'S ') : '';
+    add(p.entry, '#A0A0A5', g + 'Entry', LC.LineStyle.Dashed);
+    var lp = E.liqOf(st, SP, k, mk); if (lp) add(lp, '#F5A524', g + 'Liq.', LC.LineStyle.Dashed);
+    if (p.tp != null) add(p.tp, '#F3F3F4', g + 'TP', LC.LineStyle.Dotted);
+    if (p.sl != null) add(p.sl, '#8A8A90', g + 'SL', LC.LineStyle.Dotted);
+  });
+  st.ord.forEach(function (o) {
+    if (o.sym !== id) return;
+    var k = o.k || 'limit', c = o.side === 1 ? CUP : CDN;
+    if (k === 'limit') add(o.px, c, 'Limit', LC.LineStyle.Dotted);
+    else if (k === 'stop') add(o.trig, c, 'Trigger', LC.LineStyle.Dotted);
+    else { var tl = E.trailStop(o); if (tl) add(tl, c, 'Trail', LC.LineStyle.Dotted); else if (o.act) add(o.act, c, 'Trail start', LC.LineStyle.Dotted); }
+  });
 }
 /* 차트 창: 작은 창(아래 시트) ↔ 전체 화면 */
 function openChart(mode) {
@@ -1061,13 +1408,16 @@ function candles(id, g, n) {
 }
 /* ── 순위 ── */
 var board = {};
-function loadBoard(m) { return getJSON(API + '/p/board?month=' + m, 8000).then(function (j) { board[m] = j; }, function () { board[m] = { err: 1 }; }); }
+function loadBoard(m) { var q = m === 'w' ? 'period=week' : m === 'wp' ? 'period=lastweek' : 'month=' + m; return getJSON(API + '/p/board?' + q, 8000).then(function (j) { board[m] = j; }, function () { board[m] = { err: 1 }; }); }
+function rkKey() { return U.rk === 'w' ? (U.wk || 'w') : (U.month || monthKST()); }
 function metricOf(j) { return (j && j.metric) || INFO.metric || 'ret'; }
 function myRow(j) { if (!ME || !j || !j.rows) return null; for (var i = 0; i < j.rows.length; i++) if (j.rows[i].nick === ME.nick) return j.rows[i]; return null; }
 function monthsList() { var out = [], d = new Date(Date.now() + H9); for (var i = 0; i < 6; i++) out.push(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - i, 1)).toISOString().slice(0, 7)); return out; }
 function rankHTML() {
-  var cur = monthKST(), m = U.month || cur, j = board[m], met = metricOf(j);
-  var h = '<p class="pp-note" style="margin:0 0 4px">' + (m === cur ? '이번 달' : (+m.slice(5)) + '월') + ' · ' + (j && j.n != null ? '참가 ' + j.n + '명 · ' : '') + (met === 'gain' ? '자산 증가액 순' : '수익률 순') + (m === cur ? ' · 5분마다 갱신' : ' · 마감') + '</p>';
+  var cur = monthKST(), wkv = U.rk === 'w', m = wkv ? null : (U.month || cur), j = board[rkKey()], met = metricOf(j);
+  var h = '<div class="pp-per" role="tablist" aria-label="순위 기간"><button type="button" data-prk="m" class="' + (wkv ? '' : 'on') + '">월간</button><button type="button" data-prk="w" class="' + (wkv ? 'on' : '') + '">주간</button></div>';
+  var lbl = wkv ? ((U.wk || 'w') === 'w' ? '이번 주(월요일 0시부터)' : '지난주' + (j && j.week ? ' · ' + j.week.slice(5).replace('-', '/') + ' 시작' : '')) : (m === cur ? '이번 달' : (+m.slice(5)) + '월');
+  h += '<p class="pp-note" style="margin:0 0 4px">' + lbl + ' · ' + (j && j.n != null ? '참가 ' + j.n + '명 · ' : '') + (met === 'gain' ? '자산 증가액 순' : '수익률 순') + ((wkv ? (U.wk || 'w') === 'w' : m === cur) ? ' · 5분마다 갱신' : ' · 마감') + '</p>';
   if (!j) h += '<p class="pp-empty">순위를 불러오는 중…</p>';
   else if (j.err) h += '<p class="pp-empty">순위를 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</p>';
   else {
@@ -1077,15 +1427,73 @@ function rankHTML() {
     if (!j.rows || !j.rows.length) h += '<p class="pp-empty">아직 참가자가 없어요.</p>';
     else h += '<ol class="pp-rk">' + j.rows.slice(0, 100).map(function (r) {
       var isMe = ME && r.nick === ME.nick, v = met === 'gain' ? r.gain : r.ret;
-      return '<li' + (isMe ? ' class="me"' : '') + '><span class="r">' + r.rank + '</span><span class="nk">' + esc(r.nick) + (r.off ? '<em class="pp-off">OFFICIAL</em>' : '') + (r.liqs ? '<small>청산 ' + r.liqs + '</small>' : '') + '</span><span class="e">' + fu(r.eq) + '</span><span class="p ' + cls(v) + '">' + (met === 'gain' ? sg(v) : pct(v)) + '</span></li>';
+      return '<li data-pnick="' + esc(r.nick) + '"' + (isMe ? ' class="me"' : '') + '><span class="r">' + r.rank + '</span><span class="nk">' + esc(r.nick) + (r.off ? '<em class="pp-off">OFFICIAL</em>' : '') + (r.t5 ? '<em class="pp-t5">TOP 5</em>' : r.pub ? '<em class="pp-pub">공개</em>' : '') + (r.liqs ? '<small>청산 ' + r.liqs + '</small>' : '') + '</span><span class="e">' + fu(r.eq) + '</span><span class="p ' + cls(v) + '">' + (met === 'gain' ? sg(v) : pct(v)) + '</span></li>';
     }).join('') + '</ol>';
   }
-  h += '<div class="pp-mo">' + monthsList().map(function (x) { return '<button type="button" data-pmonth="' + x + '" class="' + (x === m ? 'on' : '') + '">' + (x === cur ? '이번 달' : (+x.slice(5)) + '월') + '</button>'; }).join('') + '</div>';
-  h += '<p class="pp-note">수익률 = 순자산 ÷ (달 시작 순자산 + 그달 초기화로 받은 금액) − 1. 초기화해도 순위가 유리해지지 않아요.</p>';
+  if (wkv) h += '<div class="pp-mo"><button type="button" data-pwk="w" class="' + ((U.wk || 'w') === 'w' ? 'on' : '') + '">이번 주</button><button type="button" data-pwk="wp" class="' + (U.wk === 'wp' ? 'on' : '') + '">지난주</button></div>';
+  else h += '<div class="pp-mo">' + monthsList().map(function (x) { return '<button type="button" data-pmonth="' + x + '" class="' + (x === m ? 'on' : '') + '">' + (x === cur ? '이번 달' : (+x.slice(5)) + '월') + '</button>'; }).join('') + '</div>';
+  h += '<p class="pp-note">닉네임을 누르면 그 트레이더의 기록이 나와요. <b>TOP 5</b> = 이번 달 월간 순위 상위 5명으로, 열린 포지션 · 거래 기록이 수량 · 금액까지 자동 공개돼요. <b>공개</b> = 본인이 공개를 켠 트레이더예요.</p>';
+  h += '<p class="pp-note">수익률 = 순자산 ÷ (기간 시작 순자산 + 그 기간 초기화로 받은 금액) − 1. 초기화해도 순위가 유리해지지 않아요.</p>';
   return h;
 }
+/* 트레이더 프로필 */
+function profileSheet(nick) {
+  openSheet(nick, '<p class="hint">기록을 불러오는 중…</p>');
+  getJSON(API + '/p/trader?nick=' + encodeURIComponent(nick), 8000).then(function (j) {
+    if (!SH || SH.hidden || $('shT').textContent !== nick) return;
+    if (!j || j.err) { $('shB').innerHTML = '<p class="hint">기록을 불러오지 못했어요.</p>'; return; }
+    $('shB').innerHTML = profileHTML(j);
+  }, function () { if ($('shB')) $('shB').innerHTML = '<p class="hint">기록을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</p>'; });
+}
+function curveSVG(c) {
+  if (!c || c.length < 2) return '';
+  var vs = c.map(function (x) { return x[1]; }), mn = Math.min.apply(null, vs.concat([0])), mx = Math.max.apply(null, vs.concat([0])), sp = mx - mn || 1, W = 300, H = 60;
+  var pts = c.map(function (x, i) { return (i / (c.length - 1) * W).toFixed(1) + ',' + (H - (x[1] - mn) / sp * H).toFixed(1); }).join(' ');
+  var z = (H - (0 - mn) / sp * H).toFixed(1), last = vs[vs.length - 1];
+  return '<svg class="pp-cv" viewBox="0 0 300 60" preserveAspectRatio="none" role="img" aria-label="실현 손익 흐름"><line x1="0" y1="' + z + '" x2="300" y2="' + z + '" stroke="var(--line)" stroke-width="1"/><polyline fill="none" stroke="' + (last >= 0 ? 'var(--pup,#22C083)' : 'var(--pdn,#FF5B5B)') + '" stroke-width="1.6" points="' + pts + '" vector-effect="non-scaling-stroke"/></svg>';
+}
+function profileHTML(j) {
+  var S = j.stats || {}, mo = j.month, wk = j.week, mine = ME && ME.nick === j.nick;
+  var badge = (j.off ? '<em class="pp-off">OFFICIAL</em>' : '') + (j.t5 ? '<em class="pp-t5">TOP 5</em>' : j.pub ? '<em class="pp-pub">공개</em>' : '');
+  function cell(k, v, sub, c) { return '<div><span>' + k + '</span><b class="' + (c || '') + '">' + v + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>'; }
+  var h = badge ? '<p class="hint" style="margin:0">' + badge + '</p>' : '';
+  h += '<div class="pp-pfg">' +
+    cell('이번 달', mo ? pct(mo.ret) : '—', mo ? mo.rank + '위 / ' + mo.n + '명 · 순자산 ' + fu(mo.eq) : '순위 집계 전', mo ? cls(mo.ret) : '') +
+    cell('이번 주', wk ? pct(wk.ret) : '—', wk ? wk.rank + '위 / ' + wk.n + '명' : '집계 전', wk ? cls(wk.ret) : '') +
+    cell('승률', S.winRate != null ? fmt(S.winRate * 100, 1) + '%' : '—', '닫은 거래 ' + (S.closes || 0) + '번 (이익 ' + (S.wins || 0) + ' · 손실 ' + (S.losses || 0) + ')') +
+    cell('손익비', S.pf != null ? fmt(S.pf, 2) : '—', '이익 합 ÷ 손실 합') +
+    cell('평균 이익 · 손실', (S.avgWin != null ? '+' + fu(S.avgWin) : '—') + ' · ' + (S.avgLoss != null ? '−' + fu(S.avgLoss) : '—'), Q) +
+    cell('최대 낙폭', S.mdd ? '−' + fu(S.mdd) : '0', S.mddPct ? fmt(S.mddPct * 100, 1) + '% · 실현 손익 기준' : '실현 손익 기준', S.mdd ? 'dn' : '') + '</div>';
+  h += '<div class="pp-box"><b>실현 손익 흐름 <small>최근 90일 · 수수료 · 펀딩 포함</small></b>' + (curveSVG(j.curve) || '<p class="hint">' + ((j.curve || []).length ? '하루치 기록이라 흐름은 이틀째부터 그려져요.' : '아직 거래가 없어요.') + '</p>') +
+    '<p class="hint" style="margin:0">누적 ' + sg(S.realized || 0) + ' ' + Q + (S.syms && S.syms.length ? ' · 주 종목 ' + S.syms.map(function (x) { return NM(x[0]); }).join(' · ') : '') + '</p></div>';
+  if (j.open) {
+    h += '<div class="pp-box"><b>열린 포지션 ' + (j.pos || []).length + '개</b>' + ((j.pos || []).length ? '<div class="pp-pl">' + j.pos.map(function (p) {
+      return '<div><span><b>' + NM(p.sym) + '</b> <span class="' + (p.side === 1 ? 'up' : 'dn') + '">' + (p.side === 1 ? 'Long' : 'Short') + '</span> · ' + p.lev + 'x' + (p.mm === 'cross' ? ' · Cross' : '') +
+        '<small>수량 ' + fq(p.sym, p.qty) + ' · 진입 ' + fp(p.sym, p.entry) + ' · Mark ' + fp(p.sym, p.mark) + ' · 증거금 ' + fu(p.margin) + '</small></span><span class="r ' + cls(p.upnl) + '">' + sg(p.upnl) + '<small>' + pct(p.roe) + '</small></span></div>';
+    }).join('') + '</div>' : '<p class="hint">지금 열린 포지션이 없어요.</p>') + '</div>';
+    h += '<div class="pp-box"><b>최근 닫은 거래</b>' + ((j.recent || []).length ? '<div class="pp-pl">' + j.recent.map(function (x) {
+      return '<div><span>' + NM(x.sym) + ' <span class="' + (x.side === 1 ? 'up' : 'dn') + '">' + (x.side === 1 ? 'Long' : 'Short') + '</span> · ' + (KIND[x.kind] || 'Close') + '<small>' + kstWhen(x.ts) + ' · ' + fq(x.sym, x.qty) + ' @ ' + fp(x.sym, x.price) + '</small></span><span class="r ' + cls(x.net) + '">' + sg(x.net) + '</span></div>';
+    }).join('') + '</div>' : '<p class="hint">아직 없어요.</p>') + '</div>';
+  } else h += '<p class="hint">이 트레이더는 포지션을 공개하지 않았어요. 월간 순위 상위 5명이 되면 자동으로 공개돼요.</p>';
+  if (mine) h += pubBox();
+  return h;
+}
+function pubBox() {
+  var on = !!(ME && ME.pub);
+  return '<div class="pp-box"><b>내 포지션 공개</b><div class="pp-cseg"><button type="button" data-ppub="1" class="' + (on ? 'on' : '') + '">공개</button><button type="button" data-ppub="0" class="' + (on ? '' : 'on') + '">비공개</button></div>' +
+    '<p class="hint">공개하면 순위표에서 내 닉네임을 누른 사람이 열린 포지션과 최근 거래(수량 · 금액 포함)를 볼 수 있어요. 월간 상위 5명은 이 설정과 상관없이 자동 공개돼요.</p></div>';
+}
+function setPub(on) {
+  if (needLogin()) return;
+  api('/p/pub', { on: on }).then(function (x) {
+    if (x.s !== 200 || !x.j.ok) { toast(errMsg(x), true); return; }
+    ME.pub = !!x.j.pub;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-ppub]'), function (b) { b.classList.toggle('on', (b.dataset.ppub === '1') === ME.pub); });
+    toast(ME.pub ? '내 포지션을 공개했어요' : '비공개로 바꿨어요');
+  });
+}
 function refreshRank(force) {
-  var m = U.month || monthKST();
+  var m = rkKey();
   if (!force && board[m] && board[m].at && Date.now() - board[m].at < 60000 && (!ME || myRow(board[m]))) { renderList(); return; }
   loadBoard(m).then(function () { renderList(); dirty.acct = true; kick(); });
 }
@@ -1142,7 +1550,7 @@ function renderAcctNums() {
   var r = $('roi'); r.textContent = pct(base > 0 ? eq / base - 1 : 0); r.className = cls(eq - base);
   var j = board[monthKST()], me = myRow(j);
   $('rank').textContent = me ? '#' + me.rank : '—';
-  if ($('avail')) { $('avail').textContent = fu(st.bal) + ' ' + Q; }
+  if ($('avail')) { $('avail').textContent = fu(availNow()) + ' ' + Q; }
 }
 /* 호가 · 펀딩 · 매수/매도 비율 */
 function renderBook() {
@@ -1175,7 +1583,7 @@ function renderCbar() {
 /* 내 거래 */
 function renderList() {
   if (!MOUNTED) return;
-  var np = Object.keys(st.pos).filter(function (k) { return SP[k]; }).length;
+  var np = Object.keys(st.pos).filter(function (k) { return SP[st.pos[k].sym]; }).length;
   $('cpos').textContent = ME ? '(' + np + ')' : ''; $('cord').textContent = ME ? '(' + st.ord.length + ')' : '';
   $$('[data-ptab]').forEach(function (b) { b.classList.toggle('on', b.dataset.ptab === U.tab); b.setAttribute('aria-selected', b.dataset.ptab === U.tab ? 'true' : 'false'); });
   var box = $('list'), t = U.tab;
@@ -1187,16 +1595,17 @@ function renderList() {
   renderPosNums();
 }
 function posHTML() {
-  var keys = Object.keys(st.pos).filter(function (k) { return SP[k]; });
+  var keys = Object.keys(st.pos).filter(function (k) { return SP[st.pos[k].sym]; });
   if (!keys.length) return '<p class="pp-empty">열린 포지션이 없어요.</p>';
-  return keys.map(function (k) {
-    var p = st.pos[k];
-    return '<div class="pp-pc"><div class="t"><b>' + NM(k) + '</b><span class="pp-tag ' + (p.side === 1 ? 'up' : 'dn') + '">' + (p.side === 1 ? 'Long <small>롱</small>' : 'Short <small>숏</small>') + '</span><span class="pp-tag">' + p.lev + 'x</span><span class="pp-tag">Isolated</span></div>' +
+  var head = keys.length > 1 ? '<div class="pp-lh"><button type="button" class="pp-sb" data-pact="closeall" data-lb="Close All">Close All</button></div>' : '';
+  return head + keys.map(function (k) {
+    var p = st.pos[k], s = p.sym, cr = p.mm === 'cross';
+    return '<div class="pp-pc"><div class="t"><b>' + NM(s) + '</b><span class="pp-tag ' + (p.side === 1 ? 'up' : 'dn') + '">' + (p.side === 1 ? 'Long <small>롱</small>' : 'Short <small>숏</small>') + '</span><span class="pp-tag">' + p.lev + 'x</span><span class="pp-tag pp-t" data-pterm="' + (cr ? 'cross' : 'iso') + '">' + (cr ? 'Cross' : 'Isolated') + '</span></div>' +
       '<div class="pl"><div><span><span class="pp-t" data-pterm="upnl">Unrealized PnL (' + Q + ')</span></span><b id="pp-pp-' + k + '">—</b></div><div class="r"><span><span class="pp-t" data-pterm="roe">ROE</span></span><b id="pp-pr-' + k + '">—</b></div></div>' +
-      '<dl class="pp-pg"><div><dt>Size (' + BS(k) + ')</dt><dd>' + fq(k, p.qty) + '</dd></div><div><dt><span class="pp-t" data-pterm="margin">Margin (' + Q + ')</span></dt><dd>' + fu(p.margin) + '</dd></div><div><dt><span class="pp-t" data-pterm="mmr">MMR</span></dt><dd id="pp-pmm-' + k + '">—</dd></div>' +
-      '<div><dt><span class="pp-t" data-pterm="entry">Entry Price</span></dt><dd>' + fp(k, p.entry) + '</dd></div><div><dt><span class="pp-t" data-pterm="mark">Mark Price</span></dt><dd id="pp-pm-' + k + '">—</dd></div><div><dt><span class="pp-t" data-pterm="liq">Est. Liq. Price</span></dt><dd class="w" id="pp-pl-' + k + '">—</dd></div></dl>' +
-      '<div class="tp"><span>TP / SL</span><b>' + (p.tp != null ? fp(k, p.tp) : '—') + ' / ' + (p.sl != null ? fp(k, p.sl) : '—') + '</b></div>' +
-      '<div class="bt"><button type="button" data-pact="tpsl" data-sym="' + k + '">TP/SL</button><button type="button" data-pact="close" data-sym="' + k + '">Close</button></div></div>';
+      '<dl class="pp-pg"><div><dt>Size (' + BS(s) + ')</dt><dd>' + fq(s, p.qty) + '</dd></div><div><dt><span class="pp-t" data-pterm="margin">Margin (' + Q + ')</span></dt><dd>' + fu(p.margin) + '</dd></div><div><dt><span class="pp-t" data-pterm="mmr">' + (cr ? 'Cross MMR' : 'MMR') + '</span></dt><dd id="pp-pmm-' + k + '">—</dd></div>' +
+      '<div><dt><span class="pp-t" data-pterm="entry">Entry Price</span></dt><dd>' + fp(s, p.entry) + '</dd></div><div><dt><span class="pp-t" data-pterm="mark">Mark Price</span></dt><dd id="pp-pm-' + k + '">—</dd></div><div><dt><span class="pp-t" data-pterm="liq">Est. Liq. Price</span></dt><dd class="w" id="pp-pl-' + k + '">—</dd></div></dl>' +
+      '<div class="tp"><span>TP / SL</span><b>' + (p.tp != null ? fp(s, p.tp) : '—') + ' / ' + (p.sl != null ? fp(s, p.sl) : '—') + '</b></div>' +
+      '<div class="bt b3"><button type="button" data-pact="tpsl" data-key="' + esc(k) + '">TP/SL</button><button type="button" data-pact="rev" data-key="' + esc(k) + '" data-lb="Reverse">Reverse</button><button type="button" data-pact="close" data-key="' + esc(k) + '" data-lb="Close">Close</button></div></div>';
   }).join('');
 }
 /* 포지션 카드: Mark 가격이 바뀌면 글자색만 잠깐 (배경 깜빡임 없음 · 동작 줄이기 설정이면 끔) */
@@ -1204,26 +1613,41 @@ var PMK = {}, PFT = {}, RMOT = false;
 try { RMOT = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
 function flash(el, up) { el.style.transition = 'none'; el.style.color = up ? cssv('--pup', CUP) : cssv('--pdn', CDN); void el.offsetWidth; el.style.transition = 'color .7s ease-out'; el.style.color = ''; }
 function renderPosNums() {
+  var mks = marks(), cst = null;
   Object.keys(st.pos).forEach(function (k) {
-    var p = st.pos[k], e = $('pp-' + k); if (!p || !e || !SP[k]) return;
-    var mk = (M[k] && M[k].mark) || p.entry, net = (mk - p.entry) * p.qty * p.side;   // 거래소와 같게: 수수료는 넣지 않는다
-    var pe = $('pm-' + k); pe.textContent = fp(k, mk);
+    var p = st.pos[k], s = p && p.sym, e = $('pp-' + k); if (!p || !e || !SP[s]) return;
+    var mk = (M[s] && M[s].mark) || p.entry, net = (mk - p.entry) * p.qty * p.side;   // 거래소와 같게: 수수료는 넣지 않는다
+    var pe = $('pm-' + k); pe.textContent = fp(s, mk);
     if (PMK[k] && mk !== PMK[k] && Date.now() - (PFT[k] || 0) > 350 && !RMOT) { PFT[k] = Date.now(); flash(pe, mk > PMK[k]); }
     PMK[k] = mk;
-    var lp = E.posLiq(SP[k], p); $('pl-' + k).textContent = lp ? fp(k, lp) : '없음';
+    var lp = E.liqOf(st, SP, k, mks); $('pl-' + k).textContent = lp ? fp(s, lp) : '없음';
     e.textContent = sg(net); e.className = cls(net);
     var r = $('pr-' + k); r.textContent = pct(net / p.margin); r.className = cls(net);
-    /* 유지증거금률 = (유지증거금 + 닫는 수수료) ÷ (증거금 + 미실현 손익). 100%가 되면 청산 */
-    var t = E.tierOf(SP[k], p.qty * mk), mm = p.qty * mk * (t.mmr + SP[k].taker) - t.off, eqp = p.margin + (mk - p.entry) * p.qty * p.side;
-    var mmr = eqp > 0 ? mm / eqp : 1, el = $('pmm-' + k);
+    /* 유지증거금률 = (유지증거금 + 닫는 수수료) ÷ (증거금 + 미실현 손익). 100%가 되면 청산.
+       교차는 계좌 단위: 교차 유지증거금 합 ÷ (잔고 + 교차 증거금 + 교차 미실현 손익) */
+    var mmr;
+    if (p.mm === 'cross') { if (!cst) cst = E.crossState(st, SP, mks); mmr = cst.eq > 0 ? cst.mm / cst.eq : 1; }
+    else { var eqp = p.margin + net; mmr = eqp > 0 ? E.mmOf(SP[s], p, mk) / eqp : 1; }
+    var el = $('pmm-' + k);
     el.textContent = fmt(mmr * 100, 2) + '%'; el.className = mmr > 0.5 ? 'w' : '';
   });
 }
+function ordKind(o) { var k = o.k || 'limit'; return k === 'stop' ? 'Trigger' : k === 'trail' ? 'Trailing' : 'Limit'; }
+function ordDesc(o) {
+  var k = o.k || 'limit', s = o.sym;
+  if (k === 'stop') return '<span class="pp-t" data-pterm="trigger">Trigger</span> ' + fp(s, o.trig) + ' (' + (o.pt === 'mark' ? 'Mark' : 'Last') + ') → ' + (o.px > 0 ? 'Limit ' + fp(s, o.px) : 'Market');
+  if (k === 'trail') return '<span class="pp-t" data-pterm="trail">Callback</span> ' + fmt(o.cb * 100, 1) + '% · ' + (o.pt === 'mark' ? 'Mark' : 'Last') + ' 기준' + (o.armed ? ' · 기준 ' + fp(s, o.peak) + ' · 발동 ' + fp(s, E.trailStop(o)) : ' · 시작 ' + fp(s, o.act) + ' 대기');
+  return '@ ' + fp(s, o.px);
+}
 function ordHTML() {
-  if (!st.ord.length) return '<p class="pp-empty">걸어 둔 지정가 주문이 없어요.</p>';
-  return st.ord.map(function (o) {
-    return '<div class="pp-or"><div class="l"><b>' + NM(o.sym) + '</b> <span class="' + (o.side === 1 ? 'up' : 'dn') + '">' + (o.side === 1 ? 'Long <small>(롱)</small>' : 'Short <small>(숏)</small>') + '</span> · Limit · ' + o.lev + 'x' +
-      '<small>' + fq(o.sym, o.qty) + ' ' + o.sym + ' @ ' + fp(o.sym, o.px) + (o.tp != null ? ' · TP ' + fp(o.sym, o.tp) : '') + (o.sl != null ? ' · SL ' + fp(o.sym, o.sl) : '') + '</small></div>' +
+  if (!st.ord.length) return '<p class="pp-empty">걸어 둔 주문이 없어요.</p>';
+  var head = st.ord.length > 1 ? '<div class="pp-lh"><button type="button" class="pp-sb" data-pact="cancelall">Cancel All</button></div>' : '';
+  return head + st.ord.map(function (o) {
+    var sd = o.ro ? (o.side === 1 ? 'Close Short' : 'Close Long') : (o.side === 1 ? 'Long <small>(롱)</small>' : 'Short <small>(숏)</small>');
+    var c = (o.ro ? -o.side : o.side) === 1 ? 'up' : 'dn';
+    return '<div class="pp-or"><div class="l"><b>' + NM(o.sym) + '</b> <span class="' + c + '">' + sd + '</span> · ' + ordKind(o) + ' · ' + o.lev + 'x' +
+      (o.ro && (o.k || 'limit') !== 'trail' ? ' · <span class="pp-t" data-pterm="reduce">RO</span>' : '') + (o.po ? ' · <span class="pp-t" data-pterm="post">PO</span>' : '') +
+      '<small>' + fq(o.sym, o.qty) + ' ' + BS(o.sym) + ' ' + ordDesc(o) + (o.tp != null ? ' · TP ' + fp(o.sym, o.tp) : '') + (o.sl != null ? ' · SL ' + fp(o.sym, o.sl) : '') + '</small></div>' +
       '<button type="button" class="pp-sb" data-pact="cancel" data-id="' + esc(o.id) + '">Cancel</button></div>';
   }).join('');
 }
@@ -1233,54 +1657,78 @@ function fillsHTML() {
     var net = x.kind === 'open' ? -x.fee : x.pnl - x.fee;
     /* 포지션 방향 기준: 진입은 그 방향, 종료·TP·SL·청산은 반대 방향 거래 */
     var ps = x.kind === 'open' || x.kind === 'fund' ? x.side : -x.side, sd = ps === 1 ? 'Long' : 'Short';
-    var lb = x.kind === 'fund' ? 'Funding' : x.kind === 'open' ? 'Open ' + sd : x.kind === 'close' ? 'Close ' + sd : x.kind === 'tp' ? 'TP · ' + sd : x.kind === 'sl' ? 'SL · ' + sd : 'Liquidated · ' + sd;
+    var LB = { open: 'Open ' + sd, close: 'Close ' + sd, tp: 'TP · ' + sd, sl: 'SL · ' + sd, stop: 'Trigger · ' + sd, trail: 'Trailing · ' + sd, liq: 'Liquidated · ' + sd };
+    var lb = x.kind === 'fund' ? 'Funding' : LB[x.kind] || 'Close ' + sd;
     return '<div class="pp-fr"><span class="tm">' + kstWhen(x.ts) + '</span><span><b>' + NM(x.sym) + '</b> <span class="k ' + (x.kind === 'liq' ? 'w' : ps === 1 ? 'up' : 'dn') + '">' + lb + '</span></span>' +
       '<span class="v ' + cls(net) + '">' + sg(net, x.kind === 'fund' ? 4 : 2) + '</span><span class="d">' + (x.kind === 'fund' ? 'Funding fee · Mark ' + fp(x.sym, x.price) : fq(x.sym, x.qty) + ' @ ' + fp(x.sym, x.price)) + (x.fee ? ' · Fee ' + fu(x.fee) : '') + '</span></div>';
   }).join('') + '<p class="pp-note">최근 60건까지 보여요. 기록은 180일 동안 보관돼요.</p>';
 }
 /* 주문 칸: 예상 · 최대 · 청산가 */
+/* 닫기 주문인지: 트레일링 · 양방향의 Close · 단방향의 감소 전용 */
+function closeMode() { if (U.ot === 'trail') return true; if (hedgeOn()) return U.oc === 'close'; var r = $('ro'); return !!(r && r.checked); }
 function curPx(side) {
   var m = M[U.sym]; if (!m) return null;
   if (U.ot === 'limit') { var v = num($('px').value); return v > 0 ? v : null; }
+  if (U.ot === 'stop') { var lp = num($('px').value), tg = num($('trg').value); return lp > 0 ? lp : tg > 0 ? tg : null; }
+  if (U.ot === 'trail') return (TPT === 'mark' ? m.mark : m.last) || null;
   return side === 1 ? (m.ask || m.last) : (m.bid || m.last);
 }
 function maxQty(side) {
   var id = U.sym, sp = SP[id], lev = levOf(id), m = M[id], px = curPx(side);
   if (!sp || !(px > 0) || !ME) return 0;
-  var budget = st.bal, q = budget / (px * (1 / lev + sp.taker));
-  if (U.ot !== 'limit' && m.book) { var lv = side === 1 ? m.book.asks : m.book.bids; if (lv && lv.length) { for (var i = 0; i < 3; i++) { px = E.walk(lv, Math.max(q, sp.step), side, sp.tick) || px; q = budget / (px * (1 / lev + sp.taker)); } q *= 0.997; } }
-  var pos = st.pos[id], back = pos && pos.side === -side ? pos.qty : 0;
-  var used = (pos && pos.side === side ? pos.qty : 0) + E.sameSideResting(st, id, side);
+  if (closeMode()) return E.closable(st, id, side);
+  var budget = Math.max(0, availNow()), q = budget / (px * (1 / lev + sp.taker));
+  if (U.ot === 'market' && m.book) { var lv = side === 1 ? m.book.asks : m.book.bids; if (lv && lv.length) { for (var i = 0; i < 3; i++) { px = E.walk(lv, Math.max(q, sp.step), side, sp.tick) || px; q = budget / (px * (1 / lev + sp.taker)); } q *= 0.997; } }
+  var pos = E.samePos(st, id, side), opp = hedgeOn() ? null : E.oppPos(st, id, side), back = opp ? opp.qty : 0;
+  var used = (pos ? pos.qty : 0) + E.sameSideResting(st, id, side);
   return E.roundQty(sp, Math.min(q, Math.max(0, E.maxNotional(sp, lev) / px - used) * 0.999) + back);
 }
 function setLiq(id, v) { var e = $(id); e.textContent = v; e.style.color = /\d/.test(v) ? '' : 'var(--pt3)'; }
 function renderEst() {
   var id = U.sym; if (!SP[id]) return;
-  var lev = levOf(id), qty = num($('qty').value), u = ' ' + BS(id);
+  var lev = levOf(id), qty = num($('qty').value), u = ' ' + BS(id), cm = closeMode();
   $('maxl').textContent = ME ? fq(id, maxQty(1)) + u : '—';
   $('maxs').textContent = ME ? fq(id, maxQty(-1)) + u : '—';
   var pxL = curPx(1), pxS = curPx(-1);
   if (!(qty > 0) || !pxL) { $('costl').textContent = $('costs').textContent = 'Cost —'; setLiq('liql', '—'); setLiq('liqs', '—'); return; }
-  $('costl').textContent = 'Cost ' + fu(E.openPart(st, id, 1, qty) * pxL / lev);
-  $('costs').textContent = 'Cost ' + fu(E.openPart(st, id, -1, qty) * pxS / lev);
+  $('costl').textContent = 'Cost ' + fu(E.openPart(st, id, 1, qty, cm) * pxL / lev);
+  $('costs').textContent = 'Cost ' + fu(E.openPart(st, id, -1, qty, cm) * pxS / lev);
   setLiq('liql', estLiq(1, qty, pxL, lev)); setLiq('liqs', estLiq(-1, qty, pxS, lev));
 }
+/* 예상 청산가: 지금 계좌를 복사해 이 주문이 체결됐다고 치고 엔진으로 계산 (격리 · 교차 · 양방향 모두 같은 방법) */
 function estLiq(side, qty, px, lev) {
-  var id = U.sym, p = st.pos[id], nq, ne, nm;
-  if (!p) { nq = qty; ne = px; nm = qty * px / lev; }
-  else if (p.side === side) { nq = p.qty + qty; ne = (p.entry * p.qty + px * qty) / nq; nm = p.margin + qty * px / lev; }
-  else if (qty > p.qty) { nq = qty - p.qty; ne = px; nm = nq * px / lev; }
-  else return 'Reduce only';
-  var lp = E.liqPrice(SP[id], side, nq, ne, nm);
+  var id = U.sym;
+  if (closeMode()) return 'Reduce only';
+  var c; try { c = JSON.parse(JSON.stringify(st)); } catch (e) { return '—'; }
+  c.fills = []; c.ev = [];
+  E.applyFill(c, SP, id, side, qty, px, SP[id].taker, lev, null, Date.now(), { mm: mmOf(id) });
+  if (!E.samePos(c, id, side)) return 'Reduce only';
+  var lp = E.liqOf(c, SP, E.pkey(c, id, side), marks());
   return lp ? fp(id, lp) : '없음';
 }
-function levBtn() { var id = U.sym; if (!SP[id] || !$('levtx')) return; $('levtx').textContent = levOf(id) + 'x'; }
+function levBtn() { var id = U.sym; if (!SP[id] || !$('levtx')) return; $('levtx').textContent = levOf(id) + 'x'; $('mmtx').textContent = mmOf(id) === 'cross' ? 'Cross' : 'Isolated'; formOpts(); }
+/* 주문 칸 모양: 양방향이면 Open/Close, 주문 종류에 맞는 칸만, 단추 글자 */
+function formOpts() {
+  if (!$('ocs')) return;
+  var h = hedgeOn(), ot = U.ot;
+  $('ocs').hidden = !h;
+  $$('[data-poc]').forEach(function (b) { b.classList.toggle('on', b.dataset.poc === U.oc); });
+  $('rol').hidden = h || ot === 'trail';
+  $('pol').hidden = ot !== 'limit';
+  var cm = closeMode(), noTp = cm || ot === 'trail';
+  $('tpl').hidden = noTp;
+  $('tprow').hidden = noTp || !$('tpon').checked;
+  $('buy').querySelector('b').innerHTML = cm ? 'Close Short <small>(숏 닫기)</small>' : 'Open Long <small>(롱)</small>';
+  $('sell').querySelector('b').innerHTML = cm ? 'Close Long <small>(롱 닫기)</small>' : 'Open Short <small>(숏)</small>';
+  $('actb').textContent = $('trgb').textContent = tptName();
+  $('trpt').innerHTML = '기준 가격 <b>' + tptName() + '</b> · ⚙ 설정에서 바꿀 수 있어요';
+}
 function setSym(id) {
   if (!SP[id]) return;
   var same = id === U.sym;
   U.sym = id; saveUI();
   $('qtyu').textContent = BS(id);
-  if (!same) { $('qty').value = ''; $('px').value = ''; $('tp').value = ''; $('sl').value = ''; $('slider').value = 0; hideErr(); if (U.ot === 'limit' && M[id] && M[id].last) $('px').value = M[id].last.toFixed(SP[id].pp); }
+  if (!same) { $('qty').value = ''; $('px').value = ''; $('trg').value = ''; $('act').value = ''; $('tp').value = ''; $('sl').value = ''; $('slider').value = 0; hideErr(); if (U.ot === 'limit' && M[id] && M[id].last) $('px').value = M[id].last.toFixed(SP[id].pp); }
   syncSubs();
   if (CHART) loadChart();
   levBtn();
@@ -1288,10 +1736,17 @@ function setSym(id) {
 }
 function setTf(tf) { if (tf === U.tf) return; U.tf = tf; saveUI(); $$('[data-ptf]').forEach(function (b) { b.classList.toggle('on', b.dataset.ptf === tf); }); syncSubs(); loadChart(); }
 function setOt(ot) {
-  U.ot = ot; saveUI();
+  if (OTS.indexOf(ot) < 0) ot = 'market';
+  var prev = U.ot; U.ot = ot; saveUI();
   $$('[data-pot]').forEach(function (b) { b.classList.toggle('on', b.dataset.pot === ot); });
-  $('pxrow').hidden = ot !== 'limit';
+  $('pxrow').hidden = ot !== 'limit' && ot !== 'stop';
+  $('trgrow').hidden = ot !== 'stop';
+  $('trrow').hidden = ot !== 'trail';
+  $('pxl').textContent = (ot === 'stop' ? 'Limit' : 'Price') + ' (' + Q + ')';
+  $('px').placeholder = ot === 'stop' ? 'Market' : '0';
+  if (ot === 'stop' && prev !== 'stop') $('px').value = '';
   if (ot === 'limit' && !$('px').value && M[U.sym] && M[U.sym].last) $('px').value = M[U.sym].last.toFixed(SP[U.sym].pp);
+  formOpts();
   dirty.est = true; kick();
 }
 /* 밀대: 0~100% → 매수 최대 수량 기준 */
@@ -1337,23 +1792,35 @@ function needLogin() { if (ME) return false; authSheet(TOK ? 'login' : 'signup')
 function submit(side) {
   hideErr();
   if (needLogin() || busy) return;
-  var id = U.sym, sp = SP[id];
+  var id = U.sym, sp = SP[id], ot = U.ot, ro = closeMode();
   var qty = E.roundQty(sp, num($('qty').value));
   if (!(qty >= sp.min - 1e-12)) return showErr(E.errText({ err: 'min', min: sp.min }, BS(id), Q));
-  var isLimit = U.ot === 'limit', px = null;
-  if (isLimit) { px = E.roundPx(sp, num($('px').value)); if (!(px > 0)) return showErr(E.errText({ err: 'px' })); }
+  var px = null, trig = null, cb = null, act = null;
+  if (ot === 'limit') { px = E.roundPx(sp, num($('px').value)); if (!(px > 0)) return showErr(E.errText({ err: 'px' })); }
+  if (ot === 'stop') {
+    trig = E.roundPx(sp, num($('trg').value)); if (!(trig > 0)) return showErr(E.errText({ err: 'trig_num' }));
+    if ($('px').value.trim()) { px = E.roundPx(sp, num($('px').value)); if (!(px > 0)) return showErr(E.errText({ err: 'px' })); }
+  }
+  if (ot === 'trail') {
+    var cbp = num($('cb').value); if (!(cbp >= 0.1 && cbp <= 10)) return showErr(E.errText({ err: 'cb' }));
+    cb = Math.round(cbp * 10) / 1000;
+    if ($('act').value.trim()) { act = num($('act').value); if (!(act > 0)) return showErr(E.errText({ err: 'act_num' })); }
+  }
   var tp = null, sl = null;
-  if ($('tpon').checked) { tp = optNum('tp'); sl = optNum('sl'); if ((tp !== null && isNaN(tp)) || (sl !== null && isNaN(sl))) return showErr(E.errText({ err: 'tpsl_num' })); }
+  if (!ro && ot !== 'trail' && $('tpon').checked) { tp = optNum('tp'); sl = optNum('sl'); if ((tp !== null && isNaN(tp)) || (sl !== null && isNaN(sl))) return showErr(E.errText({ err: 'tpsl_num' })); }
   setBusy(true);
-  api('/p/order', { sym: id, side: side, type: isLimit ? 'limit' : 'market', qty: qty, px: px, lev: levOf(id), tp: tp, sl: sl }).then(function (x) {
+  api('/p/order', { sym: id, side: side, type: ot, qty: qty, px: px, lev: levOf(id), tp: tp, sl: sl, ro: ro, po: ot === 'limit' && $('po').checked, trig: trig, cb: cb, act: act, pt: (ot === 'trail' || ot === 'stop') && TPT === 'mark' ? 'mark' : null }).then(function (x) {
     setBusy(false);
     if (x.j.acct) applyServer(x.j);
     toastEvents(x.j.ev);
     if (x.s !== 200 || !x.j.ok) { showErr(errMsg(x)); changed(); return; }
     var r = x.j.res || {}, f = FILLS[0], red = f && f.kind !== 'open' && f.ts >= Date.now() - 10000 && r.filled > 0, msg;
-    if (r.filled > 0 && !r.rested) msg = NM(id) + ' ' + (side === 1 ? 'Long' : 'Short') + ' filled · ' + fq(id, r.filled) + ' @ ' + fp(id, r.px);
+    var sd = ro ? (side === 1 ? 'Close Short' : 'Close Long') : (side === 1 ? 'Long' : 'Short');
+    if (r.trail) msg = NM(id) + ' Trailing ' + sd + ' placed · ' + fq(id, r.rested) + ' · ' + fmt(cb * 100, 1) + '% · ' + tptName() + ' 기준';
+    else if (r.stop) msg = NM(id) + ' Trigger ' + sd + ' placed · ' + fq(id, r.rested) + ' @ ' + fp(id, r.px) + ' · ' + tptName() + ' 기준';
+    else if (r.filled > 0 && !r.rested) msg = NM(id) + ' ' + sd + ' filled · ' + fq(id, r.filled) + ' @ ' + fp(id, r.px);
     else if (r.filled > 0) msg = NM(id) + ' Limit · filled ' + fq(id, r.filled) + ' · open ' + fq(id, r.rested);
-    else msg = NM(id) + ' Limit ' + (side === 1 ? 'Long' : 'Short') + ' placed · ' + fq(id, r.rested) + ' @ ' + fp(id, r.px);
+    else msg = NM(id) + ' Limit ' + sd + ' placed · ' + fq(id, r.rested) + ' @ ' + fp(id, r.px);
     toast(msg + (red ? ' · PnL ' + sg(f.pnl - f.fee) : ''), red && f.pnl - f.fee < 0);
     beep(red ? 'close' : r.filled > 0 ? 'fill' : 'place');
     $('slider').value = 0;
@@ -1362,18 +1829,22 @@ function submit(side) {
   });
 }
 
-function closePos(id, btn) {
+function posAct(path, k, btn, done) {
   if (busy) return;
+  var p = st.pos[k]; if (!p && path !== '/p/closeall') return;
   setBusy(true); if (btn) btn.disabled = true;
-  api('/p/close', { sym: id }).then(function (x) {
+  api(path, p ? { sym: p.sym, key: k } : {}).then(function (x) {
     setBusy(false);
     if (x.j.acct) applyServer(x.j);
     toastEvents(x.j.ev);
     if (x.s !== 200 || !x.j.ok) { toast(errMsg(x), true); if (btn) btn.disabled = false; changed(); return; }
-    if (x.j.res) { toast(NM(id) + ' Closed · ' + fp(id, x.j.res.px) + ' · PnL ' + sg(x.j.res.net), x.j.res.net < 0); beep('close'); }
+    if (x.j.res) done(x.j.res, p);
     changed();
   });
 }
+function closePos(k, btn) { posAct('/p/close', k, btn, function (r, p) { toast(NM(p.sym) + ' Closed · ' + fp(p.sym, r.px) + ' · PnL ' + sg(r.net), r.net < 0); beep('close'); }); }
+function reversePos(k, btn) { posAct('/p/reverse', k, btn, function (r, p) { toast(NM(p.sym) + ' Reversed → ' + (p.side === 1 ? 'Short' : 'Long') + ' · ' + fp(p.sym, r.px) + ' · PnL ' + sg(r.net), r.net < 0); beep('fill'); }); }
+function closeAllPos(btn) { posAct('/p/closeall', null, btn, function (r) { toast('Close All · ' + r.n + '개 닫음' + (r.left ? ' · ' + r.left + '개는 호가가 없어 남김' : '') + ' · PnL ' + sg(r.net), r.net < 0); beep('close'); }); }
 function cancelOrd(oid, btn) {
   if (btn) btn.disabled = true;
   api('/p/cancel', { id: oid }).then(function (x) {
@@ -1382,6 +1853,21 @@ function cancelOrd(oid, btn) {
     if (x.s !== 200 || !x.j.ok) toast(errMsg(x), true); else toast('Order cancelled');
     changed();
   });
+}
+function cancelAll(btn) {
+  if (btn) btn.disabled = true;
+  api('/p/cancelall', {}).then(function (x) {
+    if (x.j.acct) applyServer(x.j);
+    if (x.s !== 200 || !x.j.ok) toast(errMsg(x), true); else toast('All orders cancelled');
+    changed();
+  });
+}
+/* 두 번 눌러야 실행 (닫기 · 뒤집기 · 전부 닫기) */
+function armed(c, word) {
+  if (c.classList.contains('arm')) return true;
+  c.classList.add('arm'); c.textContent = 'Tap again to ' + word;
+  clearTimeout(armT); armT = setTimeout(function () { c.classList.remove('arm'); c.textContent = c.dataset.lb || word; }, 3000);
+  return false;
 }
 
 /* ── 시트 ── */
@@ -1402,7 +1888,7 @@ function openSheet(title, html) {
 function closeSheet() { PK = false; if (SH) { SH.hidden = true; $('shB').innerHTML = ''; } }
 function levSheet() {
   var id = U.sym, sp = SP[id]; if (!sp) return;
-  if (st.pos[id]) { toast('포지션이 열려 있으면 레버리지를 바꿀 수 없어요. 포지션을 닫은 뒤 바꿔 주세요.'); return; }
+  if (E.keysOf(st, id).length) { toast('포지션이 열려 있으면 레버리지를 바꿀 수 없어요. 포지션을 닫은 뒤 바꿔 주세요.'); return; }
   var cur = levOf(id);
   var quick = [1, 5, 10, 20, 50, 100, sp.max].filter(function (x, i, a) { return x <= sp.max && a.indexOf(x) === i; });
   openSheet(id + ' Leverage', '<div class="pp-lv"><button type="button" data-pd="-1" aria-label="1 낮추기">−</button><output id="pp-levo">' + cur + 'x</output><button type="button" data-pd="1" aria-label="1 올리기">+</button></div>' +
@@ -1423,29 +1909,72 @@ function saveLev(v) {
   if (ME) { ME.acct.lev = ME.acct.lev || {}; ME.acct.lev[id] = v; api('/p/lev', { sym: id, lev: v }).then(function (x) { if (x.s !== 200) toast(errMsg(x), true); }); }
   closeSheet(); levBtn(); dirty.est = true; kick(); toast(id + ' Leverage ' + v + 'x');
 }
-function tpslSheet(id) {
-  var p = st.pos[id]; if (!p) return;
-  var lp = E.posLiq(SP[id], p);
+function mmSheet() {
+  var id = U.sym; if (!SP[id]) return;
+  var cur = mmOf(id), lock = !!(ME && exposed(id));
+  function opt(v, t, d) { return '<button type="button" data-pmm="' + v + '" class="' + (cur === v ? 'on' : '') + '"' + (lock ? ' disabled' : '') + '><b>' + t + '</b><span>' + d + '</span></button>'; }
+  openSheet(NM(id) + ' Margin Mode', '<div class="pp-mmo">' +
+    opt('isolated', 'Isolated · 격리', '포지션마다 증거금을 따로 떼어 둬요. 청산되면 그 포지션의 증거금만 잃고 나머지 잔고는 지켜져요. (기본)') +
+    opt('cross', 'Cross · 교차', '가용 잔고 전체가 증거금이에요. 청산가가 멀어지지만, 닿으면 교차로 연 포지션이 모두 함께 청산되고 잔고가 0이 돼요.') + '</div>' +
+    '<p class="hint">' + (lock ? '이 종목에 포지션이나 주문이 있으면 바꿀 수 없어요.' : '종목마다 따로 정하고 계좌에 저장돼요.') + '</p>');
+}
+function saveMM(v) {
+  if (needLogin()) return;
+  var id = U.sym;
+  api('/p/lev', { sym: id, mm: v }).then(function (x) {
+    if (x.s !== 200 || !x.j.ok) { toast(errMsg(x), true); return; }
+    ME.acct.mm = ME.acct.mm || {}; if (v === 'cross') ME.acct.mm[id] = 'cross'; else delete ME.acct.mm[id];
+    closeSheet(); levBtn(); dirty.est = true; kick(); toast(NM(id) + ' ' + (v === 'cross' ? 'Cross · 교차' : 'Isolated · 격리'));
+  });
+}
+function setPmode(v) {
+  if (needLogin() || v === st.mode) return;
+  api('/p/pmode', { mode: v }).then(function (x) {
+    if (x.s !== 200 || !x.j.ok) { toast(errMsg(x), true); return; }
+    applyServer(x.j); U.oc = 'open';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-ppm]'), function (b) { b.classList.toggle('on', b.dataset.ppm === st.mode); });
+    toast(st.mode === 'hedge' ? 'Hedge mode · 양방향' : 'One-way mode · 단방향'); changed(true);
+  });
+}
+function tpslSheet(k) {
+  var p = st.pos[k]; if (!p) return;
+  var id = p.sym, lp = E.liqOf(st, SP, k, marks());
   openSheet(chip(id) + ' ' + (p.side === 1 ? 'Long' : 'Short') + ' TP/SL',
     '<label class="pp-fld"><span>TP price</span><input id="pp-stp" inputmode="decimal" value="' + (p.tp != null ? p.tp.toFixed(SP[id].pp) : '') + '" placeholder="None"></label>' +
     '<label class="pp-fld"><span>SL price</span><input id="pp-ssl" inputmode="decimal" value="' + (p.sl != null ? p.sl.toFixed(SP[id].pp) : '') + '" placeholder="None"></label>' +
     '<p class="hint">Entry ' + fp(id, p.entry) + ' · Mark ' + fp(id, M[id].mark) + ' · Liq. ' + (lp ? fp(id, lp) : '—') + '</p><p id="pp-sterr" class="pp-err" hidden></p>' +
-    '<div class="pp-row2"><button type="button" class="pp-b gh" id="pp-stclr" data-sym="' + id + '">Clear</button><button type="button" class="pp-b" id="pp-stok" data-sym="' + id + '">Confirm</button></div>');
+    '<div class="pp-row2"><button type="button" class="pp-b gh" id="pp-stclr" data-key="' + esc(k) + '">Clear</button><button type="button" class="pp-b" id="pp-stok" data-key="' + esc(k) + '">Confirm</button></div>');
 }
-function saveTpsl(id, clear) {
-  var e = $('sterr');
+function saveTpsl(k, clear) {
+  var e = $('sterr'), p = st.pos[k]; if (!p) { closeSheet(); return; }
   var tp = clear ? null : ($('stp').value.trim() ? num($('stp').value) : null);
   var sl = clear ? null : ($('ssl').value.trim() ? num($('ssl').value) : null);
   if ((tp !== null && !(tp > 0)) || (sl !== null && !(sl > 0))) { e.hidden = false; e.textContent = '숫자로 넣어 주세요.'; return; }
   $('stok').disabled = true;
-  api('/p/tpsl', { sym: id, tp: tp, sl: sl }).then(function (x) {
+  api('/p/tpsl', { sym: p.sym, key: k, tp: tp, sl: sl }).then(function (x) {
     if (x.j.acct) applyServer(x.j);
     toastEvents(x.j.ev);
     if (x.s !== 200 || !x.j.ok) { var b = $('stok'); if (b) { b.disabled = false; e.hidden = false; e.textContent = errMsg(x); } else toast(errMsg(x), true); changed(); return; }
     closeSheet(); toast(clear ? 'TP/SL cleared' : 'TP/SL saved'); changed();
   });
 }
-function contactLine() { return INFO.contact ? '운영자 인스타그램 <b>' + esc(INFO.contact) + '</b> DM' : '운영자 인스타그램 DM'; }
+/* 문의 창구: @아이디 → 인스타그램 · 주소 → 그 주소 · 메일 → 메일 쓰기 (관리 화면 설정에서 넣는다) */
+function contactHref() {
+  var c = String(INFO.contact || '').trim(); if (!c) return '';
+  if (/^https?:\/\/\S+$/i.test(c)) return c;
+  if (/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(c)) return 'mailto:' + c;
+  var h = c.replace(/^@/, ''); return /^[A-Za-z0-9._]{1,30}$/.test(h) ? 'https://instagram.com/' + h : '';
+}
+function contactLine() {
+  var c = String(INFO.contact || '').trim();
+  if (!c) return '운영자 인스타그램 DM';
+  return /^@?[A-Za-z0-9._]{1,30}$/.test(c) ? '운영자 인스타그램 <b>' + esc(c) + '</b> DM' : '운영자 문의 창구(<b>' + esc(c) + '</b>)';
+}
+function contactBox() {
+  var h = contactHref();
+  return '<div class="pp-box"><b>문의하기</b>' + (h ? '<a class="pp-ct" href="' + esc(h) + '" target="_blank" rel="noopener">' + esc(INFO.contact) + ' 로 문의</a>' : '') +
+    '<p class="hint">초대코드 · 비밀번호 분실 · 오류 제보는 ' + contactLine() + '으로 보내 주세요.</p></div>';
+}
 function authSheet(mode) {
   var su = mode === 'signup';
   openSheet(su ? '초대코드로 시작' : '로그인',
@@ -1457,7 +1986,7 @@ function authSheet(mode) {
     '<p id="pp-aerr" class="pp-err" role="alert" hidden></p>' +
     '<button type="submit" class="pp-b" id="pp-ago">' + (su ? '가입하고 시작' : '로그인') + '</button>' +
     '<button type="button" class="pp-b gh" data-pauth="' + (su ? 'login' : 'signup') + '">' + (su ? '이미 계정이 있어요 · 로그인' : '처음이에요 · 초대코드로 시작') + '</button>' +
-    '<p class="hint">' + (su ? '닉네임은 한글·영문·숫자·밑줄(_) 2~12자예요. 초대코드는 ' + contactLine() + '으로 받을 수 있어요.' : '비밀번호를 잊었다면 ' + contactLine() + '으로 닉네임을 알려 주세요.') + '</p>' +
+    '<p class="hint">' + (su ? '닉네임은 한글·영문·숫자·밑줄(_) 2~12자예요. 초대코드는 ' + contactLine() + '으로 받을 수 있어요. 월간 순위 상위 5명은 포지션 · 거래 기록이 순위표에 공개돼요.' : '비밀번호를 잊었다면 ' + contactLine() + '으로 닉네임을 알려 주세요.') + '</p>' +
     (su && !INFO.signup ? '<p class="pp-err">지금은 새 가입을 받지 않아요.</p>' : '') + '</form>');
 }
 var AUTH_ERR = { code: '초대코드가 맞지 않거나 이미 다 쓰였어요.', nick_rule: '닉네임은 한글·영문·숫자·밑줄(_) 2~12자예요.', nick_block: '쓸 수 없는 단어가 들어 있어요.', nick_taken: '이미 있는 닉네임이에요.', pw_rule: '비밀번호는 8자 이상이에요.', closed: '지금은 새 가입을 받지 않아요.', login: '닉네임 또는 비밀번호가 맞지 않아요.', locked: '비밀번호를 5번 틀려 15분 동안 잠겼어요.', suspended: ERR.suspended, slow_down: ERR.slow_down, net: ERR.net };
@@ -1503,7 +2032,8 @@ function meSheet() {
     '<div class="pp-box"><b>비밀번호 바꾸기</b><label class="pp-fld l"><span>지금</span><input id="pp-pwold" type="password" autocomplete="current-password" maxlength="64"></label>' +
     '<label class="pp-fld l"><span>새 비밀번호</span><input id="pp-pwnew" type="password" autocomplete="new-password" maxlength="64" placeholder="8자 이상"></label><p id="pp-pwerr" class="pp-err" hidden></p>' +
     '<button type="button" class="pp-b gh" id="pp-pwgo">바꾸기</button></div>' +
-    '<p class="hint">문의 · 비밀번호 분실: ' + contactLine() + '</p>' +
+    pubBox() +
+    contactBox() +
     '<button type="button" class="pp-b gh" id="pp-out">로그아웃</button>');
 }
 function doReset(btn) {
@@ -1539,7 +2069,9 @@ var GLOSS = [
   ['long', 'Long', '롱', '가격이 오르면 이익을 보는 포지션이에요. Open Long = 롱 진입.'],
   ['short', 'Short', '숏', '가격이 내리면 이익을 보는 포지션이에요. Open Short = 숏 진입.'],
   ['perp', 'Perp · Perpetual', '무기한 선물', '만기가 없는 선물이에요. 대신 펀딩비로 현물 가격 가까이 붙어 다녀요.'],
-  ['iso', 'Isolated', '격리 마진', '포지션마다 증거금을 따로 떼어 둬요. 청산되면 그 포지션의 증거금만 잃고 나머지 잔고는 지켜져요.'],
+  ['iso', 'Isolated', '격리 마진', '포지션마다 증거금을 따로 떼어 둬요. 청산되면 그 포지션의 증거금만 잃고 나머지 잔고는 지켜져요. 처음 설정이에요.'],
+  ['cross', 'Cross', '교차 마진', '가용 잔고 전체를 교차 포지션들이 함께 증거금으로 써요. 청산가는 멀어지지만, 닿으면 교차로 연 포지션이 모두 청산되고 잔고가 0이 돼요. 격리 포지션은 영향을 받지 않아요. 미실현 손실은 가용 잔고에서 빠지고, 이익은 닫기 전까지 쓸 수 없어요.'],
+  ['pmode', 'One-way / Hedge', '단방향 / 양방향', '단방향은 종목마다 한 방향 포지션만 있어요(반대 주문은 줄이거나 뒤집어요). 양방향은 같은 종목에 롱과 숏을 따로 들 수 있고, Open(열기)과 Close(닫기)로 나눠 주문해요. 처음 설정은 단방향이에요.'],
   ['lev', 'Leverage', '레버리지', '증거금의 몇 배 규모로 거래할지예요. 높을수록 작은 움직임에도 청산가에 빨리 닿아요.'],
   ['limit', 'Limit', '지정가', '내가 정한 가격에 닿아야 체결돼요. 호가에 걸어 두면 수수료가 싼 메이커(0.02%)예요.'],
   ['market', 'Market', '시장가', '지금 호가로 바로 체결돼요. 수수료는 테이커(0.06%)이고, 수량이 크면 더 불리한 가격까지 먹어요.'],
@@ -1548,17 +2080,21 @@ var GLOSS = [
   ['avbl', 'Avbl · Available', '가용 잔고', '새 주문에 쓸 수 있는 돈이에요. 포지션 증거금과 미체결 주문에 묶인 돈은 빠져 있어요.'],
   ['max', 'Max', '최대 진입 수량', '지금 가용 잔고와 레버리지로 열 수 있는 최대 수량이에요(수수료 포함, 레버리지 한도 반영).'],
   ['cost', 'Cost', '필요 증거금', '이 주문을 열 때 묶이는 증거금이에요. 수량 × 가격 ÷ 레버리지.'],
+  ['trigger', 'Trigger', '조건부 주문', '최근 체결가가 Trigger 가격에 닿으면 그때 주문이 나가요. 가격 칸을 비우면 시장가, 넣으면 그 가격의 지정가로 걸려요. 닿기 전에는 증거금이 묶이지 않아서, 닿는 순간 잔고가 모자라면 취소돼요. 닿았는지 보는 가격은 ⚙에서 Last(최근 체결가 · 기본) 또는 Mark(표시 가격)로 고를 수 있어요.'],
+  ['trail', 'Trailing Stop', '트레일링 스탑', '가격이 유리하게 움직이는 동안 최고가(숏은 최저가)를 따라가다가, 정한 비율(Callback 0.1~10%)만큼 되돌아오면 자동으로 시장가로 닫아요. 한 번 걸어 두면 따로 할 일이 없어요 — 앱을 닫아도 서버가 1분마다 확인하고, 앱이 열려 있으면 실시간 체결로도 확인해요. 시작 가격(Activation)을 넣으면 그 가격에 닿은 뒤부터 따라가요. 따라가는 기준 가격은 ⚙에서 Last(최근 체결가 · 기본) 또는 Mark(표시 가격)로 고를 수 있어요. 걸어 둔 주문은 고칠 수 없으니 바꾸려면 취소하고 다시 걸어요.'],
+  ['post', 'Post-only', '메이커 전용', '호가에 걸리기만 하는 지정가예요. 바로 체결될 가격이면 주문을 받지 않아요. 체결되면 항상 메이커 수수료(0.02%)예요.'],
+  ['rev', 'Reverse', '반대로 뒤집기', '지금 포지션을 시장가로 닫고 같은 수량 · 같은 레버리지로 반대 방향을 열어요. 열 증거금이 모자라면 아무것도 하지 않아요.'],
   ['tpsl', 'TP / SL', '익절 / 손절', 'TP(Take Profit)는 이익을 확정하는 가격, SL(Stop Loss)은 손실을 끊는 가격이에요. 닿으면 자동으로 포지션을 닫아요.'],
-  ['liq', 'Est. Liq. Price', '예상 청산가', 'Mark 가격이 여기에 닿으면 강제 청산돼 그 포지션의 증거금을 잃어요.'],
+  ['liq', 'Est. Liq. Price', '예상 청산가', 'Mark 가격이 여기에 닿으면 강제 청산돼요. 격리는 그 포지션의 증거금을, 교차는 교차 잔고 전체를 잃어요. 교차 청산가는 다른 교차 포지션의 지금 손익에 따라 움직여요.'],
   ['mkt', 'Market Closed', '장 마감', '주식 · 지수 종목은 실제 증시가 닫힌 시간(주말 포함)에도 거래되지만 기준 가격이 거의 멈춰 있어요. 다음 개장 때 크게 움직일 수 있어요. 공휴일은 따로 표시하지 않아요.'],
   ['fund', 'Funding / Countdown', '펀딩비 / 남은 시간', '무기한 선물 가격을 현물에 붙여 두려고 롱·숏이 매시 정각(1시간마다) 주고받는 비용이에요. 양수면 롱이 숏에게 내요. 정각에 포지션을 들고 있을 때만 정산돼요.'],
   ['upnl', 'Unrealized PnL', '미실현 손익', '아직 닫지 않은 포지션의 가격 차이 손익이에요(Mark 가격 기준). 대형 거래소처럼 수수료는 넣지 않아요. 낸 수수료는 거래 기록에서 확인할 수 있어요.'],
   ['roe', 'ROE', '증거금 대비 수익률', '미실현 손익 ÷ 증거금. 레버리지가 높으면 같은 가격 변화에도 크게 움직여요.'],
   ['margin', 'Margin', '증거금', '포지션을 유지하려고 묶어 둔 돈이에요.'],
-  ['mmr', 'MMR', '유지증거금률', '(유지증거금 + 닫는 수수료) ÷ (증거금 + 미실현 손익). 100%가 되면 강제 청산돼요.'],
+  ['mmr', 'MMR', '유지증거금률', '(유지증거금 + 닫는 수수료) ÷ (증거금 + 미실현 손익). 100%가 되면 강제 청산돼요. 교차(Cross MMR)는 교차 포지션 전체를 잔고까지 합쳐 한 번에 계산해요.'],
   ['entry', 'Entry Price', '평균 진입가', '여러 번 나눠 들어갔다면 그 평균 가격이에요.'],
-  ['reduce', 'Reduce only', '포지션 줄임', '반대 방향 주문이 새 포지션을 열지 않고 기존 포지션만 줄이는 경우예요.'],
-  ['oo', 'Open Orders', '미체결 주문', '걸어 두었지만 아직 체결되지 않은 지정가 주문이에요. 그만큼의 증거금이 묶여 있어요.'],
+  ['reduce', 'Reduce-only', '감소 전용', '포지션을 줄이거나 닫기만 하고 새로 열거나 뒤집지 않는 주문이에요. 포지션보다 많이 넣어도 포지션만큼만 체결되고, 줄일 포지션이 없어지면 자동으로 취소돼요. 증거금이 묶이지 않아요.'],
+  ['oo', 'Open Orders', '미체결 주문', '걸어 두었지만 아직 체결되지 않은 주문이에요(지정가 · 조건부 · 트레일링). 지정가로 새로 여는 주문만 그만큼의 증거금이 묶여 있어요.'],
   ['equity', 'Equity', '순자산', '가용 잔고 + 증거금 + 미실현 손익 + 미체결 주문에 묶인 돈. 순위는 이 값으로 매겨요.'],
   ['liqd', 'Liquidated', '강제 청산', '유지증거금이 바닥나 거래소(여기서는 서버)가 포지션을 강제로 닫은 것이에요.'],
   ['bs', 'B / S ratio', '매수 · 매도 호가 비율', '호가창에 보이는 매수 잔량과 매도 잔량의 비율이에요.']
@@ -1574,6 +2110,11 @@ function guideSheet() {
     '<div class="pp-box"><b>상승 · 롱 색</b><div class="pp-cseg"><button type="button" data-pcol="g" class="' + (COL === 'g' ? 'on' : '') + '"><i style="background:#22C083"></i>Green Up</button><button type="button" data-pcol="r" class="' + (COL === 'r' ? 'on' : '') + '"><i style="background:#FF5B5B"></i>Red Up</button></div>' +
     '<p class="hint">Green Up = 세계 거래소 표준(초록 = 상승 · 롱). Red Up = 한국 증권 앱 방식(빨강 = 상승 · 롱). 이 기기에 저장돼요.</p></div>' +
     '<div class="pp-box"><b>체결음</b><div class="pp-cseg s4">' + [['tick', '틱'], ['mar', '마림바'], ['bell', '벨'], ['off', '끄기']].map(function (x) { return '<button type="button" data-psnd="' + x[0] + '" class="' + (SND === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div><p class="hint">누르면 미리 들려줘요. 체결 · 익절/손절 · 청산 때 울려요. 휴대폰이 무음(진동) 모드면 안 들릴 수 있어요.</p></div>' +
+    '<div class="pp-box"><b>조건 주문 기준 가격 <small>Trigger · Trail</small></b><div class="pp-cseg">' + [['last', 'Last · 최근 체결가'], ['mark', 'Mark · 표시 가격']].map(function (x) { return '<button type="button" data-ptpt="' + x[0] + '" class="' + (TPT === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+    '<p class="hint">Last: 실제 체결가를 따라가요. 반응이 빠르지만 순간 꼬리에도 걸릴 수 있어요(기본). Mark: 청산 기준과 같은 표시 가격을 따라가요. 순간 꼬리에 덜 흔들려요. 조건부(Trigger)와 트레일링 둘 다에 쓰여요. 새로 거는 주문부터 적용되고, 이 기기에 저장돼요.</p></div>' +
+    '<div class="pp-box"><b>포지션 모드</b><div class="pp-cseg">' + [['one', 'One-way · 단방향'], ['hedge', 'Hedge · 양방향']].map(function (x) { return '<button type="button" data-ppm="' + x[0] + '" class="' + (st.mode === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+    '<p class="hint">단방향: 종목마다 롱이나 숏 하나만 (반대 주문은 줄이거나 뒤집어요). 양방향: 같은 종목에 롱과 숏을 따로 들고 Open/Close로 나눠 주문해요. 포지션 · 주문이 모두 없을 때만 바꿀 수 있어요.</p></div>' +
+    contactBox() +
     '<dl class="pp-gl">' + GLOSS.map(function (g) { return '<div><dt>' + esc(g[1]) + '<small>' + esc(g[2]) + '</small></dt><dd>' + esc(g[3]) + '</dd></div>'; }).join('') + '</dl>');
 }
 function setCol(c) {
@@ -1624,15 +2165,26 @@ function onClick(e) {
   if ((c = t.closest('[data-pstep]'))) { stepPx(+c.dataset.pstep); return; }
   if ((c = t.closest('[data-ptab]'))) { U.tab = c.dataset.ptab; renderList(); if (U.tab === 'rank') refreshRank(); return; }
   if ((c = t.closest('[data-pmonth]'))) { U.month = c.dataset.pmonth === monthKST() ? null : c.dataset.pmonth; renderList(); refreshRank(); return; }
-  if ((c = t.closest('[data-ppx]'))) { if (U.ot !== 'limit') setOt('limit'); $('px').value = (+c.dataset.ppx).toFixed(SP[U.sym].pp); dirty.est = true; kick(); return; }
+  if ((c = t.closest('[data-prk]'))) { U.rk = c.dataset.prk === 'w' ? 'w' : 'm'; renderList(); refreshRank(); return; }
+  if ((c = t.closest('[data-pwk]'))) { U.wk = c.dataset.pwk === 'wp' ? 'wp' : 'w'; renderList(); refreshRank(); return; }
+  if ((c = t.closest('[data-pnick]'))) { profileSheet(c.dataset.pnick); return; }
+  if ((c = t.closest('[data-ppub]'))) { setPub(c.dataset.ppub === '1'); return; }
+  if ((c = t.closest('[data-ppx]'))) { var bv = (+c.dataset.ppx).toFixed(SP[U.sym].pp); if (U.ot === 'stop') $('trg').value = bv; else { if (U.ot !== 'limit') setOt('limit'); $('px').value = bv; } dirty.est = true; kick(); return; }
+  if ((c = t.closest('[data-poc]'))) { U.oc = c.dataset.poc === 'close' ? 'close' : 'open'; formOpts(); hideErr(); renderEst(); return; }
+  if ((c = t.closest('[data-pmm]'))) { saveMM(c.dataset.pmm); return; }
+  if ((c = t.closest('[data-ppm]'))) { setPmode(c.dataset.ppm); return; }
+  if ((c = t.closest('[data-pcb]'))) { $('cb').value = c.dataset.pcb; $$('[data-pcb]').forEach(function (b) { b.classList.toggle('on', b === c); }); hideErr(); return; }
+  if ((c = t.closest('[data-pfill]'))) { var lm = M[U.sym], fv = lm && (TPT === 'mark' ? lm.mark : lm.last); if (fv) { $(c.dataset.pfill).value = fv.toFixed(SP[U.sym].pp); dirty.est = true; kick(); } return; }
+  if ((c = t.closest('[data-ptpt]'))) { TPT = c.dataset.ptpt === 'mark' ? 'mark' : 'last'; lsSet('a99p.tpt', TPT); Array.prototype.forEach.call(document.querySelectorAll('[data-ptpt]'), function (b) { b.classList.toggle('on', b.dataset.ptpt === TPT); }); formOpts(); dirty.est = true; kick(); toast('조건 주문 기준 가격 · ' + tptName()); return; }
   if ((c = t.closest('[data-pban]'))) { if (c.dataset.pban === 'go' && BAN === 'low') meSheet(); else if (c.dataset.pban === 'go' && BAN === 'tip') guideSheet(); banner(null); return; }
   if ((c = t.closest('[data-pact]'))) {
-    var act = c.dataset.pact, sym = c.dataset.sym;
-    if (act === 'close') {
-      if (!c.classList.contains('arm')) { c.classList.add('arm'); c.textContent = 'Tap again to close'; clearTimeout(armT); armT = setTimeout(function () { c.classList.remove('arm'); c.textContent = 'Close'; }, 3000); return; }
-      closePos(sym, c);
-    } else if (act === 'tpsl') tpslSheet(sym);
+    var act = c.dataset.pact, key = c.dataset.key;
+    if (act === 'close') { if (armed(c, 'close')) closePos(key, c); }
+    else if (act === 'rev') { if (armed(c, 'reverse')) reversePos(key, c); }
+    else if (act === 'closeall') { if (armed(c, 'close all')) closeAllPos(c); }
+    else if (act === 'tpsl') tpslSheet(key);
     else if (act === 'cancel') cancelOrd(c.dataset.id, c);
+    else if (act === 'cancelall') cancelAll(c);
     return;
   }
   if ((c = t.closest('[data-plv]'))) { $('levr').value = c.dataset.plv; levHint(+c.dataset.plv); return; }
@@ -1641,13 +2193,14 @@ function onClick(e) {
   if (id === 'pp-buy') return submit(1);
   if (id === 'pp-sell') return submit(-1);
   if (id === 'pp-lev') return levSheet();
+  if (id === 'pp-mmb') return mmSheet();
   if (id === 'pp-hsym') return pickerSheet();
   if (id === 'pp-guide' || id === 'pp-gall') return guideSheet();
   if (id === 'pp-bbo') { var m = M[U.sym]; if (m && m.last) { $('px').value = m.last.toFixed(SP[U.sym].pp); dirty.est = true; kick(); } return; }
   if (id === 'pp-me' || id === 'pp-acb') return meSheet();
   if (id === 'pp-levok') return saveLev(+$('levr').value);
-  if (id === 'pp-stok') return saveTpsl(bt.dataset.sym, false);
-  if (id === 'pp-stclr') return saveTpsl(bt.dataset.sym, true);
+  if (id === 'pp-stok') return saveTpsl(bt.dataset.key, false);
+  if (id === 'pp-stclr') return saveTpsl(bt.dataset.key, true);
   if (id === 'pp-rsgo') return doReset(bt);
   if (id === 'pp-pwgo') return doPw();
   if (id === 'pp-out') { closeSheet(); logout(false); toast('로그아웃했어요'); return; }
@@ -1663,14 +2216,20 @@ function skeleton() {
     '<div id="pp-ban" class="pp-ban" hidden></div>' +
     '<div id="pp-acct"></div>' +
     '<div class="pp-tr"><form class="pp-of" id="pp-of" novalidate>' +
-      '<div class="pp-ot"><span class="pp-t" data-pterm="iso">Isolated</span><button type="button" id="pp-lev" aria-label="레버리지 바꾸기"><b id="pp-levtx">10x</b></button></div>' +
-      '<div class="pp-seg" role="tablist" aria-label="주문 방식"><button type="button" data-pot="limit">Limit</button><button type="button" data-pot="market">Market</button></div>' +
-      '<div class="pp-fld" id="pp-pxrow" hidden><div class="k"><span>Price (' + Q + ')</span><input id="pp-px" inputmode="decimal" autocomplete="off" placeholder="0"></div>' +
+      '<div class="pp-ot"><button type="button" id="pp-mmb" aria-label="증거금 방식 바꾸기"><b id="pp-mmtx">Isolated</b></button><button type="button" id="pp-lev" aria-label="레버리지 바꾸기"><b id="pp-levtx">10x</b></button></div>' +
+      '<div class="pp-seg" id="pp-ocs" role="tablist" aria-label="열기 · 닫기" hidden><button type="button" data-poc="open">Open</button><button type="button" data-poc="close">Close</button></div>' +
+      '<div class="pp-seg s4" role="tablist" aria-label="주문 방식"><button type="button" data-pot="limit">Limit</button><button type="button" data-pot="market">Market</button><button type="button" data-pot="stop">Trigger</button><button type="button" data-pot="trail">Trail</button></div>' +
+      '<div class="pp-fld" id="pp-trgrow" hidden><div class="k"><span><span class="pp-t" data-pterm="trigger">Trigger</span> (' + Q + ')</span><input id="pp-trg" inputmode="decimal" autocomplete="off" placeholder="0"></div><button type="button" class="bb" id="pp-trgb" data-pfill="trg">Last</button></div>' +
+      '<div class="pp-fld" id="pp-pxrow" hidden><div class="k"><span id="pp-pxl">Price (' + Q + ')</span><input id="pp-px" inputmode="decimal" autocomplete="off" placeholder="0"></div>' +
         '<button type="button" class="st" data-pstep="-1" aria-label="한 칸 내리기">−</button><button type="button" class="st" data-pstep="1" aria-label="한 칸 올리기">+</button><button type="button" class="bb" id="pp-bbo">Last</button></div>' +
       '<div class="pp-fld"><div class="k"><span>Size</span><input id="pp-qty" inputmode="decimal" autocomplete="off" placeholder="0"></div><em id="pp-qtyu">—</em></div>' +
       '<div class="pp-sl"><input type="range" id="pp-slider" min="0" max="100" step="1" value="0" list="pp-slt" aria-label="사용 가능 금액 비율"><datalist id="pp-slt"><option value="0"></option><option value="25"></option><option value="50"></option><option value="75"></option><option value="100"></option></datalist>' +
         '<div class="tk"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div></div>' +
-      '<label class="pp-chk"><input type="checkbox" id="pp-tpon">TP/SL</label>' +
+      '<div id="pp-trrow" class="pp-tpr" hidden><div class="pp-fld"><div class="k"><span><span class="pp-t" data-pterm="trail">Callback</span></span><input id="pp-cb" inputmode="decimal" autocomplete="off" value="1"></div><em>%</em></div>' +
+        '<div class="pp-cbq">' + ['0.5', '1', '2', '5'].map(function (v) { return '<button type="button" data-pcb="' + v + '"' + (v === '1' ? ' class="on"' : '') + '>' + v + '%</button>'; }).join('') + '</div>' +
+        '<div class="pp-fld"><div class="k"><span>Activation (' + Q + ')</span><input id="pp-act" inputmode="decimal" autocomplete="off" placeholder="비우면 바로 시작"></div><button type="button" class="bb" id="pp-actb" data-pfill="act">Last</button></div>' +
+        '<p class="pp-trpt" id="pp-trpt"></p></div>' +
+      '<div class="pp-opts"><label class="pp-chk" id="pp-tpl"><input type="checkbox" id="pp-tpon">TP/SL</label><label class="pp-chk" id="pp-rol"><input type="checkbox" id="pp-ro"><span class="pp-t" data-pterm="reduce">Reduce-only</span></label><label class="pp-chk" id="pp-pol" hidden><input type="checkbox" id="pp-po"><span class="pp-t" data-pterm="post">Post-only</span></label></div>' +
       '<div id="pp-tprow" class="pp-tpr" hidden><div class="pp-fld"><div class="k"><span>TP trigger</span><input id="pp-tp" inputmode="decimal" autocomplete="off" placeholder="Optional"></div></div><div class="pp-fld"><div class="k"><span>SL trigger</span><input id="pp-sl" inputmode="decimal" autocomplete="off" placeholder="Optional"></div></div></div>' +
       '<div class="pp-kv2"><span class="pp-t" data-pterm="avbl">Avbl</span><b id="pp-avail">—</b></div>' +
       '<div class="pp-kv2"><span class="pp-t" data-pterm="max">Max</span><b id="pp-maxl">—</b></div>' +
@@ -1688,12 +2247,14 @@ function skeleton() {
     '<div class="pp-list" id="pp-list"></div>' +
     '<div class="pp-foot"><p>모의투자 · 가상 자금이에요. 실제 거래·수익과 무관한 연습용 시뮬레이션입니다.</p>' +
     '<p>순자산이 500 아래로 내려가고 열린 포지션·주문이 없으면 쿠폰으로 1,000에서 다시 시작할 수 있어요(쿠폰은 매달 새로 받아요).</p>' +
-    '<p>체결은 서버가 거래소 공개 호가로 계산해요. 앱을 닫아 둔 동안의 청산·TP/SL·지정가·펀딩은 서버가 1분마다 확인해요. 청산은 Mark 가격 기준이에요.</p>' +
+    '<p>체결은 서버가 거래소 공개 호가로 계산해요. 앱을 닫아 둔 동안의 청산·TP/SL·지정가·조건부·트레일링·펀딩은 서버가 1분마다 확인해요. 청산은 Mark 가격 기준이에요.</p>' +
     '<p>시세: Hyperliquid 공개 자료(실시간 달러 시세) · ' + Q + ' 표기는 모의투자용 가상 단위 · 금(XAU)은 PAXG 시세 · 계약 규칙: 안드레99 모의투자 규칙 · 실제 거래가 아니에요 · ' + VER + '</p></div>' +
     '<button type="button" class="pp-cbar" id="pp-cbar" data-pchart="sheet"><span id="pp-cbtx" style="color:var(--pt1);font-family:var(--pf);font-weight:700;font-size:13.5px">Chart</span><span id="pp-cbpx"></span><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>';
 }
 function bindInputs() {
-  ['qty', 'px'].forEach(function (k) { $(k).addEventListener('input', function () { hideErr(); dirty.est = true; kick(); }); });
+  ['qty', 'px', 'trg', 'cb', 'act'].forEach(function (k) { $(k).addEventListener('input', function () { hideErr(); dirty.est = true; kick(); }); });
+  $('cb').addEventListener('input', function () { var v = this.value; $$('[data-pcb]').forEach(function (b) { b.classList.toggle('on', b.dataset.pcb === v); }); });
+  $('ro').addEventListener('change', function () { formOpts(); renderEst(); });
   $('qty').addEventListener('input', function () { $('slider').value = 0; });
   $('slider').addEventListener('input', function () { onSlider(+this.value); });
   $('tpon').addEventListener('change', function () { $('tprow').hidden = !this.checked; });

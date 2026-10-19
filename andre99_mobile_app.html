@@ -493,7 +493,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 /* ── 하단 내비 ── */
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--bg);
   border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
-.nav-in{display:grid;grid-template-columns:repeat(6,1fr);height:var(--nav-h)}
+.nav-in{display:grid;grid-template-columns:repeat(5,1fr);height:var(--nav-h)}
 .nb span{white-space:nowrap}
 #p-paper .pp-load{padding:48px 16px;text-align:center;font-size:13px;color:var(--tx3);line-height:1.7}
 #p-paper .pp-load button{margin-top:12px;min-height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--line);color:var(--tx);font-size:13px;font-weight:600}
@@ -913,6 +913,16 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     </div>
   </div>
 
+  <div class="sec why-h"><div class="sec-h"><h2>오늘 움직인 이유</h2><span class="note">급등락 · 공시 · 흑자 전환</span></div></div>
+  <div class="disc-bar">
+    <button class="disc-b on" data-disc="mv">급등 이유</button>
+    <button class="disc-b" data-disc="fk">오늘 공시</button>
+    <button class="disc-b" data-disc="ta">흑자 전환</button>
+  </div>
+  <div id="mvBox"></div>
+  <div id="fkBox" hidden></div>
+  <div id="taBox" hidden></div>
+
   <div class="sec">
     <div class="sec-h"><h2>업종별 등락</h2><span class="note">섹터 ETF</span></div>
     <div class="heat" id="heat"></div>
@@ -955,19 +965,20 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   </div>
   <div id="stockBody">
     <div class="sec sf-empty"><p class="t">종목을 검색하면</p><p class="s">세 줄 요약 · 재무제표 · 실적 · 뉴스 · 공시</p></div>
-    <div class="disc-bar">
-      <button class="disc-b on" data-disc="fk">오늘 공시</button>
-      <button class="disc-b" data-disc="ta">흑자 전환</button>
-      <button class="disc-b" data-disc="mv">급등 이유</button>
-    </div>
-    <div id="fkBox"></div>
-    <div id="taBox" hidden></div>
-    <div id="mvBox" hidden></div>
   </div>
 </main>
 
-<!-- ══ 실적 ══ -->
-<main class="page" id="p-earn">
+
+<!-- ══ 경제 ══ -->
+<main class="page" id="p-eco">
+  <div class="ec-tabs">
+    <button class="ec-tab on" data-eco="fed">경제</button>
+    <button class="ec-tab" data-eco="cal">일정</button>
+    <button class="ec-tab" data-eco="inst">큰손</button>
+  </div>
+  <div id="ecoBody"><div class="skel">불러오는 중…</div></div>
+  <div id="flowWrap"><div id="flowBox"><div class="tvnote">불러오는 중…</div></div></div>
+  <div id="calWrap" hidden>
   <div class="sec">
     <div class="sec-h"><h2>실적 발표</h2><span class="note" id="calRange"></span></div>
     <div class="wknav">
@@ -987,17 +998,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     <div id="calBody"><div class="skel">불러오는 중…</div></div>
   </div>
   <div id="earnBody" hidden></div>
-</main>
-
-<!-- ══ 경제 ══ -->
-<main class="page" id="p-eco">
-  <div class="ec-tabs">
-    <button class="ec-tab on" data-eco="fed">연준과 경제</button>
-    <button class="ec-tab" data-eco="flow">시장</button>
-    <button class="ec-tab" data-eco="inst">기관</button>
   </div>
-  <div id="ecoBody"><div class="skel">불러오는 중…</div></div>
-  <div id="flowWrap" hidden><div id="flowBox"><div class="tvnote">불러오는 중…</div></div></div>
   <div id="instWrap" hidden><div id="instBox"><div class="tvnote">불러오는 중…</div></div></div>
 </main>
 
@@ -1063,17 +1064,16 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 <nav class="nav">
   <div class="nav-in">
-    <button class="nb on" data-tab="home"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z"/></svg><span>홈</span></button>
-    <button class="nb" data-tab="stock"><svg viewBox="0 0 24 24"><path d="M4 17l5-5 3 3 7-7"/><path d="M15 8h4v4"/></svg><span>종목</span></button>
-    <button class="nb" data-tab="earn"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>실적</span></button>
+    <button class="nb on" data-tab="home"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 15v-4M12 15V7M17 15v-6"/></svg><span>마켓</span></button>
     <button class="nb" data-tab="eco"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.7 2.5 12.3 0 16M12 4c-2.5 2.7-2.5 12.3 0 16"/></svg><span>경제</span></button>
-    <button class="nb" data-tab="my"><svg viewBox="0 0 24 24"><path d="M12 20l-7-7a4.2 4.2 0 016-6l1 1 1-1a4.2 4.2 0 016 6z"/></svg><span>관심</span></button>
+    <button class="nb" data-tab="stock"><svg viewBox="0 0 24 24"><path d="M4 17l5-5 3 3 7-7"/><path d="M15 8h4v4"/></svg><span>종목</span></button>
     <button class="nb" data-tab="paper"><svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 01-8 0z"/><path d="M8 6H5.5a2.5 2.5 0 002.7 3.5M16 6h2.5a2.5 2.5 0 01-2.7 3.5M12 13v4M9 20h6M10 17h4"/></svg><span>모의투자</span></button>
+    <button class="nb" data-tab="my"><svg viewBox="0 0 24 24"><path d="M12 20l-7-7a4.2 4.2 0 016-6l1 1 1-1a4.2 4.2 0 016 6z"/></svg><span>관심</span></button>
   </div>
 </nav>
 
 <script>
-var BUILD_VER='v2026.10.12-H';
+var BUILD_VER='v2026.10.19-C';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -1103,19 +1103,19 @@ var pct=function(v){return (v==null||isNaN(v))?'—':(v>=0?'+':'')+Number(v).toF
 var dirCls=function(v){return v==null?'ft':(v>0?'up':(v<0?'dn':'ft'))};
 
 /* ── 탭 ── */
-var TABS=['home','stock','earn','eco','my','paper'];
+var TABS=['home','stock','eco','my','paper'];
 function show(t){
+  if(t==='earn'){ t='eco'; ECO_TAB='cal'; }              /* 옛 「실적」 탭으로 오는 길 → 경제 > 일정 */
   CUR_PAGE=t;
   TABS.forEach(function(x){ $('p-'+x).classList.toggle('on',x===t); });
   document.querySelectorAll('.nb').forEach(function(b){ b.classList.toggle('on',b.dataset.tab===t); });
   window.scrollTo(0,0);
-  if(t==='earn'&&!CAL_WEEK){ calInit(); }
-  if(t==='eco'){ loadEco(); }
-  if(t==='stock'){ setDisc(DISC_TAB); }
+  if(t==='eco'){ ecoSeg(ECO_TAB); }
+  if(t==='home'){ setDisc(DISC_TAB); }
   if(t==='paper'){ paperOpen(); } else if(window.A99Paper){ window.A99Paper.hide(); }
 }
 /* 모의투자 탭: 처음 누를 때만 paper/paper.js(차트 · 계산 엔진 · 화면)를 받아 온다 — 앱 첫 화면은 가볍게 */
-var PAPER_JS='paper/paper.js?v=2026.10.12-H', PAPER_LOADING=false;
+var PAPER_JS='paper/paper.js?v=2026.10.19-C', PAPER_LOADING=false;
 function paperOpen(){
   var host=$('paperHost');
   if(window.A99Paper){ window.A99Paper.mount(host); window.A99Paper.show(); return; }
@@ -1141,17 +1141,18 @@ if($('wkPrev')) $('wkPrev').addEventListener('click',function(){ shiftWeek(-1); 
 if($('wkNext')) $('wkNext').addEventListener('click',function(){ shiftWeek(1); });
 if($('wkNow'))  $('wkNow').addEventListener('click',function(){ CAL_WEEK=null; calInit(); });
 if($('calQ'))   $('calQ').addEventListener('input',function(){ CAL_Q=this.value; renderCalList(); });
+/* 경제 탭 3칸: 경제(연준·물가·고용 + 시장 반응) · 일정(실적 달력) · 큰손(기관 보유) */
+function ecoSeg(k){
+  ECO_TAB=k==='cal'||k==='inst'?k:'fed';
+  document.querySelectorAll('.ec-tab').forEach(function(x){ x.classList.toggle('on', x.dataset.eco===ECO_TAB); });
+  var eb=$('ecoBody'), fw=$('flowWrap'), iw=$('instWrap'), cw=$('calWrap');
+  [eb,fw,iw,cw].forEach(function(e){ if(e) e.setAttribute('hidden',''); });
+  if(ECO_TAB==='cal'){ cw.removeAttribute('hidden'); if(!CAL_WEEK) calInit(); }
+  else if(ECO_TAB==='inst'){ iw.removeAttribute('hidden'); loadInst(); }
+  else { eb.removeAttribute('hidden'); fw.removeAttribute('hidden'); if(ECO) drawEco(ECO); else loadEco(); loadFlow(); }
+}
 document.querySelectorAll('.ec-tab').forEach(function(b){
-  b.addEventListener('click',function(){
-    ECO_TAB=b.dataset.eco;
-    document.querySelectorAll('.ec-tab').forEach(function(x){ x.classList.toggle('on', x.dataset.eco===ECO_TAB); });
-    var eb=$('ecoBody'), fw=$('flowWrap'), iw=$('instWrap');
-    eb.setAttribute('hidden',''); fw.setAttribute('hidden',''); iw.setAttribute('hidden','');
-    if(ECO_TAB==='flow'){ fw.removeAttribute('hidden'); loadFlow(); }
-    else if(ECO_TAB==='inst'){ iw.removeAttribute('hidden'); loadInst(); }
-    else { eb.removeAttribute('hidden'); if(ECO) drawEco(ECO); else loadEco(); }
-    window.scrollTo(0,0);
-  });
+  b.addEventListener('click',function(){ ecoSeg(b.dataset.eco); window.scrollTo(0,0); });
 });
 if($('ecoMdC')) $('ecoMdC').addEventListener('click',function(){ $('ecoMd').classList.remove('on'); });
 if($('ecoMd')) $('ecoMd').addEventListener('click',function(e){ if(e.target===this) this.classList.remove('on'); });
@@ -1330,6 +1331,7 @@ function loadMarket(){
 }
 $('btnReload').addEventListener('click',loadMarket);
 loadMarket();
+setTimeout(function(){ setDisc(DISC_TAB); },0);   /* 마켓 탭 「오늘 움직인 이유」 — 아래 변수들이 준비된 뒤에 */
 
 /* ── 종목 ── */
 var QUICK=['PLTR','NVDA','AAPL','TSLA','MSFT','GOOGL'];
@@ -2098,7 +2100,7 @@ function drawFlow(j){
 /* ══ 오늘 나온 공시 (2026.08.20) ══
    SEC 8-K 제출 즉시 목록. 티커 + 회사명 + 사유 한 줄. */
 var FK=null, FK_LOADING=false, FK_G='all', FK_MORE=false;
-var DISC_TAB='fk';   /* fk · ta · mv */
+var DISC_TAB='mv';   /* mv · fk · ta — 마켓 탭 「오늘 움직인 이유」 */
 function loadFK(){
   var box=$('fkBox'); if(!box) return;
   if(FK){ drawFK(FK); return; }
@@ -3761,7 +3763,7 @@ function loadEcoSilent(){
   fetchT(API+'/economy?_='+Date.now(), 20000)
     .then(function(r){return r.json()})
     .then(function(j){ ECO_LOADING=false; if(j){ ECO=j;
-      if(ECO_TAB==='flow'){ var k='d'+FLOW_DAYS; if(FLOW[k]) drawFlow(FLOW[k]); } } })
+      if(ECO_TAB==='fed'){ var k='d'+FLOW_DAYS; if(FLOW[k]) drawFlow(FLOW[k]); } } })
     .catch(function(){ ECO_LOADING=false; });
 }
 function loadEco(){
@@ -3779,7 +3781,7 @@ function loadEco(){
     .catch(function(){ ECO_LOADING=false;
       box.innerHTML='<div class="sec"><div class="empty"><h3>불러오지 못했습니다</h3><p>잠시 후 다시 시도해 주세요.</p></div></div>'; });
 }
-var ECO_TAB='rate';
+var ECO_TAB='fed';
 /* 지표 설명 · 약어 (2026-08-12) */
 var ECO_INFO={
   DFF:{ab:'FFR', en:'Effective Federal Funds Rate',
@@ -4049,7 +4051,7 @@ function openCardPick(){
                '<span>'+c.n+'</span></label>';
       }).join('');
     }
-  }else if(CUR_PAGE==='earn'){
+  }else if(CUR_PAGE==='eco'&&ECO_TAB==='cal'){
     PICK_MODE='week'; ttl.textContent='저장할 카드를 고르세요';
     box.innerHTML='<label class="pkrow"><input type="checkbox" data-k="week" checked>'+
                   '<span>이번 주 실적</span></label>';
@@ -6073,9 +6075,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
   function renameTab() {
     var nb = document.querySelector('.nb[data-tab="my"]'); if (!nb || nb.dataset.a9) return;
     nb.dataset.a9 = '1';
-    var sp = nb.querySelector('span'); if (sp) sp.textContent = '트레이딩';
-    var sv = nb.querySelector('svg');
-    if (sv) sv.innerHTML = '<path d="M8 3v3M8 16v5M16 3v5M16 17v4"/><rect x="5.5" y="6" width="5" height="10" rx="1"/><rect x="13.5" y="8" width="5" height="9" rx="1"/>';
+    var sp = nb.querySelector('span'); if (sp) sp.textContent = '관심';   /* 2026.10.19 탭 정리: 「트레이딩」 → 「관심」 (모의투자와 헷갈리지 않게) */
   }
 
   /* 종목 화면에서 들어왔을 때 — 돌아가는 칩 */
@@ -7802,7 +7802,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
 ═══════════════════════════════════════════════════════════════ -->
 
 <style>
-.ad-wrap{position:fixed;inset:0;z-index:2050;background:var(--bg);display:flex;flex-direction:column;
+.ad-wrap{position:fixed;inset:0;z-index:2070;background:var(--bg);display:flex;flex-direction:column;
   padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 .ad-wrap[hidden]{display:none!important}
 .ad-h{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line)}
@@ -7863,7 +7863,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
     var taps = [];
     v.addEventListener('click', function () {
       var n = Date.now(); taps = taps.filter(function (x) { return n - x < 3000; }); taps.push(n);
-      if (taps.length >= 5) { taps = []; openPanel(); }
+      if (taps.length >= 5) { taps = []; if (window.A99PaperAdmin) window.A99PaperAdmin.open(); else openPanel(); }   /* 2026.10.19 운영 센터(관리 키 필요)로 */
     });
   }
 
@@ -7925,9 +7925,8 @@ html.at-lock,html.at-lock body{overflow:hidden}
     if (!P) {
       P = document.createElement('div'); P.className = 'ad-wrap'; P.id = 'adWrap';
       P.setAttribute('role', 'dialog'); P.setAttribute('aria-modal', 'true'); P.setAttribute('aria-label', '운영 화면');
-      P.innerHTML = '<div class="ad-h"><b>운영 화면</b><span>버전 · 감시 · 계산 자료 · 데이터 점검</span><button type="button" id="adX" aria-label="닫기">✕</button></div>' +
+      P.innerHTML = '<div class="ad-h"><b>메인 앱 점검</b><span>버전 · 계산 자료 · 데이터 점검</span><button type="button" id="adX" aria-label="닫기">✕</button></div>' +
         '<div class="ad-body"><div class="ad-ver" id="adVer">버전 확인 중…</div>' +
-        '<h3 class="ad-h3">모의선물 관리</h3><div class="ad-row"><button type="button" class="pri" id="adPaper">회원 · 초대코드 · 초기화 · 용량 · 속도</button></div>' +
         '<h3 class="ad-h3">핵심 가격대 계산 자료</h3>' +
         '<div class="ad-row"><button type="button" id="adExCur">지금 종목</button><button type="button" class="pri" id="adEx4">BTC · 금 · 유가 · PLTR</button></div>' +
         '<p class="ad-st" id="adExSt">받은 봉 원본과 계산 결과(가격대 · 구성 선 · 유효시각)를 파일 하나로 저장합니다. 이 파일로 강도 기준을 실제 데이터에 맞춥니다.</p>' +
@@ -7938,7 +7937,6 @@ html.at-lock,html.at-lock body{overflow:hidden}
       document.body.appendChild(P);
       $('adX').addEventListener('click', function () { P.hidden = true; });
       $('adGo').addEventListener('click', run);
-      $('adPaper').addEventListener('click', function () { if (window.A99PaperAdmin) window.A99PaperAdmin.open(); else toast('모의선물 관리 모듈이 없습니다'); });
       $('adCopy').addEventListener('click', copy);
       $('adExCur').addEventListener('click', function () {
         var S = window.A99Tab && window.A99Tab._S, sym = (S && S.sym) || ls('a99_tab_sym');
@@ -8057,6 +8055,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
     ls(KEY, null);                                   // 예전 「운영자 모드」 기억은 지운다 (10.05 부터 버튼 없음)
     var old = $('adBtn'); if (old) old.remove();
     hookVer();
+    window.A99Ops = { openPanel: openPanel };   /* 운영 센터 → 「메인 앱」 → 점검 도구 */
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
   window.A99Audit = { open: openPanel, _audit: audit };
@@ -8064,9 +8063,11 @@ html.at-lock,html.at-lock body{overflow:hidden}
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════
-  안드레99 — 모의선물 관리 (회원 · 초대코드 · 초기화 승인 · 설정 · 용량 · 속도)  v2026.10.11-A
-  여는 길: 운영 화면(버전 글자 5번) → 「모의선물 관리」
-  관리 키 : 모의선물 서버의 PAPER_ADMIN_KEY. 이 기기에만 저장(a99_paper_ak). 「키 지우기」로 지운다.
+  안드레99 — 운영 센터  v2026.10.19-C
+  여는 길: 앱 위쪽 버전 글자를 3초 안에 5번 → 관리 키를 넣어야 열린다(서버가 확인)
+  6섹션: 오늘 · 회원(목록 · 초대코드 · 초기화 요청) · 모의투자(종목 · 규칙) · 메인 앱 · 시스템 · 보안·설정(관리 기록 · 문의 · 가입 · 잠금)
+  관리 키 : 모의선물 서버의 PAPER_ADMIN_KEY. 「이 기기에 기억」을 끄면 앱을 닫을 때 잊는다. 「잠그기」로 지운다.
+  서버: 키 5번 틀리면 그 IP 15분 잠금 · 바꾸는 작업은 모두 관리 기록에 남는다.
   붙여넣는 곳: 운영 화면 블록 뒤 (</body> 앞)
 ═══════════════════════════════════════════════════════════════ -->
 <style>
@@ -8076,6 +8077,18 @@ html.at-lock,html.at-lock body{overflow:hidden}
 .pa-h b{font-size:15px}
 .pa-h span{font-size:11.5px;color:var(--tx3)}
 .pa-h button{margin-left:auto;width:40px;height:40px;background:transparent;color:var(--tx2);font-size:18px;border:0}
+.pa-secs{display:flex;overflow-x:auto;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line);scrollbar-width:none}
+.pa-secs::-webkit-scrollbar{display:none}
+.pa-secs[hidden],.pa-tabs[hidden]{display:none!important}
+.pa-secs button{flex:0 0 auto;min-height:36px;padding:0 13px;border-radius:18px;border:1px solid var(--line);background:transparent;color:var(--tx2);font-size:13px;font-weight:600}
+.pa-secs button.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.pa-secs i{font-style:normal;font-size:11px;margin-left:3px;color:var(--up)}
+.pa-secs button.on i{color:var(--bg)}
+.pa-gate{max-width:420px;margin:24px auto 0}
+.pa-todo{display:grid;gap:8px;margin-bottom:6px}
+.pa-todo button{display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--tx);font-size:13.5px;text-align:left}
+.pa-todo button.warn{border-color:#E8A317}
+.pa-todo button b{font-variant-numeric:tabular-nums}
 .pa-tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);padding:0 8px;scrollbar-width:none}
 .pa-tabs::-webkit-scrollbar{display:none}
 .pa-tabs button{flex:0 0 auto;min-height:42px;padding:0 12px;background:transparent;border:0;border-bottom:2px solid transparent;color:var(--tx2);font-size:13.5px}
@@ -8138,6 +8151,7 @@ select.pa-in{padding-right:6px}
   var PAPER = window.A99P_API || 'https://andre99-paper.jhw5282435.workers.dev';
   var MAIN = window.API || 'https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
   var KEY = 'a99_paper_ak';
+  function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) { return null; } }
   var WARN = 0.7;
   var POL = { 'default': '기본', approve: '승인 필요', free: '쿠폰 없이', block: '초기화 막기' };
   function $(i) { return document.getElementById(i); }
@@ -8149,7 +8163,8 @@ select.pa-in{padding-right:6px}
   function mb(b) { return b == null ? '—' : b >= 1048576 ? (b / 1048576).toFixed(1) + 'MB' : (b / 1024).toFixed(0) + 'KB'; }
   function ago(t) { if (!t) return '—'; var s = Math.round((Date.now() - t) / 1000); return s < 60 ? s + '초 전' : s < 3600 ? Math.round(s / 60) + '분 전' : s < 86400 ? Math.round(s / 3600) + '시간 전' : Math.round(s / 86400) + '일 전'; }
   function kst(t) { if (!t) return '—'; var d = new Date(t + 9 * 3600e3); return (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + ' ' + ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
-  function key() { return ls(KEY) || ''; }
+  function key() { return ls(KEY) || ss(KEY) || ''; }
+  function forget() { ls(KEY, null); ss(KEY, null); }
   function call(path, body) {
     return new Promise(function (ok) {
       var done = false, tm = setTimeout(function () { if (!done) { done = true; ok({ s: 0, j: { err: '시간 초과' } }); } }, 20000);
@@ -8165,42 +8180,129 @@ select.pa-in{padding-right:6px}
   function median(a) { a = a.filter(function (x) { return x != null; }).sort(function (x, y) { return x - y; }); return a.length ? a[Math.floor(a.length / 2)] : null; }
   function ping3(url) { return ping(url).then(function (a) { return ping(url).then(function (b) { return ping(url).then(function (c) { return median([a, b, c]); }); }); }); }
 
-  var P = null, TAB = 'home', SEL = {}, UQ = { q: '', status: '', policy: '', page: 0 }, LAST = { users: [], ov: null }, OFF = [];
+  var P = null, TAB = 'today', SEL = {}, UQ = { q: '', status: '', policy: '', page: 0 }, LAST = { users: [], ov: null }, OFF = [];
+  /* 6섹션 · 섹션 안 칸 */
+  var SECS = [['today', '오늘'], ['members', '회원'], ['paper', '모의투자'], ['main', '메인 앱'], ['sys', '시스템'], ['sec', '보안·설정']];
+  var SUBS = { members: [['users', '회원 목록'], ['invites', '초대코드'], ['resets', '초기화 요청']], paper: [['syms', '종목'], ['rules', '규칙']], sec: [['audit', '관리 기록'], ['prefs', '문의 · 가입 · 잠금']] };
+  function secOf(t) { for (var k in SUBS) for (var i = 0; i < SUBS[k].length; i++) if (SUBS[k][i][0] === t) return k; return t; }
   function open() {
     if (!P) {
       P = document.createElement('div'); P.className = 'pa-wrap'; P.id = 'paWrap';
-      P.setAttribute('role', 'dialog'); P.setAttribute('aria-modal', 'true'); P.setAttribute('aria-label', '모의선물 관리');
-      P.innerHTML = '<div class="pa-h"><b>모의선물 관리</b><span>회원 · 용량 · 속도</span><button type="button" id="paX" aria-label="닫기">✕</button></div>' +
-        '<div class="pa-tabs" role="tablist">' + [['home', '현황'], ['users', '회원'], ['syms', '종목'], ['invites', '초대코드'], ['resets', '초기화 요청'], ['settings', '설정']].map(function (t) {
-          return '<button type="button" data-pt="' + t[0] + '">' + t[1] + (t[0] === 'resets' ? '<i id="paRc"></i>' : '') + '</button>';
-        }).join('') + '</div><div class="pa-body" id="paBody"></div>';
+      P.setAttribute('role', 'dialog'); P.setAttribute('aria-modal', 'true'); P.setAttribute('aria-label', '운영 센터');
+      P.innerHTML = '<div class="pa-h"><b>운영 센터</b><span id="paSub">안드레99 · 모의투자</span><button type="button" id="paX" aria-label="닫기">✕</button></div>' +
+        '<div class="pa-secs" id="paSecs" role="tablist" aria-label="운영 섹션">' + SECS.map(function (t) {
+          return '<button type="button" data-ps="' + t[0] + '">' + t[1] + (t[0] === 'members' ? '<i id="paRc"></i>' : t[0] === 'sec' ? '<i id="paFc"></i>' : '') + '</button>';
+        }).join('') + '</div><div class="pa-tabs" id="paTabs" role="tablist" hidden></div><div class="pa-body" id="paBody"></div>';
       document.body.appendChild(P);
       $('paX').addEventListener('click', function () { P.hidden = true; });
       P.addEventListener('click', onClick);
       P.addEventListener('change', onChange);
       P.addEventListener('input', function (e) { if (e.target.id === 'pyQ') { SYM.q = e.target.value; drawFind(); } });
+      P.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.id === 'paKey') unlock(); });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && P && !P.hidden) P.hidden = true; });
     }
     P.hidden = false;
     go(key() ? TAB : 'key');
   }
   function go(t) {
+    if (t === 'home') t = 'today';
     TAB = t;
-    Array.prototype.forEach.call(P.querySelectorAll('[data-pt]'), function (b) { b.classList.toggle('on', b.dataset.pt === t); });
+    var sec = secOf(t), locked = t === 'key';
+    $('paSecs').hidden = locked;
+    Array.prototype.forEach.call(P.querySelectorAll('[data-ps]'), function (b) { b.classList.toggle('on', b.dataset.ps === sec); });
+    var T = $('paTabs'), sub = !locked && SUBS[sec];
+    T.hidden = !sub;
+    if (sub) T.innerHTML = sub.map(function (x) { return '<button type="button" data-pt="' + x[0] + '" class="' + (x[0] === t ? 'on' : '') + '">' + x[1] + '</button>'; }).join('');
     var B = $('paBody');
-    if (t === 'key') return keyView(B);
+    if (locked) return keyView(B);
     B.innerHTML = '<p class="pa-st">불러오는 중…</p>';
-    ({ home: home, users: users, syms: symsView, invites: invites, resets: resets, settings: settingsView })[t](B);
+    ({ today: today, sys: home, main: mainView, users: users, syms: symsView, invites: invites, resets: resets, rules: settingsView, prefs: prefsView, audit: auditView })[t](B);
   }
+  function lockedMsg(j) { var u = j && j.until ? new Date(j.until + 9 * 3600e3) : null; return '관리 키를 5번 틀려서 15분 동안 잠겼어요' + (u ? ' (' + ('0' + u.getUTCHours()).slice(-2) + ':' + ('0' + u.getUTCMinutes()).slice(-2) + '까지)' : '') + '. 이 동안에는 맞는 키도 받지 않아요.'; }
   function denied(B, x) {
-    if (x.s === 403 || x.s === 500 && x.j.err === 'no_admin_key') { ls(KEY, null); keyView(B, x.j.err === 'no_admin_key' ? '서버에 관리 키(PAPER_ADMIN_KEY)가 아직 없어요.' : '관리 키가 맞지 않아요.'); return true; }
-    if (x.s !== 200) { B.innerHTML = '<p class="pa-st err">모의선물 서버에 연결하지 못했어요 (' + esc(x.j.err || x.s) + ').</p><div class="pa-row"><button type="button" data-re="1">다시</button></div>'; return true; }
+    if (x.s === 429 && x.j.err === 'admin_locked') { forget(); go('key'); keyView($('paBody'), lockedMsg(x.j)); return true; }
+    if (x.s === 403 || x.s === 500 && x.j.err === 'no_admin_key') { forget(); go('key'); keyView($('paBody'), x.j.err === 'no_admin_key' ? '서버에 관리 키(PAPER_ADMIN_KEY)가 아직 없어요.' : '관리 키가 맞지 않아요.'); return true; }
+    if (x.s !== 200) { B.innerHTML = '<p class="pa-st err">모의투자 서버에 연결하지 못했어요 (' + esc(x.j.err || x.s) + ').</p><div class="pa-row"><button type="button" data-re="1">다시</button></div>'; return true; }
     return false;
   }
+  /* 입구: 관리 키를 서버가 확인해야 열린다 */
   function keyView(B, msg) {
-    B.innerHTML = '<h3 class="pa-h3">관리 키</h3><p class="pa-st">모의선물 서버에 넣은 PAPER_ADMIN_KEY를 한 번 넣으면 이 기기에만 저장돼요.</p>' +
-      '<div class="pa-row"><input class="pa-in w" id="paKey" type="password" autocomplete="off" placeholder="관리 키"><button type="button" class="pri" id="paKeyGo">확인</button></div>' +
-      (msg ? '<p class="pa-st err">' + esc(msg) + '</p>' : '');
+    B.innerHTML = '<div class="pa-gate"><h3 class="pa-h3">운영 센터 잠금</h3><p class="pa-st">관리 키(PAPER_ADMIN_KEY)를 넣으면 서버가 확인한 뒤 열려요. 5번 틀리면 15분 동안 잠겨요.</p>' +
+      '<div class="pa-row"><input class="pa-in w" id="paKey" type="password" autocomplete="off" placeholder="관리 키"><button type="button" class="pri" id="paKeyGo">열기</button></div>' +
+      '<label class="pa-st" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="paKeyRm" checked style="width:18px;height:18px">이 기기에 기억 (끄면 앱을 닫을 때 잊어요)</label>' +
+      (msg ? '<p class="pa-st err">' + esc(msg) + '</p>' : '') + '</div>';
+  }
+  function unlock() {
+    var k = $('paKey').value.trim(); if (!k) return;
+    var rm = $('paKeyRm').checked, btn = $('paKeyGo'); btn.disabled = true;
+    fetch(PAPER + '/p/admin/ping', { headers: { 'x-admin-key': k } }).then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j || {} }; }, function () { return { s: r.status, j: {} }; }); }, function () { return { s: 0, j: {} }; }).then(function (x) {
+      btn.disabled = false;
+      if (x.s === 200 && x.j.ok) { forget(); if (rm) ls(KEY, k); else ss(KEY, k); go('today'); return; }
+      var B = $('paBody');
+      if (x.j.err === 'admin_locked') return keyView(B, lockedMsg(x.j));
+      if (x.j.err === 'admin') return keyView(B, '관리 키가 맞지 않아요.' + (x.j.left != null ? ' 남은 시도 ' + x.j.left + '번.' : ''));
+      if (x.j.err === 'no_admin_key') return keyView(B, '서버에 관리 키(PAPER_ADMIN_KEY)가 아직 없어요.');
+      keyView(B, '서버에 연결하지 못했어요. 잠시 뒤 다시 해 주세요.');
+    });
+  }
+
+  /* ── 오늘: 처리할 일만 ── */
+  function today(B) {
+    call('overview').then(function (x) {
+      if (denied(B, x)) return;
+      var o = x.j; LAST.ov = o;
+      var cr = o.cron, last = cr && cr.last, late = !last || Date.now() - last.at > 5 * 60000, us = o.users || {};
+      $('paRc').textContent = o.pendingResets ? o.pendingResets : '';
+      $('paFc').textContent = o.adminFails24h ? '!' : '';
+      var todo = [];
+      if (o.pendingResets) todo.push(['resets', '초기화 승인 기다리는 요청', o.pendingResets + '건', 'warn']);
+      if (o.adminFails24h) todo.push(['audit', '최근 24시간 관리 키 틀린 시도', o.adminFails24h + '번', 'warn']);
+      if (late) todo.push(['sys', '1분 감시가 멈춘 것 같아요', last ? ago(last.at) : '기록 없음', 'warn']);
+      else if (last && last.err.length) todo.push(['sys', '1분 감시 오류', last.err.length + '개', 'warn']);
+      if (o.specs && o.specs.fallback) todo.push(['syms', '종목 규칙이 기본값이에요', '다시 받기', 'warn']);
+      var h = '<h3 class="pa-h3">처리할 일</h3>' + (todo.length ? '<div class="pa-todo">' + todo.map(function (t) { return '<button type="button" data-goto="' + t[0] + '" class="' + t[3] + '"><span>' + t[1] + '</span><b>' + t[2] + ' ›</b></button>'; }).join('') + '</div>' : '<p class="pa-st">지금 처리할 일이 없어요.</p>');
+      h += '<h3 class="pa-h3">모의투자 한눈에</h3><div class="pa-grid">' +
+        card('회원', n0(us.n) + '명', '7일 새 가입 ' + n0(us.new7) + ' · 정지 ' + n0(us.sus), '') +
+        card('하루 안 접속', n0(us.seen1) + '명', '7일 안 ' + n0(us.seen7) + '명', '') +
+        card('열린 포지션 · 주문', n0(o.positions) + ' · ' + n0(o.orders), '', '') +
+        card('체결', n0(o.fills24h) + '건 / 24시간', '누적 ' + n0(o.fillsTotal) + '건', '') +
+        card('1분 감시', last ? ago(last.at) : '기록 없음', last ? last.ms + 'ms · 외부 호출 ' + last.calls : '', late ? 'bad' : '') +
+        card('서버 판', esc(o.ver || '—'), '종목 ' + ((o.specs && o.specs.n) || 0) + '개', '') + '</div>' +
+        '<div class="pa-row"><button type="button" data-re="1">새로 고침</button></div><p class="pa-st" id="paMsg"></p>';
+      B.innerHTML = h;
+    });
+  }
+  /* ── 메인 앱: 데이터 점검 · 가격대 자료 · 버전 (예전 운영 화면) ── */
+  function mainView(B) {
+    B.innerHTML = '<h3 class="pa-h3">메인 앱 도구</h3><p class="pa-st">종목 데이터 점검(빨강 = 틀린 숫자 가능 · 노랑 = 빈칸), 핵심 가격대 계산 자료 저장, 앱 · 메인 서버 버전 확인이 들어 있어요. 읽기만 하고 아무것도 바꾸지 않아요.</p>' +
+      '<div class="pa-row"><button type="button" class="pri" id="paMain">점검 도구 열기</button></div>';
+  }
+  /* ── 보안·설정: 관리 기록 ── */
+  var ACT = { bulk: '회원 일괄 작업', pw: '비밀번호 재설정', rename: '닉네임 변경', official: '공식 계정', specs: '종목 다시 받기', invites: '초대코드', resets: '초기화 승인 · 거절', settings: '설정 저장' };
+  function auditView(B) {
+    call('audit').then(function (x) {
+      if (denied(B, x)) return;
+      var r = x.j.rows || [], f = x.j.fails || [];
+      var h = '<h3 class="pa-h3">관리 기록 (최근 100개)</h3>' + (x.j.noTable ? '<p class="pa-st err">관리 기록 표가 아직 없어요. 이번 판의 DB 바꾸기(SQL)를 먼저 실행해 주세요.</p>' : r.length ? '<div class="pa-scroll"><table class="pa-tbl"><thead><tr><th>때</th><th>작업</th><th>내용</th><th>IP</th></tr></thead><tbody>' +
+        r.map(function (a) { return '<tr><td>' + kst(a.ts) + '</td><td style="text-align:left">' + esc(ACT[a.act] || a.act) + '</td><td style="text-align:left;white-space:normal;font-size:11px;color:var(--tx3)">' + esc(a.detail || '') + '</td><td>' + esc(a.ip || '') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="pa-st">아직 기록이 없어요.</p>');
+      h += '<h3 class="pa-h3">관리 키 틀린 시도 (최근 7일)</h3>' + (f.length ? '<div class="pa-scroll"><table class="pa-tbl"><thead><tr><th>때</th><th>IP</th><th>연속</th><th>잠금</th></tr></thead><tbody>' +
+        f.map(function (a) { return '<tr><td>' + kst(a.ts) + '</td><td>' + esc(a.ip) + '</td><td>' + a.n + '번째</td><td>' + (a.locked ? '15분 잠금' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="pa-st">없어요.</p>') +
+        '<p class="pa-st">IP는 앞 두 자리만 남겨요. 모르는 시도가 많으면 관리 키를 바꾸세요(정식 배포 체크리스트 A-1).</p>';
+      B.innerHTML = h;
+    });
+  }
+  /* ── 보안·설정: 문의 · 가입 · 잠금 ── */
+  function prefsView(B) {
+    call('overview').then(function (x) {
+      if (denied(B, x)) return;
+      var s = x.j.settings || {}, rem = !!ls(KEY);
+      B.innerHTML = '<div class="pa-set">' +
+        '<label><span>새 가입 받기<small>끄면 초대코드가 있어도 가입이 막혀요.</small></span><input type="checkbox" id="psSu"' + (s.signup ? ' checked' : '') + '></label>' +
+        '<label><span>문의 창구<small>모의투자 ⚙ 설정 · 내 정보의 「문의하기」 단추로 나와요. @아이디 = 인스타그램 DM · https://주소 · 메일 주소 모두 돼요. 예: @andre99</small></span><input class="pa-in" id="psCt" maxlength="60" value="' + esc(s.contact || '') + '" style="width:150px"></label>' +
+        '</div><div class="pa-row"><button type="button" class="pri" id="pfGo">저장</button></div>' +
+        '<h3 class="pa-h3">이 기기 잠금</h3><p class="pa-st">지금 관리 키는 ' + (rem ? '이 기기에 기억돼 있어요.' : '앱을 닫으면 잊혀요.') + ' 폰을 다른 사람이 쓸 수 있다면 「잠그기」를 눌러 두세요.</p>' +
+        '<div class="pa-row"><button type="button" class="red" id="paKeyDel">잠그기 (이 기기에서 키 지우기)</button></div><p class="pa-st" id="paMsg"></p>';
+    });
   }
 
   /* ── 현황: 속도 · 용량 · 회원 ── */
@@ -8224,20 +8326,12 @@ select.pa-in{padding-right:6px}
         var mx = Math.max.apply(null, cr.hist.map(function (x) { return x[1]; }).concat([50]));
         h += '<div class="pa-spark" aria-label="최근 60번 실행 시간">' + cr.hist.map(function (x) { return '<i class="' + (x[4] ? 'e' : '') + '" style="height:' + Math.max(3, Math.round(x[1] / mx * 100)) + '%" title="' + kst(x[0]) + ' ' + x[1] + 'ms"></i>'; }).join('') + '</div><p class="pa-st">최근 ' + cr.hist.length + '번 실행 시간 (빨강 = 오류 있던 회차) · 최대 ' + mx + 'ms</p>';
       }
-      var us = o.users || {};
-      h += '<h3 class="pa-h3">회원 (모의선물)</h3><div class="pa-grid">' +
-        card('전체', n0(us.n) + '명', '활성 ' + n0(us.act) + ' · 정지 ' + n0(us.sus), '') +
-        card('최근 7일 가입', n0(us.new7) + '명', '', '') +
-        card('하루 안 접속', n0(us.seen1) + '명', '7일 안 ' + n0(us.seen7) + '명', '') +
-        card('초기화 요청', n0(o.pendingResets) + '건', o.pendingResets ? '「초기화 요청」 탭에서 처리' : '', o.pendingResets ? 'warn' : '') +
-        card('열린 포지션 · 주문', n0(o.positions) + ' · ' + n0(o.orders), '', '') +
-        card('체결 기록', n0(o.fills24h) + '건 / 24시간', '누적 ' + n0(o.fillsTotal) + '건 · 180일 보관', '') + '</div>';
       var dbw = o.dbBytes ? o.dbBytes / (500 * 1048576) : null;
       h += '<h3 class="pa-h3">용량</h3><div class="pa-grid">' + card('모의선물 DB', mb(o.dbBytes), '한 DB 한도 500MB', lvl(dbw), dbw) +
         card('종목', (o.specs.n || 0) + '개', o.specs.fallback ? '기본값 사용 중 (시세 자료 못 받음)' : '갱신 ' + esc(o.specs.day || '—'), o.specs.fallback ? 'warn' : '') + '</div>' +
         '<div class="pa-row"><button type="button" id="paSp">종목 지금 다시 받기</button></div>';
       h += usageHtml(u);
-      h += '<div class="pa-row"><button type="button" data-re="1">새로 고침</button><button type="button" id="paKeyDel">키 지우기</button></div><p class="pa-st" id="paMsg"></p>';
+      h += '<div class="pa-row"><button type="button" data-re="1">새로 고침</button><a class="pa-b" style="display:inline-flex;align-items:center;text-decoration:none" href="' + PAPER + '/p/diag" target="_blank" rel="noopener">시세 서버 진단</a></div><p class="pa-st" id="paMsg"></p>';
       B.innerHTML = h;
     });
   }
@@ -8345,7 +8439,7 @@ select.pa-in{padding-right:6px}
   }
   function refreshSpecsNow() {
     toast('종목 규칙을 받는 중…');
-    call('specs', {}).then(function (x) { toast(x.j && x.j.ok ? '종목 ' + x.j.n + '개로 갱신했어요' : '실패: ' + ((x.j && x.j.err) || x.s)); if (x.j && x.j.ok) go('home'); });
+    call('specs', {}).then(function (x) { toast(x.j && x.j.ok ? '종목 ' + x.j.n + '개로 갱신했어요' : '실패: ' + ((x.j && x.j.err) || x.s)); if (x.j && x.j.ok) go(TAB); });
   }
 
   /* ── 초대코드 ── */
@@ -8388,10 +8482,8 @@ select.pa-in{padding-right:6px}
       var s = x.j.settings || {};
       B.innerHTML = '<div class="pa-set">' +
         '<label><span>초기화 승인 모드<small>켜면 모든 회원(정책 「기본」)의 초기화를 운영자가 승인해야 해요. 끄면 쿠폰만 있으면 바로.</small></span><input type="checkbox" id="psAp"' + (s.approval ? ' checked' : '') + '></label>' +
-        '<label><span>새 가입 받기<small>끄면 초대코드가 있어도 가입이 막혀요.</small></span><input type="checkbox" id="psSu"' + (s.signup ? ' checked' : '') + '></label>' +
         '<label><span>순위 기준<small>바꾸면 이번 달 순위가 바로 다시 계산돼요.</small></span><select class="pa-in" id="psRm"><option value="ret"' + (s.rankMetric !== 'gain' ? ' selected' : '') + '>수익률</option><option value="gain"' + (s.rankMetric === 'gain' ? ' selected' : '') + '>자산 증가액</option></select></label>' +
         '<label><span>매달 주는 초기화 쿠폰<small>새 달 첫 접속 때 이 수로 다시 채워요.</small></span><input class="pa-in" id="psCp" type="number" min="0" max="10" value="' + (s.coupons != null ? s.coupons : 2) + '" style="width:70px"></label>' +
-        '<label><span>문의 창구<small>가입 · 비밀번호 분실 안내에 나와요. 예: @andre99</small></span><input class="pa-in" id="psCt" maxlength="60" value="' + esc(s.contact || '') + '" style="width:150px"></label>' +
         '<label><span>최대 레버리지 · 1군 (BTC · ETH)<small>1~200배. 저장하면 바로 적용돼요(이미 연 포지션은 그대로).</small></span><input class="pa-in" id="psL1" type="number" min="1" max="200" value="' + ((s.levCaps || [])[0] || 125) + '" style="width:70px"></label>' +
         '<label><span>최대 레버리지 · 2군 (거래대금 3~10위)</span><input class="pa-in" id="psL2" type="number" min="1" max="200" value="' + ((s.levCaps || [])[1] || 75) + '" style="width:70px"></label>' +
         '<label><span>최대 레버리지 · 3군 (나머지 크립토)</span><input class="pa-in" id="psL3" type="number" min="1" max="200" value="' + ((s.levCaps || [])[2] || 50) + '" style="width:70px"></label>' +
@@ -8433,7 +8525,7 @@ select.pa-in{padding-right:6px}
       '</div><h3 class="pa-h3">직접 추가</h3><div class="pa-row"><input class="pa-in w" id="pyQ" placeholder="NVDA, 삼성, GOLD, SOL…" value="' + esc(SYM.q) + '" autocomplete="off"></div><div class="pa-list" id="pyL"></div>' +
       (c.include.length ? '<h3 class="pa-h3">직접 추가한 종목</h3><div class="pa-chips">' + c.include.map(function (k) { return chipOf(k, 'data-si', '추가 취소'); }).join('') + '</div>' : '') +
       (c.exclude.length ? '<h3 class="pa-h3">뺀 종목 <small class="pa-st">↺ = 되돌리기</small></h3><div class="pa-chips">' + c.exclude.map(function (k) { return chipOf(k, 'data-se', '되돌리기'); }).join('') + '</div>' : '') +
-      '<div class="pa-row"><button type="button" class="pri" id="pyGo">저장하고 바로 적용</button></div><p class="pa-st" id="paMsg">열린 포지션 · 주문이 있는 종목은 목록에서 빠지지 않아요. 매일 한 번 거래대금 순위로 다시 골라요.</p>';
+      '<div class="pa-row"><button type="button" class="pri" id="pyGo">저장하고 바로 적용</button><button type="button" id="paSp">종목 규칙 지금 다시 받기</button></div><p class="pa-st" id="paMsg">열린 포지션 · 주문이 있는 종목은 목록에서 빠지지 않아요. 매일 한 번 거래대금 순위로 다시 골라요.</p>';
     drawFind();
   }
   function drawFind() {
@@ -8469,10 +8561,13 @@ select.pa-in{padding-right:6px}
 
   function onClick(e) {
     var t = e.target, d = t.dataset || {};
+    var sb = t.closest('[data-ps]'); if (sb) { if (key()) { var sk = sb.dataset.ps; go(SUBS[sk] ? SUBS[sk][0][0] : sk); } return; }
     var tab = t.closest('[data-pt]'); if (tab) { if (key()) go(tab.dataset.pt); return; }
+    var gt = t.closest('[data-goto]'); if (gt) return go(gt.dataset.goto);
     if (d.re) return go(TAB);
-    if (t.id === 'paKeyGo') { var k = $('paKey').value.trim(); if (!k) return; ls(KEY, k); return go('home'); }
-    if (t.id === 'paKeyDel') { if (confirm('이 기기에서 관리 키를 지울까요?')) { ls(KEY, null); go('key'); } return; }
+    if (t.id === 'paKeyGo') return unlock();
+    if (t.id === 'paKeyDel') { if (confirm('이 기기에서 관리 키를 지우고 잠글까요?')) { forget(); go('key'); } return; }
+    if (t.id === 'paMain') { if (window.A99Ops && window.A99Ops.openPanel) window.A99Ops.openPanel(); else toast('점검 도구가 없어요'); return; }
     if (t.id === 'paQGo') { UQ.q = $('paQ').value.trim(); UQ.page = 0; return go('users'); }
     if (d.pg) { UQ.page = Math.max(0, UQ.page + +d.pg); return go('users'); }
     if (t.id === 'paAll') { LAST.users.forEach(function (u) { SEL[u.id] = true; }); Array.prototype.forEach.call(P.querySelectorAll('[data-uid]'), function (c) { c.checked = true; }); return selN(); }
@@ -8500,7 +8595,13 @@ select.pa-in{padding-right:6px}
     if (TAB === 'syms' && symClick(t)) return;
     if (t.id === 'psGo') {
       t.disabled = true;
-      return call('settings', { approval: $('psAp').checked, signup: $('psSu').checked, rankMetric: $('psRm').value, coupons: +$('psCp').value, contact: $('psCt').value.trim(), levCaps: [+$('psL1').value, +$('psL2').value, +$('psL3').value, +$('psL4').value] }).then(function (x) {
+      return call('settings', { approval: $('psAp').checked, rankMetric: $('psRm').value, coupons: +$('psCp').value, levCaps: [+$('psL1').value, +$('psL2').value, +$('psL3').value, +$('psL4').value] }).then(function (x) {
+        t.disabled = false; toast(x.s === 200 ? '저장했어요' : '실패');
+      });
+    }
+    if (t.id === 'pfGo') {
+      t.disabled = true;
+      return call('settings', { signup: $('psSu').checked, contact: $('psCt').value.trim() }).then(function (x) {
         t.disabled = false; toast(x.s === 200 ? '저장했어요' : '실패');
       });
     }
@@ -8512,6 +8613,28 @@ select.pa-in{padding-right:6px}
     if (t.id === 'paFp') { UQ.policy = t.value; UQ.page = 0; return go('users'); }
   }
   window.A99PaperAdmin = { open: open, _usageHtml: usageHtml };
+})();
+</script>
+
+<script>
+/* 2026.10.19 탭 정리 — 관심 탭: 관심 종목을 차트·알림 상자 바로 아래로 올린다 */
+(function () {
+  var n = 0;
+  function go() {
+    var at = document.getElementById('atTab'), wr = document.getElementById('watchRows');
+    if (!at || !wr) return false;
+    if (document.getElementById('myWatch')) return true;
+    var box = document.createElement('div'); box.className = 'sec'; box.id = 'myWatch';
+    var heads = Array.prototype.slice.call(document.querySelectorAll('#p-my .sec-h'));
+    var h = heads.filter(function (x) { var t = x.querySelector('h2'); return t && t.textContent === '관심 종목'; })[0];
+    if (h) box.appendChild(h);
+    var sum = document.getElementById('watchSum'); if (sum) box.appendChild(sum);
+    box.appendChild(wr);
+    at.parentNode.insertBefore(box, at.nextSibling);
+    return true;
+  }
+  function boot() { if (go()) return; if (++n < 40) setTimeout(boot, 250); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 0); }); else setTimeout(boot, 0);
 })();
 </script>
 
