@@ -841,6 +841,18 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .mv-none{font-size:11.5px;color:#F0B429;line-height:1.5}
 /* ══ 오늘 나온 공시 (2026.08.20) ══ */
 .disc-bar{display:flex;gap:5px;padding:10px 16px 12px}
+/* ══ 이번 주 실적 발표 3줄 (2026.10.19-D) ══ */
+.wk3-all{background:none;border:0;font-family:inherit;color:var(--tx2);padding:4px 0;cursor:pointer}
+#wk3{margin:0 16px;border-radius:13px;background:var(--s1);overflow:hidden}
+.wk3-r{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:0 14px;background:none;border:0;border-top:1px solid var(--s2);font-family:inherit;color:var(--tx);text-align:left;cursor:pointer}
+.wk3-r:first-child{border-top:0}
+.wk3-r .d{flex:0 0 54px;font-size:12px;font-weight:700;color:var(--tx2);font-variant-numeric:tabular-nums}
+.wk3-r .d.td{color:#F0B429}
+.wk3-r .n{flex:1;min-width:0;font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk3-r .n small{margin-left:6px;font-size:11px;font-weight:600;color:var(--tx3)}
+.wk3-r .h{flex:0 0 auto;font-size:11.5px;color:var(--tx3)}
+.wk3-e{padding:16px 14px;font-size:12px;color:var(--tx3);line-height:1.6}
+.ec-goto{display:block;width:100%;margin-top:6px;padding:12px 0 4px;background:none;border:0;border-top:1px solid var(--s2);font-family:inherit;font-size:12px;color:var(--tx2);text-align:left;cursor:pointer}
 .disc-b{flex:1;min-height:38px;border-radius:11px;background:var(--s2);color:var(--tx2);
   font-size:11.5px;font-weight:700;border:none;font-family:inherit;padding:0 4px}
 .disc-b.on{background:var(--s3,#1a1a1c);color:var(--tx);box-shadow:inset 0 0 0 1px var(--tx3,#3a3a3d)}
@@ -913,6 +925,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     </div>
   </div>
 
+  <!-- 2026.10.19-D 마켓 순서: Market 데이터 → 업종별 등락 → 오늘 움직인 이유 → 시장 온도 -->
+  <div class="sec">
+    <div class="sec-h"><h2>업종별 등락</h2><span class="note">섹터 ETF</span></div>
+    <div class="heat" id="heat"></div>
+  </div>
+
   <div class="sec why-h"><div class="sec-h"><h2>오늘 움직인 이유</h2><span class="note">급등락 · 공시 · 흑자 전환</span></div></div>
   <div class="disc-bar">
     <button class="disc-b on" data-disc="mv">급등 이유</button>
@@ -923,9 +941,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   <div id="fkBox" hidden></div>
   <div id="taBox" hidden></div>
 
-  <div class="sec">
-    <div class="sec-h"><h2>업종별 등락</h2><span class="note">섹터 ETF</span></div>
-    <div class="heat" id="heat"></div>
+  <!-- 2026.10.19-D 이번 주 실적 발표 3줄 (전체는 경제 > 일정) -->
+  <div class="sec wk3-sec">
+    <div class="sec-h"><h2 id="wk3T">이번 주 실적 발표</h2><button type="button" class="note wk3-all" id="wk3All">전체 일정 ›</button></div>
+    <div id="wk3"><div class="skel">불러오는 중…</div></div>
   </div>
 
   <div class="sec">
@@ -936,11 +955,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <div class="tscale"><span>공포 0</span><span>중립 50</span><span>탐욕 100</span></div>
       <p id="fearSay">변동성 지수로 계산한 시장 분위기입니다.</p>
     </div>
-  </div>
-
-  <div class="sec">
-    <div class="sec-h"><h2>오늘 많이 오른 종목</h2><span class="note">미국장</span></div>
-    <div class="rows" id="gainRows"><div class="skel">불러오는 중…</div></div>
   </div>
 
   <button class="srcbtn" id="srcBtn">▾ SOURCE &amp; NOTICE</button>
@@ -1073,7 +1087,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.10.19-C';
+var BUILD_VER='v2026.10.19-D';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -1115,7 +1129,7 @@ function show(t){
   if(t==='paper'){ paperOpen(); } else if(window.A99Paper){ window.A99Paper.hide(); }
 }
 /* 모의투자 탭: 처음 누를 때만 paper/paper.js(차트 · 계산 엔진 · 화면)를 받아 온다 — 앱 첫 화면은 가볍게 */
-var PAPER_JS='paper/paper.js?v=2026.10.19-C', PAPER_LOADING=false;
+var PAPER_JS='paper/paper.js?v=2026.10.19-D', PAPER_LOADING=false;
 function paperOpen(){
   var host=$('paperHost');
   if(window.A99Paper){ window.A99Paper.mount(host); window.A99Paper.show(); return; }
@@ -1313,19 +1327,11 @@ function loadMarket(){
         +'<br><span class="fearsrc">변동성지수(VIX)로 계산한 근사값입니다. VIX 18을 중립(50)으로 봅니다.</span>';
     }
 
-    var g=d.gainers||[];
-    $('gainRows').innerHTML = g.length ? g.map(function(x,i){
-      return '<div class="row" data-sym="'+esc(x.symbol)+'"><span class="rk n">'+(i+1)+'</span>'+
-        '<span><span class="tk">'+esc(x.symbol)+'</span><div class="ko">'+esc(x.name||'')+'</div></span>'+
-        '<span class="rt"><div class="p n">'+fx(x.price)+'</div>'+
-        '<div class="c n '+dirCls(x.chg_pct)+'">'+pct(x.chg_pct)+'</div></span></div>';
-    }).join('') : '<div class="skel">지금은 목록을 불러오지 못했습니다.</div>';
-    $('gainRows').querySelectorAll('.row').forEach(function(r){
-      r.addEventListener('click',function(){ show('stock'); loadStock(r.dataset.sym); });
-    });
+    /* 2026.10.19-D 「오늘 많이 오른 종목」은 「오늘 움직인 이유 → 급등 이유」로 합침. 이유 목록을 못 받을 때만 대신 보여준다 */
+    MK_GAIN=d.gainers||[];
+    if(window.MV_FAILED&&MV_DIR==='up') mvFail($('mvBox'));   /* 이유 목록이 먼저 실패했으면 대신 목록을 채운다 */
 
   }).catch(function(){
-    $('gainRows').innerHTML='<div class="skel">데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</div>';
     var st=$('mTime'); if(st){ st.textContent='갱신 실패'; st.className='n stale'; }
   });
 }
@@ -2037,7 +2043,8 @@ function drawFlow(j){
   }
   if(ECO && (ECO.credit||{}).BAMLH0A0HYM2){
     o+='<div class="ec-grp">시장이 걱정하는 정도</div>'+
-       '<div class="sec ec-sec">'+ecoRow(ECO.credit.BAMLH0A0HYM2)+ecoRow(ECO.credit.VIXCLS)+'</div>';
+       '<div class="sec ec-sec">'+ecoRow(ECO.credit.BAMLH0A0HYM2)+
+       '<button type="button" class="ec-goto" id="goTemp">VIX(변동성 지수)는 마켓 › 시장 온도에서 함께 봐요 ›</button></div>';   /* 2026.10.19-D VIX는 마켓 한 곳에만 */
   }
   var it=(j.items||[]).slice();
   var mx=1; it.forEach(function(x){ if(Math.abs(x.pct)>mx) mx=Math.abs(x.pct); });
@@ -2209,7 +2216,37 @@ function setDisc(t){
   if(t==='mv') loadMV();
 }
 
-var MV=null, MV_LOADING=false, MV_DIR='up';
+var MV=null, MV_LOADING=false, MV_DIR='up', MK_GAIN;   /* MK_GAIN: 마켓 자료가 먼저 와도 지워지지 않게 초기값 없음 */
+function mvFail(box){
+  if(!box) return;
+  window.MV_FAILED=true;
+  var g=MV_DIR==='up'?(MK_GAIN||[]):[];
+  var h='<div class="sec">'+mvSeg()+'<div class="ta-load">이유 목록을 지금 불러오지 못했습니다<br><button type="button" class="mv-retry" onclick="MV=null;loadMV()">다시 시도</button></div>';
+  if(g.length){
+    h+='<div class="ta-lead">대신 오늘 많이 오른 종목만 먼저 보여드려요 (이유 확인 전).</div><div class="rows">'+g.map(function(x,i){
+      return '<div class="row" data-sym="'+esc(x.symbol)+'"><span class="rk n">'+(i+1)+'</span>'+
+        '<span><span class="tk">'+esc(x.symbol)+'</span><div class="ko">'+esc(x.name||'')+'</div></span>'+
+        '<span class="rt"><div class="p n">'+fx(x.price)+'</div>'+
+        '<div class="c n '+dirCls(x.chg_pct)+'">'+pct(x.chg_pct)+'</div></span></div>';
+    }).join('')+'</div>';
+  }
+  box.innerHTML=h+'</div>';
+  mvBind(box);
+}
+function mvSeg(){
+  return '<div class="ta-days">'+
+    '<button class="ta-d'+(MV_DIR==='up'?' on':'')+'" data-mv="up">많이 오른 곳</button>'+
+    '<button class="ta-d'+(MV_DIR==='down'?' on':'')+'" data-mv="down">많이 내린 곳</button>'+
+  '</div>';
+}
+function mvBind(box){
+  box.querySelectorAll('[data-mv]').forEach(function(b){
+    b.addEventListener('click',function(){ MV_DIR=b.dataset.mv; loadMV(); });
+  });
+  box.querySelectorAll('.rows .row[data-sym]').forEach(function(r){
+    r.addEventListener('click',function(){ show('stock'); loadStock(r.dataset.sym); });
+  });
+}
 function loadMV(){
   var box=$('mvBox'); if(!box) return;
   var k=MV_DIR;
@@ -2220,10 +2257,10 @@ function loadMV(){
   fetchT(API+'/movers?dir='+MV_DIR+'&n=10&_='+Date.now(), 30000)
     .then(function(r){return r.json()})
     .then(function(j){ MV_LOADING=false;
-      if(!j || j.status!=='ok'){ box.innerHTML='<div class="sec"><div class="ta-load">지금 목록을 불러오지 못했습니다<br><button type="button" class="mv-retry" onclick="MV=null;loadMV()">다시 시도</button></div></div>'; return; }
+      if(!j || j.status!=='ok'){ mvFail(box); return; }
       j.__k=k; MV=j; drawMV(j);
     })
-    .catch(function(){ MV_LOADING=false; var box=$('mvBox'); if(box) box.innerHTML='<div class="sec"><div class="ta-load">지금 목록을 불러오지 못했습니다<br><button type="button" class="mv-retry" onclick="MV=null;loadMV()">다시 시도</button></div></div>'; });
+    .catch(function(){ MV_LOADING=false; mvFail($('mvBox')); });
 }
 function mvReason(x){
   if(!x.reasons || !x.reasons.length){
@@ -2253,14 +2290,10 @@ function mvRow(x){
 }
 function drawMV(j){
   var box=$('mvBox'); if(!box) return;
+  window.MV_FAILED=false;
   var it=j.items||[];
-  if(!it.length){ box.innerHTML='<div class="sec"><div class="ta-load">지금은 크게 움직인 종목이 없습니다</div></div>'; return; }
-  var o='<div class="sec"><div class="sec-h"><h2>오늘 크게 움직인 종목</h2>'+
-        '<span class="note">이유 확인</span></div>'+
-        '<div class="ta-days">'+
-          '<button class="ta-d'+(MV_DIR==='up'?' on':'')+'" data-mv="up">많이 오른 곳</button>'+
-          '<button class="ta-d'+(MV_DIR==='down'?' on':'')+'" data-mv="down">많이 내린 곳</button>'+
-        '</div>'+
+  if(!it.length){ box.innerHTML='<div class="sec">'+mvSeg()+'<div class="ta-load">지금은 크게 움직인 종목이 없습니다</div></div>'; mvBind(box); return; }
+  var o='<div class="sec">'+mvSeg()+
         '<div class="ta-lead">공시와 실적 발표를 대조했습니다. '+
           '이유가 확인된 곳 '+j.counts.with_reason+'곳 · 못 찾은 곳 '+j.counts.no_reason+'곳</div>';
   o+=it.map(mvRow).join('');
@@ -8063,10 +8096,10 @@ html.at-lock,html.at-lock body{overflow:hidden}
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════
-  안드레99 — 운영 센터  v2026.10.19-C
-  여는 길: 앱 위쪽 버전 글자를 3초 안에 5번 → 관리 키를 넣어야 열린다(서버가 확인)
+  안드레99 — 운영 센터  v2026.10.19-D
+  여는 길: 앱 위쪽 버전 글자를 3초 안에 5번 → 운영자 비밀번호(서버 확인) → 12시간 출입증. 비상용: 관리 키(기기에 저장 안 함)
   6섹션: 오늘 · 회원(목록 · 초대코드 · 초기화 요청) · 모의투자(종목 · 규칙) · 메인 앱 · 시스템 · 보안·설정(관리 기록 · 문의 · 가입 · 잠금)
-  관리 키 : 모의선물 서버의 PAPER_ADMIN_KEY. 「이 기기에 기억」을 끄면 앱을 닫을 때 잊는다. 「잠그기」로 지운다.
+  비밀번호: 서버에는 변환값만. 바꾸면 모든 기기 출입증 끝. 관리 키 = 모의선물 서버의 PAPER_ADMIN_KEY(비상용 · 비밀번호 정하기/잊었을 때).
   서버: 키 5번 틀리면 그 IP 15분 잠금 · 바꾸는 작업은 모두 관리 기록에 남는다.
   붙여넣는 곳: 운영 화면 블록 뒤 (</body> 앞)
 ═══════════════════════════════════════════════════════════════ -->
@@ -8111,6 +8144,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
 .pa-row button,.pa-b{min-height:38px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--tx);font-size:12.5px;font-weight:600}
 .pa-row button.pri,.pa-b.pri{background:var(--tx);color:var(--bg);border-color:var(--tx)}
 .pa-row button.red{border-color:var(--up);color:var(--up)}
+.pa-row button.lnk{border:0;background:none;color:var(--tx3);padding:6px 0;min-height:0;text-decoration:underline;text-underline-offset:3px;font-size:12.5px;text-align:left}
 .pa-row button:disabled{opacity:.4}
 .pa-in{min-height:38px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--tx);font-size:13px;min-width:0}
 .pa-in.w{flex:1}
@@ -8163,12 +8197,18 @@ select.pa-in{padding-right:6px}
   function mb(b) { return b == null ? '—' : b >= 1048576 ? (b / 1048576).toFixed(1) + 'MB' : (b / 1024).toFixed(0) + 'KB'; }
   function ago(t) { if (!t) return '—'; var s = Math.round((Date.now() - t) / 1000); return s < 60 ? s + '초 전' : s < 3600 ? Math.round(s / 60) + '분 전' : s < 86400 ? Math.round(s / 3600) + '시간 전' : Math.round(s / 86400) + '일 전'; }
   function kst(t) { if (!t) return '—'; var d = new Date(t + 9 * 3600e3); return (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + ' ' + ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
-  function key() { return ls(KEY) || ss(KEY) || ''; }
-  function forget() { ls(KEY, null); ss(KEY, null); }
+  /* 2026.10.19-D 입구: 운영자 비밀번호 → 12시간 출입증만 이 기기에 · 관리 키는 비상용(앱 닫으면 잊음, 기기에 저장 안 함) */
+  var TOK = 'a99_paper_at', GMODE = 'pw';
+  function tok() { try { var o = JSON.parse(ls(TOK) || 'null'); return o && o.t && o.e > Date.now() ? o : null; } catch (e) { return null; } }
+  function setTok(j) { if (j && j.token) ls(TOK, JSON.stringify({ t: j.token, e: j.exp })); ss(KEY, null); }
+  function hdr() { var o = tok(); if (o) return { 'x-admin-token': o.t }; var k = ss(KEY); return k ? { 'x-admin-key': k } : {}; }
+  function key() { return !!(tok() || ss(KEY)); }
+  function forget() { ls(KEY, null); ss(KEY, null); ls(TOK, null); }
+  function hm(t) { var d = new Date(t + 9 * 3600e3); return ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
   function call(path, body) {
     return new Promise(function (ok) {
       var done = false, tm = setTimeout(function () { if (!done) { done = true; ok({ s: 0, j: { err: '시간 초과' } }); } }, 20000);
-      fetch(PAPER + '/p/admin/' + path, { method: body ? 'POST' : 'GET', headers: { 'content-type': 'application/json', 'x-admin-key': key() }, body: body ? JSON.stringify(body) : undefined })
+      fetch(PAPER + '/p/admin/' + path, { method: body ? 'POST' : 'GET', headers: Object.assign({ 'content-type': 'application/json' }, hdr()), body: body ? JSON.stringify(body) : undefined })
         .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j || {} }; }, function () { return { s: r.status, j: {} }; }); })
         .then(function (x) { if (!done) { done = true; clearTimeout(tm); ok(x); } }, function () { if (!done) { done = true; clearTimeout(tm); ok({ s: 0, j: { err: '연결 실패' } }); } });
     });
@@ -8183,7 +8223,7 @@ select.pa-in{padding-right:6px}
   var P = null, TAB = 'today', SEL = {}, UQ = { q: '', status: '', policy: '', page: 0 }, LAST = { users: [], ov: null }, OFF = [];
   /* 6섹션 · 섹션 안 칸 */
   var SECS = [['today', '오늘'], ['members', '회원'], ['paper', '모의투자'], ['main', '메인 앱'], ['sys', '시스템'], ['sec', '보안·설정']];
-  var SUBS = { members: [['users', '회원 목록'], ['invites', '초대코드'], ['resets', '초기화 요청']], paper: [['syms', '종목'], ['rules', '규칙']], sec: [['audit', '관리 기록'], ['prefs', '문의 · 가입 · 잠금']] };
+  var SUBS = { members: [['users', '회원 목록'], ['invites', '초대코드'], ['resets', '초기화 요청']], paper: [['syms', '종목'], ['rules', '규칙']], sec: [['audit', '관리 기록'], ['prefs', '비밀번호 · 문의 · 가입']] };
   function secOf(t) { for (var k in SUBS) for (var i = 0; i < SUBS[k].length; i++) if (SUBS[k][i][0] === t) return k; return t; }
   function open() {
     if (!P) {
@@ -8202,6 +8242,7 @@ select.pa-in{padding-right:6px}
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && P && !P.hidden) P.hidden = true; });
     }
     P.hidden = false;
+    ls(KEY, null);                                                     // 예전 판이 이 기기에 기억해 둔 관리 키는 지운다
     go(key() ? TAB : 'key');
   }
   function go(t) {
@@ -8218,29 +8259,40 @@ select.pa-in{padding-right:6px}
     B.innerHTML = '<p class="pa-st">불러오는 중…</p>';
     ({ today: today, sys: home, main: mainView, users: users, syms: symsView, invites: invites, resets: resets, rules: settingsView, prefs: prefsView, audit: auditView })[t](B);
   }
-  function lockedMsg(j) { var u = j && j.until ? new Date(j.until + 9 * 3600e3) : null; return '관리 키를 5번 틀려서 15분 동안 잠겼어요' + (u ? ' (' + ('0' + u.getUTCHours()).slice(-2) + ':' + ('0' + u.getUTCMinutes()).slice(-2) + '까지)' : '') + '. 이 동안에는 맞는 키도 받지 않아요.'; }
+  function lockedMsg(j) { return '5번 틀려서 15분 동안 잠겼어요' + (j && j.until ? ' (' + hm(j.until) + '까지)' : '') + '. 이 동안에는 맞는 비밀번호도 받지 않아요.'; }
   function denied(B, x) {
     if (x.s === 429 && x.j.err === 'admin_locked') { forget(); go('key'); keyView($('paBody'), lockedMsg(x.j)); return true; }
-    if (x.s === 403 || x.s === 500 && x.j.err === 'no_admin_key') { forget(); go('key'); keyView($('paBody'), x.j.err === 'no_admin_key' ? '서버에 관리 키(PAPER_ADMIN_KEY)가 아직 없어요.' : '관리 키가 맞지 않아요.'); return true; }
+    if (x.s === 401) { forget(); GMODE = 'pw'; go('key'); keyView($('paBody'), '출입증 시간이 끝났거나 다른 곳에서 로그아웃했어요. 비밀번호를 다시 넣어 주세요.'); return true; }
+    if (x.s === 403 || x.s === 500 && x.j.err === 'no_admin_key') { forget(); go('key'); keyView($('paBody'), x.j.err === 'no_admin_key' ? '서버에 관리 키(PAPER_ADMIN_KEY)가 아직 없어요.' : '들어갈 수 없어요. 다시 넣어 주세요.'); return true; }
     if (x.s !== 200) { B.innerHTML = '<p class="pa-st err">모의투자 서버에 연결하지 못했어요 (' + esc(x.j.err || x.s) + ').</p><div class="pa-row"><button type="button" data-re="1">다시</button></div>'; return true; }
     return false;
   }
-  /* 입구: 관리 키를 서버가 확인해야 열린다 */
+  /* 입구: 비밀번호(평소) · 관리 키(비상용) — 둘 다 서버가 확인해야 열린다 */
   function keyView(B, msg) {
-    B.innerHTML = '<div class="pa-gate"><h3 class="pa-h3">운영 센터 잠금</h3><p class="pa-st">관리 키(PAPER_ADMIN_KEY)를 넣으면 서버가 확인한 뒤 열려요. 5번 틀리면 15분 동안 잠겨요.</p>' +
-      '<div class="pa-row"><input class="pa-in w" id="paKey" type="password" autocomplete="off" placeholder="관리 키"><button type="button" class="pri" id="paKeyGo">열기</button></div>' +
-      '<label class="pa-st" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="paKeyRm" checked style="width:18px;height:18px">이 기기에 기억 (끄면 앱을 닫을 때 잊어요)</label>' +
-      (msg ? '<p class="pa-st err">' + esc(msg) + '</p>' : '') + '</div>';
+    var pw = GMODE === 'pw';
+    B.innerHTML = '<div class="pa-gate"><h3 class="pa-h3">운영 센터 잠금</h3>' +
+      (pw ? '<p class="pa-st">운영자 비밀번호를 넣으면 12시간 동안 열려요. 이 기기에는 비밀번호가 아니라 12시간짜리 출입증만 남아요. 5번 틀리면 15분 잠겨요.</p>' +
+        '<div class="pa-row"><input class="pa-in w" id="paKey" type="password" autocomplete="current-password" placeholder="운영자 비밀번호"><button type="button" class="pri" id="paKeyGo">들어가기</button></div>' +
+        '<div class="pa-row"><button type="button" class="lnk" id="paUseKey">비밀번호를 아직 안 정했거나 잊었어요 → 관리 키로 들어가기</button></div>'
+        : '<p class="pa-st">비상용 관리 키(PAPER_ADMIN_KEY)로 들어가요. 이 기기에 저장하지 않고 앱을 닫으면 잊어요. 들어간 뒤 비밀번호를 정하거나 바꾸세요.</p>' +
+        '<div class="pa-row"><input class="pa-in w" id="paKey" type="password" autocomplete="off" placeholder="관리 키"><button type="button" class="pri" id="paKeyGo">열기</button></div>' +
+        '<div class="pa-row"><button type="button" class="lnk" id="paUsePw">← 비밀번호로 들어가기</button></div>') +
+      (msg ? '<p class="pa-st err" id="paGateMsg">' + esc(msg) + '</p>' : '') + '</div>';
+  }
+  function jfetch(path, opt) {
+    return fetch(PAPER + '/p/admin/' + path, opt).then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j || {} }; }, function () { return { s: r.status, j: {} }; }); }, function () { return { s: 0, j: {} }; });
   }
   function unlock() {
     var k = $('paKey').value.trim(); if (!k) return;
-    var rm = $('paKeyRm').checked, btn = $('paKeyGo'); btn.disabled = true;
-    fetch(PAPER + '/p/admin/ping', { headers: { 'x-admin-key': k } }).then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j || {} }; }, function () { return { s: r.status, j: {} }; }); }, function () { return { s: 0, j: {} }; }).then(function (x) {
+    var btn = $('paKeyGo'); btn.disabled = true;
+    var B = $('paBody'), pw = GMODE === 'pw';
+    (pw ? jfetch('login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pw: k }) }) : jfetch('ping', { headers: { 'x-admin-key': k } })).then(function (x) {
       btn.disabled = false;
-      if (x.s === 200 && x.j.ok) { forget(); if (rm) ls(KEY, k); else ss(KEY, k); go('today'); return; }
-      var B = $('paBody');
+      if (x.s === 200 && pw && x.j.token) { forget(); setTok(x.j); go('today'); return; }
+      if (x.s === 200 && !pw && x.j.ok) { forget(); ss(KEY, k); go(x.j.pwSet ? 'today' : 'prefs'); return; }
+      if (x.j.err === 'no_pw') { GMODE = 'key'; return keyView(B, '아직 운영자 비밀번호가 없어요. 관리 키로 한 번 들어와서 「보안·설정」에서 정해 주세요.'); }
       if (x.j.err === 'admin_locked') return keyView(B, lockedMsg(x.j));
-      if (x.j.err === 'admin') return keyView(B, '관리 키가 맞지 않아요.' + (x.j.left != null ? ' 남은 시도 ' + x.j.left + '번.' : ''));
+      if (x.j.err === 'admin') return keyView(B, (pw ? '비밀번호가' : '관리 키가') + ' 맞지 않아요.' + (x.j.left != null ? ' 남은 시도 ' + x.j.left + '번.' : ''));
       if (x.j.err === 'no_admin_key') return keyView(B, '서버에 관리 키(PAPER_ADMIN_KEY)가 아직 없어요.');
       keyView(B, '서버에 연결하지 못했어요. 잠시 뒤 다시 해 주세요.');
     });
@@ -8248,15 +8300,18 @@ select.pa-in{padding-right:6px}
 
   /* ── 오늘: 처리할 일만 ── */
   function today(B) {
-    call('overview').then(function (x) {
+    Promise.all([call('overview'), call('ping')]).then(function (rr) {
+      var x = rr[0];
       if (denied(B, x)) return;
+      var pg = rr[1].j || {};
       var o = x.j; LAST.ov = o;
       var cr = o.cron, last = cr && cr.last, late = !last || Date.now() - last.at > 5 * 60000, us = o.users || {};
       $('paRc').textContent = o.pendingResets ? o.pendingResets : '';
       $('paFc').textContent = o.adminFails24h ? '!' : '';
       var todo = [];
       if (o.pendingResets) todo.push(['resets', '초기화 승인 기다리는 요청', o.pendingResets + '건', 'warn']);
-      if (o.adminFails24h) todo.push(['audit', '최근 24시간 관리 키 틀린 시도', o.adminFails24h + '번', 'warn']);
+      if (pg.ok && !pg.pwSet) todo.push(['prefs', '운영자 비밀번호를 아직 안 정했어요', '정하기', 'warn']);
+      if (o.adminFails24h) todo.push(['audit', '최근 24시간 틀린 들어가기 시도', o.adminFails24h + '번', 'warn']);
       if (late) todo.push(['sys', '1분 감시가 멈춘 것 같아요', last ? ago(last.at) : '기록 없음', 'warn']);
       else if (last && last.err.length) todo.push(['sys', '1분 감시 오류', last.err.length + '개', 'warn']);
       if (o.specs && o.specs.fallback) todo.push(['syms', '종목 규칙이 기본값이에요', '다시 받기', 'warn']);
@@ -8278,30 +8333,59 @@ select.pa-in{padding-right:6px}
       '<div class="pa-row"><button type="button" class="pri" id="paMain">점검 도구 열기</button></div>';
   }
   /* ── 보안·설정: 관리 기록 ── */
-  var ACT = { bulk: '회원 일괄 작업', pw: '비밀번호 재설정', rename: '닉네임 변경', official: '공식 계정', specs: '종목 다시 받기', invites: '초대코드', resets: '초기화 승인 · 거절', settings: '설정 저장' };
+  var ACT = { bulk: '회원 일괄 작업', pw: '비밀번호 재설정', rename: '닉네임 변경', official: '공식 계정', specs: '종목 다시 받기', invites: '초대코드', resets: '초기화 승인 · 거절', settings: '설정 저장', login: '비밀번호로 들어옴', setpw: '운영자 비밀번호 정함 · 바꿈', logoutall: '모든 기기 로그아웃' };
   function auditView(B) {
     call('audit').then(function (x) {
       if (denied(B, x)) return;
       var r = x.j.rows || [], f = x.j.fails || [];
       var h = '<h3 class="pa-h3">관리 기록 (최근 100개)</h3>' + (x.j.noTable ? '<p class="pa-st err">관리 기록 표가 아직 없어요. 이번 판의 DB 바꾸기(SQL)를 먼저 실행해 주세요.</p>' : r.length ? '<div class="pa-scroll"><table class="pa-tbl"><thead><tr><th>때</th><th>작업</th><th>내용</th><th>IP</th></tr></thead><tbody>' +
         r.map(function (a) { return '<tr><td>' + kst(a.ts) + '</td><td style="text-align:left">' + esc(ACT[a.act] || a.act) + '</td><td style="text-align:left;white-space:normal;font-size:11px;color:var(--tx3)">' + esc(a.detail || '') + '</td><td>' + esc(a.ip || '') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="pa-st">아직 기록이 없어요.</p>');
-      h += '<h3 class="pa-h3">관리 키 틀린 시도 (최근 7일)</h3>' + (f.length ? '<div class="pa-scroll"><table class="pa-tbl"><thead><tr><th>때</th><th>IP</th><th>연속</th><th>잠금</th></tr></thead><tbody>' +
+      h += '<h3 class="pa-h3">틀린 들어가기 시도 · 비밀번호 · 관리 키 (최근 7일)</h3>' + (f.length ? '<div class="pa-scroll"><table class="pa-tbl"><thead><tr><th>때</th><th>IP</th><th>연속</th><th>잠금</th></tr></thead><tbody>' +
         f.map(function (a) { return '<tr><td>' + kst(a.ts) + '</td><td>' + esc(a.ip) + '</td><td>' + a.n + '번째</td><td>' + (a.locked ? '15분 잠금' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="pa-st">없어요.</p>') +
-        '<p class="pa-st">IP는 앞 두 자리만 남겨요. 모르는 시도가 많으면 관리 키를 바꾸세요(정식 배포 체크리스트 A-1).</p>';
+        '<p class="pa-st">IP는 앞 두 자리만 남겨요. 모르는 시도가 많으면 「보안·설정」에서 비밀번호를 바꾸고 모든 기기를 로그아웃하세요.</p>';
       B.innerHTML = h;
     });
   }
-  /* ── 보안·설정: 문의 · 가입 · 잠금 ── */
+  /* ── 보안·설정: 운영자 비밀번호 · 문의 · 가입 ── */
   function prefsView(B) {
-    call('overview').then(function (x) {
-      if (denied(B, x)) return;
-      var s = x.j.settings || {}, rem = !!ls(KEY);
-      B.innerHTML = '<div class="pa-set">' +
+    Promise.all([call('overview'), call('ping')]).then(function (rr) {
+      var x = rr[0]; if (denied(B, x)) return;
+      var s = x.j.settings || {}, pg = rr[1].j || {}, viaPw = pg.via === 'pw', t = tok();
+      B.innerHTML = '<h3 class="pa-h3">운영자 비밀번호</h3>' +
+        '<p class="pa-st">' + (pg.pwSet ? '정해 둔 비밀번호가 있어요' + (pg.pwAt ? ' (' + kst(pg.pwAt) + ' 바꿈)' : '') + '. ' : '<b style="color:#E8A317">아직 없어요.</b> 지금 정해 두면 다음부터 관리 키 대신 이 비밀번호로 들어와요. ') +
+        '12~64자 문장형으로 정해요(예: 좋아하는 문장 + 숫자). 서버에는 되돌릴 수 없는 변환값만 저장돼요.</p>' +
+        '<div class="pa-set">' +
+        (viaPw ? '<label><span>지금 비밀번호</span><input class="pa-in" id="pwCur" type="password" autocomplete="current-password" style="width:170px"></label>' : '') +
+        '<label><span>새 비밀번호</span><input class="pa-in" id="pwNew" type="password" autocomplete="new-password" maxlength="64" style="width:170px"></label>' +
+        '<label><span>한 번 더</span><input class="pa-in" id="pwNew2" type="password" autocomplete="new-password" maxlength="64" style="width:170px"></label>' +
+        '</div><div class="pa-row"><button type="button" class="pri" id="pwGo">' + (pg.pwSet ? '비밀번호 바꾸기' : '비밀번호 정하기') + '</button></div>' +
+        '<p class="pa-st">바꾸면 다른 기기의 출입증은 모두 끝나요. 이 기기는 새 출입증으로 계속 열려 있어요.</p>' +
+        '<h3 class="pa-h3">이 기기 · 다른 기기</h3><p class="pa-st">' + (t ? '이 기기 출입증: ' + hm(t.e) + '까지 (12시간)' : '지금은 비상용 관리 키로 들어와 있어요. 앱을 닫으면 잊어요.') + '</p>' +
+        '<div class="pa-row"><button type="button" class="red" id="paKeyDel">이 기기 잠그기</button>' + (pg.pwSet ? '<button type="button" class="red" id="paLoAll">모든 기기 로그아웃</button>' : '') + '</div>' +
+        '<h3 class="pa-h3">가입 · 문의</h3><div class="pa-set">' +
         '<label><span>새 가입 받기<small>끄면 초대코드가 있어도 가입이 막혀요.</small></span><input type="checkbox" id="psSu"' + (s.signup ? ' checked' : '') + '></label>' +
         '<label><span>문의 창구<small>모의투자 ⚙ 설정 · 내 정보의 「문의하기」 단추로 나와요. @아이디 = 인스타그램 DM · https://주소 · 메일 주소 모두 돼요. 예: @andre99</small></span><input class="pa-in" id="psCt" maxlength="60" value="' + esc(s.contact || '') + '" style="width:150px"></label>' +
-        '</div><div class="pa-row"><button type="button" class="pri" id="pfGo">저장</button></div>' +
-        '<h3 class="pa-h3">이 기기 잠금</h3><p class="pa-st">지금 관리 키는 ' + (rem ? '이 기기에 기억돼 있어요.' : '앱을 닫으면 잊혀요.') + ' 폰을 다른 사람이 쓸 수 있다면 「잠그기」를 눌러 두세요.</p>' +
-        '<div class="pa-row"><button type="button" class="red" id="paKeyDel">잠그기 (이 기기에서 키 지우기)</button></div><p class="pa-st" id="paMsg"></p>';
+        '</div><div class="pa-row"><button type="button" class="pri" id="pfGo">저장</button></div><p class="pa-st" id="paMsg"></p>';
+    });
+  }
+  function setPw() {
+    var n1 = $('pwNew').value, n2 = $('pwNew2').value, cur = $('pwCur') ? $('pwCur').value : undefined;
+    if (n1.length < 12) return toast('새 비밀번호는 12자 이상이에요 (문장형 권장)');
+    if (n1 !== n2) return toast('두 칸이 서로 달라요');
+    $('pwGo').disabled = true;
+    call('setpw', { pw: n1, cur: cur }).then(function (x) {
+      var b = $('pwGo'); if (b) b.disabled = false;
+      if (x.s === 200 && x.j.token) { setTok(x.j); toast('비밀번호를 저장했어요. 다음부터 이 비밀번호로 들어와요'); return go('prefs'); }
+      if (x.j.err === 'pw_cur') return toast('지금 비밀번호가 맞지 않아요');
+      if (x.j.err === 'pw_shape') return toast('12~64자로 정해 주세요');
+      if (!denied($('paBody'), x)) toast('저장하지 못했어요');
+    });
+  }
+  function logoutAll() {
+    if (!confirm('모든 기기의 출입증을 끝낼까요? 이 기기는 계속 열려 있어요.')) return;
+    call('logoutall', {}).then(function (x) {
+      if (x.s === 200 && x.j.token) { setTok(x.j); toast('다른 기기를 모두 로그아웃했어요'); return go('prefs'); }
+      if (!denied($('paBody'), x)) toast('하지 못했어요');
     });
   }
 
@@ -8566,7 +8650,11 @@ select.pa-in{padding-right:6px}
     var gt = t.closest('[data-goto]'); if (gt) return go(gt.dataset.goto);
     if (d.re) return go(TAB);
     if (t.id === 'paKeyGo') return unlock();
-    if (t.id === 'paKeyDel') { if (confirm('이 기기에서 관리 키를 지우고 잠글까요?')) { forget(); go('key'); } return; }
+    if (t.id === 'paKeyDel') { if (confirm('이 기기를 잠글까요? 다음에는 비밀번호를 다시 넣어요.')) { forget(); GMODE = 'pw'; go('key'); } return; }
+    if (t.id === 'paUseKey') { GMODE = 'key'; return keyView($('paBody')); }
+    if (t.id === 'paUsePw') { GMODE = 'pw'; return keyView($('paBody')); }
+    if (t.id === 'pwGo') return setPw();
+    if (t.id === 'paLoAll') return logoutAll();
     if (t.id === 'paMain') { if (window.A99Ops && window.A99Ops.openPanel) window.A99Ops.openPanel(); else toast('점검 도구가 없어요'); return; }
     if (t.id === 'paQGo') { UQ.q = $('paQ').value.trim(); UQ.page = 0; return go('users'); }
     if (d.pg) { UQ.page = Math.max(0, UQ.page + +d.pg); return go('users'); }
@@ -8638,5 +8726,53 @@ select.pa-in{padding-right:6px}
 })();
 </script>
 
+<script>
+/* 2026.10.19-D 마켓 「이번 주 실적 발표」 3줄 — 경제 > 일정과 같은 자료(한국어 이름이 있는 종목), 남은 발표 중 매출 규모 큰 3곳을 날짜순으로 */
+(function(){
+  var AT=0;
+  function etToday(){ try{ return new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'}); }catch(e){ return ymd(new Date()); } }
+  function draw(rows, today, next){
+    var box=$('wk3'); if(!box) return;
+    if(!rows.length){ box.innerHTML='<div class="wk3-e">'+(next?'다음 주':'이번 주')+' 남은 주요 발표가 없어요. 「전체 일정」에서 다른 주를 볼 수 있어요.</div>'; return; }
+    box.innerHTML=rows.map(function(x){
+      var td=x.d===today;
+      return '<button type="button" class="wk3-r" data-s="'+esc(x.s)+'"><span class="d'+(td?' td':'')+'">'+(td?'오늘':wdKo(x.d)+' '+shortMD(x.d))+'</span>'+
+        '<span class="n">'+esc(x.ko)+'<small>'+esc(x.s)+'</small></span><span class="h">'+esc(hourKo(x.h))+'</span></button>';
+    }).join('');
+  }
+  function load(force){
+    if(!$('wk3')) return;
+    if(!force && AT && Date.now()-AT<30*60000) return;
+    AT=Date.now();
+    var t=etToday(), d=new Date(t+'T00:00:00'), dw=d.getDay(), next=false;
+    if(dw===6){ d.setDate(d.getDate()+2); next=true; } else if(dw===0){ d.setDate(d.getDate()+1); next=true; }
+    var mon=ymd(mondayOf(d)), from=next?ymd(d):t;
+    $('wk3T').textContent=(next?'다음 주':'이번 주')+' 실적 발표';
+    fetchT(API+'/calendar?week='+encodeURIComponent(mon)+'&ko=1&top=20&_='+Date.now(), 20000)
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(!j||j.status!=='ok') throw new Error('x');
+        var rows=[];
+        (j.days||[]).forEach(function(dd){ if(dd.date<from) return; (dd.items||[]).forEach(function(x){ if(x&&x.s) rows.push({d:dd.date,s:x.s,ko:x.ko||x.s,h:x.h,r:+x.r||0}); }); });
+        rows.sort(function(a,b){ return b.r-a.r; });
+        rows=rows.slice(0,3).sort(function(a,b){ return a.d===b.d?b.r-a.r:(a.d<b.d?-1:1); });
+        draw(rows, t, next);
+      })
+      .catch(function(){ AT=0; var b=$('wk3'); if(b) b.innerHTML='<div class="wk3-e">일정을 지금 불러오지 못했어요. 「전체 일정」에서 다시 볼 수 있어요.</div>'; });
+  }
+  document.addEventListener('click',function(e){
+    var c=e.target.closest?e.target:null; if(!c) return;
+    var r=c.closest('.wk3-r'); if(r){ show('stock'); loadStock(r.dataset.s); return; }
+    if(c.closest('#wk3All')){ show('earn'); return; }
+    if(c.closest('#goTemp')){
+      show('home');
+      setTimeout(function(){ var v=$('fearV'), s=v&&v.closest('.sec'); if(s) window.scrollTo(0, s.getBoundingClientRect().top+window.scrollY-70); }, 60);
+    }
+  });
+  var rb=$('btnReload'); if(rb) rb.addEventListener('click',function(){ load(true); });
+  document.querySelectorAll('.nb[data-tab="home"]').forEach(function(b){ b.addEventListener('click',function(){ load(false); }); });
+  load(true);
+})();
+</script>
 </body>
 </html>

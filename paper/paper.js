@@ -643,7 +643,7 @@ window.A99E = A99E;
 'use strict';
 if (window.A99Paper) return;
 
-var VER = '2026.10.19-C';
+var VER = '2026.10.19-D';
 var Q = 'US' + 'DT';                              // 모의 계좌 단위 표기 (가상 · 실제 돈 아님). 가격은 하이퍼리퀴드 달러 시세
 var WSURL = 'wss://api.hyperliquid.xyz/ws';      // 실시간 시세: 하이퍼리퀴드 공개 자료
 var HLI = 'https://api.hyperliquid.xyz/info';
@@ -651,6 +651,7 @@ var DSP = { GOLD: 'XAU', SILVER: 'XAG', PLATINUM: 'XPT', PALLADIUM: 'XPD' };
 function bare(k) { var i = String(k).indexOf(':'); return i >= 0 ? k.slice(i + 1) : k; }
 function BS(k) { var b = bare(k); if (b !== k) return DSP[b] || b; return /^k[A-Z]/.test(k) ? '1000' + k.slice(1) : k; }   // 화면 표기: 금 = XAU · 은 = XAG · k로 시작 = 1000단위 · xyz: 접두어는 숨김   // 화면 표기: 금 = XAU · k로 시작 = 1000단위
 function NM(k) { return BS(k) + Q; }
+function NMH(k) { return esc(BS(k)) + '<i class="pp-q">' + Q + '</i>'; }   // 2026.10.19-D 화면 표기: 종목은 크게 · 단위는 작게 → 한 줄
 var API = window.A99P_API || 'https://andre99-paper.jhw5282435.workers.dev';
 var H9 = 9 * 3600e3;
 var FRESH = 30000;
@@ -690,7 +691,16 @@ face('651 950', 'd09GMgABAAAAAFkwABIAAAAA3oQAAFjHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 '.pp-hd{display:flex;align-items:center;gap:8px;padding:6px 0 8px}',
 '.pp-pick{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0;text-align:left}',
 '.pp-pick b{display:flex;align-items:center;gap:6px;font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--pt1)}',
-'.pp-pick b small{font-size:11px;font-weight:600;color:var(--pt2);border:1px solid var(--pl);border-radius:6px;padding:1px 6px;letter-spacing:0}',
+'.pp-pick b small{font-size:11px;font-weight:600;color:var(--pt2);border:1px solid var(--pl);border-radius:6px;padding:1px 6px;letter-spacing:0;white-space:nowrap;flex:none}',
+'.pp-pick{flex:0 1 auto} .pp-pick b{white-space:nowrap;min-width:0;max-width:100%} .pp-pick b>span{overflow:hidden;text-overflow:ellipsis}',
+'#pp-hname.lg{font-size:15px}',
+'.pp-q{font-style:normal;font-size:.62em;font-weight:600;color:var(--pt2);margin-left:1px;letter-spacing:0}',
+'.pp-pick .l2{display:flex;align-items:center;gap:6px;white-space:nowrap}',
+'.pp-pick .l2 .pp-mc{margin:0}',
+'.pp-vw{display:flex;gap:22px;margin:0 0 6px;border-bottom:1px solid var(--pl)}',
+'.pp-vw button{min-height:42px;padding:0 2px;background:none;font-size:17px;font-weight:800;letter-spacing:-.01em;color:var(--pt3);border-bottom:2px solid transparent;margin-bottom:-1px}',
+'.pp-vw button.on{color:var(--pt1);border-bottom-color:var(--pt1)}',
+'.pp-rkv{padding-top:6px;min-height:60vh}',
 '.pp-pick b svg{width:12px;height:12px;fill:var(--pt2)}',
 '.pp-pick>span{font-size:12px;font-family:var(--pn);font-weight:600}',
 '.pp-hd .sp{flex:1}',
@@ -772,9 +782,9 @@ face('651 950', 'd09GMgABAAAAAFkwABIAAAAA3oQAAFjHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 '.pp-bk .ratio i u{display:block;height:100%;background:var(--pup)}',
 '.pp-bk .em{color:var(--pt3);font-size:11.5px;padding:12px 0;font-family:var(--pf)}',
 /* 내 거래 */
-'.pp-tabs{display:flex;gap:16px;margin:22px 0 4px;border-bottom:1px solid var(--pl);overflow-x:auto;scrollbar-width:none}',
+'.pp-tabs{display:flex;gap:14px;margin:22px 0 4px;border-bottom:1px solid var(--pl);overflow-x:auto;scrollbar-width:none}',
 '.pp-tabs::-webkit-scrollbar{display:none}',
-'.pp-tabs button{flex:none;min-height:42px;font-size:14.5px;font-weight:700;color:var(--pt3);border-bottom:2px solid transparent;margin-bottom:-1px}',
+'.pp-tabs button{flex:none;min-height:42px;font-size:14px;font-weight:700;color:var(--pt3);border-bottom:2px solid transparent;margin-bottom:-1px}',
 '.pp-tabs button.on{color:var(--pt1);border-bottom-color:var(--pt1)}',
 '.pp-tabs button span{font-family:var(--pn);font-weight:600;margin-left:2px}',
 '.pp-list{min-height:120px}',
@@ -994,7 +1004,7 @@ function mktState(k) {
 /* ── 상태 ── */
 var UIS = lsGet(LS_UI) || {};
 var OTS = ['limit', 'market', 'stop', 'trail'];
-var U = { bk: UIS.bk >= 0 && UIS.bk <= 3 ? UIS.bk : 2, sym: UIS.sym || 'BTC', tf: ['1m', '15m', '1H'].indexOf(UIS.tf) >= 0 ? UIS.tf : '15m', ot: OTS.indexOf(UIS.ot) >= 0 ? UIS.ot : 'market', oc: 'open', lev: UIS.lev || {}, tab: 'pos', month: null };
+var U = { bk: UIS.bk >= 0 && UIS.bk <= 3 ? UIS.bk : 2, sym: UIS.sym || 'BTC', tf: ['1m', '15m', '1H'].indexOf(UIS.tf) >= 0 ? UIS.tf : '15m', ot: OTS.indexOf(UIS.ot) >= 0 ? UIS.ot : 'market', oc: 'open', lev: UIS.lev || {}, tab: 'pos', view: 'trade', month: null };
 var TOK = lsGet(LS_TOK);
 var ME = null, st = E.newState(0), FILLS = [], lastFillTs = 0, busy = false;
 var ACTIVE = false, MOUNTED = false;
@@ -1468,11 +1478,11 @@ function profileHTML(j) {
     '<p class="hint" style="margin:0">누적 ' + sg(S.realized || 0) + ' ' + Q + (S.syms && S.syms.length ? ' · 주 종목 ' + S.syms.map(function (x) { return NM(x[0]); }).join(' · ') : '') + '</p></div>';
   if (j.open) {
     h += '<div class="pp-box"><b>열린 포지션 ' + (j.pos || []).length + '개</b>' + ((j.pos || []).length ? '<div class="pp-pl">' + j.pos.map(function (p) {
-      return '<div><span><b>' + NM(p.sym) + '</b> <span class="' + (p.side === 1 ? 'up' : 'dn') + '">' + (p.side === 1 ? 'Long' : 'Short') + '</span> · ' + p.lev + 'x' + (p.mm === 'cross' ? ' · Cross' : '') +
+      return '<div><span><b>' + NMH(p.sym) + '</b> <span class="' + (p.side === 1 ? 'up' : 'dn') + '">' + (p.side === 1 ? 'Long' : 'Short') + '</span> · ' + p.lev + 'x' + (p.mm === 'cross' ? ' · Cross' : '') +
         '<small>수량 ' + fq(p.sym, p.qty) + ' · 진입 ' + fp(p.sym, p.entry) + ' · Mark ' + fp(p.sym, p.mark) + ' · 증거금 ' + fu(p.margin) + '</small></span><span class="r ' + cls(p.upnl) + '">' + sg(p.upnl) + '<small>' + pct(p.roe) + '</small></span></div>';
     }).join('') + '</div>' : '<p class="hint">지금 열린 포지션이 없어요.</p>') + '</div>';
     h += '<div class="pp-box"><b>최근 닫은 거래</b>' + ((j.recent || []).length ? '<div class="pp-pl">' + j.recent.map(function (x) {
-      return '<div><span>' + NM(x.sym) + ' <span class="' + (x.side === 1 ? 'up' : 'dn') + '">' + (x.side === 1 ? 'Long' : 'Short') + '</span> · ' + (KIND[x.kind] || 'Close') + '<small>' + kstWhen(x.ts) + ' · ' + fq(x.sym, x.qty) + ' @ ' + fp(x.sym, x.price) + '</small></span><span class="r ' + cls(x.net) + '">' + sg(x.net) + '</span></div>';
+      return '<div><span>' + NMH(x.sym) + ' <span class="' + (x.side === 1 ? 'up' : 'dn') + '">' + (x.side === 1 ? 'Long' : 'Short') + '</span> · ' + (KIND[x.kind] || 'Close') + '<small>' + kstWhen(x.ts) + ' · ' + fq(x.sym, x.qty) + ' @ ' + fp(x.sym, x.price) + '</small></span><span class="r ' + cls(x.net) + '">' + sg(x.net) + '</span></div>';
     }).join('') + '</div>' : '<p class="hint">아직 없어요.</p>') + '</div>';
   } else h += '<p class="hint">이 트레이더는 포지션을 공개하지 않았어요. 월간 순위 상위 5명이 되면 자동으로 공개돼요.</p>';
   if (mine) h += pubBox();
@@ -1491,6 +1501,15 @@ function setPub(on) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-ppub]'), function (b) { b.classList.toggle('on', (b.dataset.ppub === '1') === ME.pub); });
     toast(ME.pub ? '내 포지션을 공개했어요' : '비공개로 바꿨어요');
   });
+}
+/* 2026.10.19-D 모의투자 맨 위 [거래 | 랭킹] — 랭킹은 아래 탭 대신 화면 하나를 통째로 */
+function setView(v) {
+  U.view = v === 'rank' ? 'rank' : 'trade';
+  $$('[data-pview]').forEach(function (b) { var on = b.dataset.pview === U.view; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+  $('trade').hidden = U.view === 'rank'; $('rkv').hidden = U.view !== 'rank';
+  if (U.view === 'rank') { if (CHART) closeChart(); renderList(); refreshRank(); }
+  else { dirty.quote = dirty.book = dirty.acct = true; kick(); }
+  try { window.scrollTo(0, 0); } catch (e) { }
 }
 function refreshRank(force) {
   var m = rkKey();
@@ -1526,7 +1545,7 @@ function changed(all) {
 /* 머리: 종목 · 등락 · 차트 단추 · 내 정보 */
 function renderHead() {
   var id = U.sym, m = M[id], sp = SP[id]; if (!sp || !m) return;
-  $('hname').textContent = NM(id);
+  $('hname').innerHTML = NMH(id); $('hname').classList.toggle('lg', BS(id).length > 5);
   var hm = $('hmk'); if (hm) hm.hidden = mktState(id) !== 'closed';
   var c = $('hchg'); c.textContent = m.chg != null ? pct(m.chg) : '—'; c.className = cls(m.chg || 0);
   var b = $('me');
@@ -1577,7 +1596,7 @@ function fsz(v) { return v >= 1e6 ? fmt(v / 1e6, 2) + 'M' : v >= 1e4 ? fmt(v / 1
 function renderCbar() {
   var m = M[U.sym], b = $('cbar'); if (!b) return;
   b.hidden = !!CHART;
-  $('cbtx').textContent = NM(U.sym) + ' Chart';
+  $('cbtx').innerHTML = NMH(U.sym) + ' Chart';
   var p = $('cbpx'); p.textContent = m && m.last ? fp(U.sym, m.last) : ''; p.className = cls(m && m.chg || 0);
 }
 /* 내 거래 */
@@ -1586,8 +1605,8 @@ function renderList() {
   var np = Object.keys(st.pos).filter(function (k) { return SP[st.pos[k].sym]; }).length;
   $('cpos').textContent = ME ? '(' + np + ')' : ''; $('cord').textContent = ME ? '(' + st.ord.length + ')' : '';
   $$('[data-ptab]').forEach(function (b) { b.classList.toggle('on', b.dataset.ptab === U.tab); b.setAttribute('aria-selected', b.dataset.ptab === U.tab ? 'true' : 'false'); });
+  if (U.view === 'rank') { var rb = $('rkb'); if (rb) rb.innerHTML = rankHTML(); }
   var box = $('list'), t = U.tab;
-  if (t === 'rank') { box.innerHTML = rankHTML(); return; }
   if (!ME) { box.innerHTML = '<p class="pp-empty">로그인하면 ' + (t === 'pos' ? '내 포지션' : t === 'ord' ? '미체결 주문' : '거래 내역') + '이 여기에 보여요.</p>'; return; }
   if (t === 'pos') box.innerHTML = posHTML();
   else if (t === 'ord') box.innerHTML = ordHTML();
@@ -1600,7 +1619,7 @@ function posHTML() {
   var head = keys.length > 1 ? '<div class="pp-lh"><button type="button" class="pp-sb" data-pact="closeall" data-lb="Close All">Close All</button></div>' : '';
   return head + keys.map(function (k) {
     var p = st.pos[k], s = p.sym, cr = p.mm === 'cross';
-    return '<div class="pp-pc"><div class="t"><b>' + NM(s) + '</b><span class="pp-tag ' + (p.side === 1 ? 'up' : 'dn') + '">' + (p.side === 1 ? 'Long <small>롱</small>' : 'Short <small>숏</small>') + '</span><span class="pp-tag">' + p.lev + 'x</span><span class="pp-tag pp-t" data-pterm="' + (cr ? 'cross' : 'iso') + '">' + (cr ? 'Cross' : 'Isolated') + '</span></div>' +
+    return '<div class="pp-pc"><div class="t"><b>' + NMH(s) + '</b><span class="pp-tag ' + (p.side === 1 ? 'up' : 'dn') + '">' + (p.side === 1 ? 'Long <small>롱</small>' : 'Short <small>숏</small>') + '</span><span class="pp-tag">' + p.lev + 'x</span><span class="pp-tag pp-t" data-pterm="' + (cr ? 'cross' : 'iso') + '">' + (cr ? 'Cross' : 'Isolated') + '</span></div>' +
       '<div class="pl"><div><span><span class="pp-t" data-pterm="upnl">Unrealized PnL (' + Q + ')</span></span><b id="pp-pp-' + k + '">—</b></div><div class="r"><span><span class="pp-t" data-pterm="roe">ROE</span></span><b id="pp-pr-' + k + '">—</b></div></div>' +
       '<dl class="pp-pg"><div><dt>Size (' + BS(s) + ')</dt><dd>' + fq(s, p.qty) + '</dd></div><div><dt><span class="pp-t" data-pterm="margin">Margin (' + Q + ')</span></dt><dd>' + fu(p.margin) + '</dd></div><div><dt><span class="pp-t" data-pterm="mmr">' + (cr ? 'Cross MMR' : 'MMR') + '</span></dt><dd id="pp-pmm-' + k + '">—</dd></div>' +
       '<div><dt><span class="pp-t" data-pterm="entry">Entry Price</span></dt><dd>' + fp(s, p.entry) + '</dd></div><div><dt><span class="pp-t" data-pterm="mark">Mark Price</span></dt><dd id="pp-pm-' + k + '">—</dd></div><div><dt><span class="pp-t" data-pterm="liq">Est. Liq. Price</span></dt><dd class="w" id="pp-pl-' + k + '">—</dd></div></dl>' +
@@ -1645,7 +1664,7 @@ function ordHTML() {
   return head + st.ord.map(function (o) {
     var sd = o.ro ? (o.side === 1 ? 'Close Short' : 'Close Long') : (o.side === 1 ? 'Long <small>(롱)</small>' : 'Short <small>(숏)</small>');
     var c = (o.ro ? -o.side : o.side) === 1 ? 'up' : 'dn';
-    return '<div class="pp-or"><div class="l"><b>' + NM(o.sym) + '</b> <span class="' + c + '">' + sd + '</span> · ' + ordKind(o) + ' · ' + o.lev + 'x' +
+    return '<div class="pp-or"><div class="l"><b>' + NMH(o.sym) + '</b> <span class="' + c + '">' + sd + '</span> · ' + ordKind(o) + ' · ' + o.lev + 'x' +
       (o.ro && (o.k || 'limit') !== 'trail' ? ' · <span class="pp-t" data-pterm="reduce">RO</span>' : '') + (o.po ? ' · <span class="pp-t" data-pterm="post">PO</span>' : '') +
       '<small>' + fq(o.sym, o.qty) + ' ' + BS(o.sym) + ' ' + ordDesc(o) + (o.tp != null ? ' · TP ' + fp(o.sym, o.tp) : '') + (o.sl != null ? ' · SL ' + fp(o.sym, o.sl) : '') + '</small></div>' +
       '<button type="button" class="pp-sb" data-pact="cancel" data-id="' + esc(o.id) + '">Cancel</button></div>';
@@ -1659,7 +1678,7 @@ function fillsHTML() {
     var ps = x.kind === 'open' || x.kind === 'fund' ? x.side : -x.side, sd = ps === 1 ? 'Long' : 'Short';
     var LB = { open: 'Open ' + sd, close: 'Close ' + sd, tp: 'TP · ' + sd, sl: 'SL · ' + sd, stop: 'Trigger · ' + sd, trail: 'Trailing · ' + sd, liq: 'Liquidated · ' + sd };
     var lb = x.kind === 'fund' ? 'Funding' : LB[x.kind] || 'Close ' + sd;
-    return '<div class="pp-fr"><span class="tm">' + kstWhen(x.ts) + '</span><span><b>' + NM(x.sym) + '</b> <span class="k ' + (x.kind === 'liq' ? 'w' : ps === 1 ? 'up' : 'dn') + '">' + lb + '</span></span>' +
+    return '<div class="pp-fr"><span class="tm">' + kstWhen(x.ts) + '</span><span><b>' + NMH(x.sym) + '</b> <span class="k ' + (x.kind === 'liq' ? 'w' : ps === 1 ? 'up' : 'dn') + '">' + lb + '</span></span>' +
       '<span class="v ' + cls(net) + '">' + sg(net, x.kind === 'fund' ? 4 : 2) + '</span><span class="d">' + (x.kind === 'fund' ? 'Funding fee · Mark ' + fp(x.sym, x.price) : fq(x.sym, x.qty) + ' @ ' + fp(x.sym, x.price)) + (x.fee ? ' · Fee ' + fu(x.fee) : '') + '</span></div>';
   }).join('') + '<p class="pp-note">최근 60건까지 보여요. 기록은 180일 동안 보관돼요.</p>';
 }
@@ -1779,7 +1798,7 @@ function renderPicker() {
   var cb = $('pkc'); if (cb) cb.innerHTML = PKCS.filter(function (x) { return x[0] === 'all' || have[x[0]]; }).map(function (x) { return '<button type="button" data-pkc="' + x[0] + '" class="' + (PKC === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('');
   l.innerHTML = IDS.filter(function (k) { return (PKC === 'all' || catGrp(k) === PKC) && (!q || NM(k).toUpperCase().indexOf(q) >= 0 || (SP[k].ko || '').indexOf(PKQ.trim()) >= 0); }).map(function (k) {
     var m = M[k] || {};
-    return '<button type="button" data-psym="' + k + '" class="' + (k === U.sym ? 'on' : '') + '"><b>' + NM(k) + '<small>' + esc(SP[k].ko || '') + '</small>' + (mktState(k) === 'closed' ? '<em class="pp-mc">장 마감</em>' : '') + (ME && exposed(k) ? '<i></i>' : '') + '</b>' +
+    return '<button type="button" data-psym="' + k + '" class="' + (k === U.sym ? 'on' : '') + '"><b>' + NMH(k) + '<small>' + esc(SP[k].ko || '') + '</small>' + (mktState(k) === 'closed' ? '<em class="pp-mc">장 마감</em>' : '') + (ME && exposed(k) ? '<i></i>' : '') + '</b>' +
       '<span class="v">' + (m.last ? fp(k, m.last) : '—') + '</span><span class="c ' + cls(m.chg || 0) + '">' + (m.chg != null ? pct(m.chg) : '') + '</span></button>';
   }).join('') || '<p class="hint" style="padding:12px 0">찾는 종목이 없어요.</p>';
 }
@@ -2163,7 +2182,9 @@ function onClick(e) {
   if ((c = t.closest('[data-ptf]'))) { setTf(c.dataset.ptf); return; }
   if ((c = t.closest('[data-pot]'))) { setOt(c.dataset.pot); return; }
   if ((c = t.closest('[data-pstep]'))) { stepPx(+c.dataset.pstep); return; }
-  if ((c = t.closest('[data-ptab]'))) { U.tab = c.dataset.ptab; renderList(); if (U.tab === 'rank') refreshRank(); return; }
+  if ((c = t.closest('[data-ptab]'))) { U.tab = c.dataset.ptab; renderList(); return; }
+  if ((c = t.closest('[data-pview]'))) { setView(c.dataset.pview); return; }
+  if ((c = t.closest('.pp-ac .r'))) { setView('rank'); return; }      // Equity 줄의 Rank #N → 랭킹 화면
   if ((c = t.closest('[data-pmonth]'))) { U.month = c.dataset.pmonth === monthKST() ? null : c.dataset.pmonth; renderList(); refreshRank(); return; }
   if ((c = t.closest('[data-prk]'))) { U.rk = c.dataset.prk === 'w' ? 'w' : 'm'; renderList(); refreshRank(); return; }
   if ((c = t.closest('[data-pwk]'))) { U.wk = c.dataset.pwk === 'wp' ? 'wp' : 'w'; renderList(); refreshRank(); return; }
@@ -2209,7 +2230,9 @@ function onClick(e) {
 /* ── 탭 뼈대 ── */
 var CHEV = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3h8L5 8z"/></svg>';
 function skeleton() {
-  return '<div class="pp-hd"><button type="button" class="pp-pick" id="pp-hsym" aria-label="종목 바꾸기"><b><span id="pp-hname">BTC' + Q + '</span><small>Perp</small><em class="pp-mc" id="pp-hmk" hidden>장 마감</em>' + CHEV + '</b><span id="pp-hchg">—</span></button><span class="sp"></span>' +
+  return '<div class="pp-vw" role="tablist" aria-label="모의투자 화면"><button type="button" data-pview="trade" class="on" aria-selected="true">거래</button><button type="button" data-pview="rank" aria-selected="false">랭킹</button></div>' +
+    '<div id="pp-rkv" class="pp-rkv" hidden><div id="pp-rkb"></div></div><div id="pp-trade">' +
+    '<div class="pp-hd"><button type="button" class="pp-pick" id="pp-hsym" aria-label="종목 바꾸기"><b><span id="pp-hname">BTC<i class="pp-q">' + Q + '</i></span><small>Perp</small>' + CHEV + '</b><span class="l2"><span id="pp-hchg">—</span><em class="pp-mc" id="pp-hmk" hidden>장 마감</em></span></button><span class="sp"></span>' +
     '<button type="button" class="pp-ib" data-pchart="full" aria-label="차트 크게 보기"><svg viewBox="0 0 24 24"><path d="M8 3v3M8 16v5M16 3v5M16 17v4"/><rect x="5.5" y="6" width="5" height="10" rx="1"/><rect x="13.5" y="8" width="5" height="9" rx="1"/></svg></button>' +
     '<button type="button" class="pp-ib" id="pp-guide" aria-label="설정 · 용어집"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>' +
     '<button type="button" class="pp-me cta" id="pp-me">Log In</button></div>' +
@@ -2243,13 +2266,13 @@ function skeleton() {
       '<div class="hd"><span>Price</span><button type="button" class="pp-bkt" id="pp-bkt" data-pbk="1" aria-label="호가 묶음 단위 바꾸기">—</button><span>Size</span></div><div class="a" id="pp-asks"></div>' +
       '<div class="mid"><b id="pp-blast">—</b><span><span class="pp-t" data-pterm="mark">Mark</span> <span id="pp-bmark">—</span></span></div><div class="b" id="pp-bids"></div>' +
       '<div class="ratio" id="pp-ratio"></div></aside></div>' +
-    '<div class="pp-tabs" role="tablist"><button type="button" data-ptab="pos">Positions<span id="pp-cpos"></span></button><button type="button" data-ptab="ord">Open Orders<span id="pp-cord"></span></button><button type="button" data-ptab="fills">Trade History</button><button type="button" data-ptab="rank">Ranking</button></div>' +
+    '<div class="pp-tabs" role="tablist"><button type="button" data-ptab="pos">Positions<span id="pp-cpos"></span></button><button type="button" data-ptab="ord">Open Orders<span id="pp-cord"></span></button><button type="button" data-ptab="fills">Trade History</button></div>' +
     '<div class="pp-list" id="pp-list"></div>' +
     '<div class="pp-foot"><p>모의투자 · 가상 자금이에요. 실제 거래·수익과 무관한 연습용 시뮬레이션입니다.</p>' +
     '<p>순자산이 500 아래로 내려가고 열린 포지션·주문이 없으면 쿠폰으로 1,000에서 다시 시작할 수 있어요(쿠폰은 매달 새로 받아요).</p>' +
     '<p>체결은 서버가 거래소 공개 호가로 계산해요. 앱을 닫아 둔 동안의 청산·TP/SL·지정가·조건부·트레일링·펀딩은 서버가 1분마다 확인해요. 청산은 Mark 가격 기준이에요.</p>' +
     '<p>시세: Hyperliquid 공개 자료(실시간 달러 시세) · ' + Q + ' 표기는 모의투자용 가상 단위 · 금(XAU)은 PAXG 시세 · 계약 규칙: 안드레99 모의투자 규칙 · 실제 거래가 아니에요 · ' + VER + '</p></div>' +
-    '<button type="button" class="pp-cbar" id="pp-cbar" data-pchart="sheet"><span id="pp-cbtx" style="color:var(--pt1);font-family:var(--pf);font-weight:700;font-size:13.5px">Chart</span><span id="pp-cbpx"></span><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>';
+    '<button type="button" class="pp-cbar" id="pp-cbar" data-pchart="sheet"><span id="pp-cbtx" style="color:var(--pt1);font-family:var(--pf);font-weight:700;font-size:13.5px">Chart</span><span id="pp-cbpx"></span><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button></div>';
 }
 function bindInputs() {
   ['qty', 'px', 'trg', 'cb', 'act'].forEach(function (k) { $(k).addEventListener('input', function () { hideErr(); dirty.est = true; kick(); }); });
@@ -2287,7 +2310,7 @@ function mount(host) {
     changed(true);
     if (!lsGet('a99p.tip1') && !BAN) { lsSet('a99p.tip1', 1); banner('점선 밑줄 용어를 누르면 한국어 설명이 나와요. 전체 용어집 · 색 · 체결음 설정은 오른쪽 위 톱니바퀴(⚙)에 있어요.', 'tip', '용어집'); }
     loadMe();
-    loadBoard(monthKST()).then(function () { dirty.acct = true; kick(); if (U.tab === 'rank') renderList(); });
+    loadBoard(monthKST()).then(function () { dirty.acct = true; kick(); if (U.view === 'rank') renderList(); });
   });
   setInterval(function () { if (ACTIVE) { dirty.acct = dirty.book = true; kick(); } }, 1000);
   setInterval(function () { if (ME && !document.hidden && (ACTIVE || anyExposed())) loadMe(true); }, 60000);
