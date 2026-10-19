@@ -836,11 +836,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .mv-r.e .t{background:rgba(78,205,196,.14);color:#4ECDC4}
 .mv-r.f .t{background:var(--s2);color:var(--tx2)}
 .mv-r.w .t{background:rgba(240,180,41,.14);color:#F0B429}
+.mv-r.t .t{background:rgba(34,192,131,.14);color:#22C083}
 .mv-r .k{flex:1;min-width:0;color:var(--tx2)}
 .mv-r .d{flex:0 0 auto;font-size:10px;color:var(--tx3,#7a7a7e)}
 .mv-none{font-size:11.5px;color:#F0B429;line-height:1.5}
 /* ══ 오늘 나온 공시 (2026.08.20) ══ */
 .disc-bar{display:flex;gap:5px;padding:10px 16px 12px}
+.mk-fail{grid-column:1/-1;padding:16px 14px;border-radius:13px;background:var(--s1);font-size:12px;color:var(--tx3);line-height:1.6}
 /* ══ 이번 주 실적 발표 3줄 (2026.10.19-D) ══ */
 .wk3-all{background:none;border:0;font-family:inherit;color:var(--tx2);padding:4px 0;cursor:pointer}
 #wk3{margin:0 16px;border-radius:13px;background:var(--s1);overflow:hidden}
@@ -925,21 +927,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     </div>
   </div>
 
-  <!-- 2026.10.19-D 마켓 순서: Market 데이터 → 업종별 등락 → 오늘 움직인 이유 → 시장 온도 -->
+  <!-- 2026.10.19-E 마켓 순서: Market 데이터 → 업종별 등락 → 이번 주 실적 발표 → 시장 온도 → 급변한 종목 -->
   <div class="sec">
     <div class="sec-h"><h2>업종별 등락</h2><span class="note">섹터 ETF</span></div>
     <div class="heat" id="heat"></div>
   </div>
-
-  <div class="sec why-h"><div class="sec-h"><h2>오늘 움직인 이유</h2><span class="note">급등락 · 공시 · 흑자 전환</span></div></div>
-  <div class="disc-bar">
-    <button class="disc-b on" data-disc="mv">급등 이유</button>
-    <button class="disc-b" data-disc="fk">오늘 공시</button>
-    <button class="disc-b" data-disc="ta">흑자 전환</button>
-  </div>
-  <div id="mvBox"></div>
-  <div id="fkBox" hidden></div>
-  <div id="taBox" hidden></div>
 
   <!-- 2026.10.19-D 이번 주 실적 발표 3줄 (전체는 경제 > 일정) -->
   <div class="sec wk3-sec">
@@ -956,6 +948,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <p id="fearSay">변동성 지수로 계산한 시장 분위기입니다.</p>
     </div>
   </div>
+
+  <!-- 2026.10.19-E 「급변한 종목」 = 예전 「오늘 움직인 이유」 칩 3개를 목록 하나로. 공시 · 실적 · 흑자 전환은 줄마다 배지로 -->
+  <div class="sec why-h"><div class="sec-h"><h2>급변한 종목</h2><span class="note">이유 배지 · 공시 · 실적 · 흑자 전환</span></div></div>
+  <div id="mvBox"></div>
+  <div id="fkBox" hidden></div>
+  <div id="taBox" hidden></div>
 
   <button class="srcbtn" id="srcBtn">▾ SOURCE &amp; NOTICE</button>
   <div class="srcbox" id="srcBox" hidden>
@@ -1087,7 +1085,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 </nav>
 
 <script>
-var BUILD_VER='v2026.10.19-D';
+var BUILD_VER='v2026.10.19-E';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -1129,7 +1127,7 @@ function show(t){
   if(t==='paper'){ paperOpen(); } else if(window.A99Paper){ window.A99Paper.hide(); }
 }
 /* 모의투자 탭: 처음 누를 때만 paper/paper.js(차트 · 계산 엔진 · 화면)를 받아 온다 — 앱 첫 화면은 가볍게 */
-var PAPER_JS='paper/paper.js?v=2026.10.19-D', PAPER_LOADING=false;
+var PAPER_JS='paper/paper.js?v=2026.10.19-E', PAPER_LOADING=false;
 function paperOpen(){
   var host=$('paperHost');
   if(window.A99Paper){ window.A99Paper.mount(host); window.A99Paper.show(); return; }
@@ -1331,10 +1329,23 @@ function loadMarket(){
     MK_GAIN=d.gainers||[];
     if(window.MV_FAILED&&MV_DIR==='up') mvFail($('mvBox'));   /* 이유 목록이 먼저 실패했으면 대신 목록을 채운다 */
 
+    MK_RETRY=0;
   }).catch(function(){
     var st=$('mTime'); if(st){ st.textContent='갱신 실패'; st.className='n stale'; }
+    mkFail();
   });
 }
+/* 2026.10.19-E 마켓 자료를 못 받으면: 빈칸 · 「불러오는 중」에 멈추지 않게 안내 + 30초 뒤 자동 재시도(최대 3번) */
+var MK_RETRY=0, MK_RT=null;
+function mkFail(){
+  var msg='<div class="mk-fail">마켓 자료를 잠깐 불러오지 못했어요. '+(MK_RETRY<3?'30초 뒤 다시 시도해요.':'오른쪽 위 ⟳ 로 다시 시도해 주세요.')+'</div>';
+  var g=$('mkGrid'); if(g && (!g.children.length || g.querySelector('.skel'))) g.innerHTML=msg;
+  var h=$('heat'); if(h && !h.children.length) h.innerHTML=msg;
+  var fs=$('fearS'); if(fs && fs.textContent==='불러오는 중') fs.textContent='잠깐 불러오지 못했어요';
+  var br=$('breadth'); if(br && br.textContent.indexOf('불러오는 중')>=0) br.innerHTML='<div class="blegend"><span class="ft">시장 폭을 불러오지 못했어요</span></div>';
+  if(MK_RETRY<3){ clearTimeout(MK_RT); MK_RT=setTimeout(function(){ MK_RETRY++; if(!document.hidden) loadMarket(); else MK_RETRY--; }, 30000); }
+}
+$('btnReload').addEventListener('click',function(){ MK_RETRY=0; });
 $('btnReload').addEventListener('click',loadMarket);
 loadMarket();
 setTimeout(function(){ setDisc(DISC_TAB); },0);   /* 마켓 탭 「오늘 움직인 이유」 — 아래 변수들이 준비된 뒤에 */
@@ -2107,7 +2118,21 @@ function drawFlow(j){
 /* ══ 오늘 나온 공시 (2026.08.20) ══
    SEC 8-K 제출 즉시 목록. 티커 + 회사명 + 사유 한 줄. */
 var FK=null, FK_LOADING=false, FK_G='all', FK_MORE=false;
-var DISC_TAB='mv';   /* mv · fk · ta — 마켓 탭 「오늘 움직인 이유」 */
+var DISC_TAB='mv';   /* 2026.10.19-E 칩 없앰 — 「급변한 종목」 목록 하나(mv)만. fk · ta 화면 코드는 남겨 둠 */
+var TA_TURN=null, TA_TURN_AT=0;
+function loadTurnSet(){
+  if(TA_TURN_AT && Date.now()-TA_TURN_AT<30*60000) return;
+  TA_TURN_AT=Date.now();
+  fetchT(API+'/turnaround?days=30&_='+Date.now(), 30000)
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(!j||j.status!=='ok') throw new Error('x');
+      var m={}; (j.turned||[]).forEach(function(x){ if(x&&x.symbol) m[x.symbol]=x; });
+      window.TA_TURN=m;
+      if(MV && !window.MV_FAILED) drawMV(MV);
+    })
+    .catch(function(){ TA_TURN_AT=0; });
+}
 function loadFK(){
   var box=$('fkBox'); if(!box) return;
   if(FK){ drawFK(FK); return; }
@@ -2202,7 +2227,7 @@ function drawFK(j){
 }
 /* 발견 화면 하위 탭 */
 function setDisc(t){
-  DISC_TAB=t;
+  t='mv'; DISC_TAB=t; loadTurnSet();
   document.querySelectorAll('[data-disc]').forEach(function(b){
     b.classList.toggle('on', b.dataset.disc===t);
   });
@@ -2262,11 +2287,18 @@ function loadMV(){
     })
     .catch(function(){ MV_LOADING=false; mvFail($('mvBox')); });
 }
+function mvTurn(x){
+  var t=window.TA_TURN&&window.TA_TURN[x.symbol]; if(!t) return '';
+  return '<div class="mv-r t"><span class="t">흑자 전환</span><span class="k">'+
+    (t.eps_prev!=null&&t.eps_now!=null?'주당순이익 '+Number(t.eps_prev).toFixed(2)+' → +'+Number(t.eps_now).toFixed(2):'최근 실적에서 흑자로 돌아섬')+
+    '</span><span class="d">'+esc(t.date||'')+'</span></div>';
+}
 function mvReason(x){
+  var tn=mvTurn(x);
   if(!x.reasons || !x.reasons.length){
-    return '<div class="mv-none">확인된 공시나 실적 발표가 없습니다</div>';
+    return tn?'<div class="mv-rs">'+tn+'</div>':'<div class="mv-none">확인된 공시나 실적 발표가 없습니다</div>';
   }
-  return '<div class="mv-rs">'+x.reasons.slice(0,3).map(function(r){
+  return '<div class="mv-rs">'+tn+x.reasons.slice(0,tn?2:3).map(function(r){
     var cls = (r.kind==='earnings') ? 'e' : (r.level>=2 ? 'w' : 'f');
     var tag = (r.kind==='earnings') ? '실적' : esc(r.form||'공시');
     return '<div class="mv-r '+cls+'"><span class="t">'+tag+'</span>'+
@@ -8096,7 +8128,7 @@ html.at-lock,html.at-lock body{overflow:hidden}
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════
-  안드레99 — 운영 센터  v2026.10.19-D
+  안드레99 — 운영 센터  v2026.10.19-E
   여는 길: 앱 위쪽 버전 글자를 3초 안에 5번 → 운영자 비밀번호(서버 확인) → 12시간 출입증. 비상용: 관리 키(기기에 저장 안 함)
   6섹션: 오늘 · 회원(목록 · 초대코드 · 초기화 요청) · 모의투자(종목 · 규칙) · 메인 앱 · 시스템 · 보안·설정(관리 기록 · 문의 · 가입 · 잠금)
   비밀번호: 서버에는 변환값만. 바꾸면 모든 기기 출입증 끝. 관리 키 = 모의선물 서버의 PAPER_ADMIN_KEY(비상용 · 비밀번호 정하기/잊었을 때).
@@ -8197,7 +8229,7 @@ select.pa-in{padding-right:6px}
   function mb(b) { return b == null ? '—' : b >= 1048576 ? (b / 1048576).toFixed(1) + 'MB' : (b / 1024).toFixed(0) + 'KB'; }
   function ago(t) { if (!t) return '—'; var s = Math.round((Date.now() - t) / 1000); return s < 60 ? s + '초 전' : s < 3600 ? Math.round(s / 60) + '분 전' : s < 86400 ? Math.round(s / 3600) + '시간 전' : Math.round(s / 86400) + '일 전'; }
   function kst(t) { if (!t) return '—'; var d = new Date(t + 9 * 3600e3); return (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + ' ' + ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
-  /* 2026.10.19-D 입구: 운영자 비밀번호 → 12시간 출입증만 이 기기에 · 관리 키는 비상용(앱 닫으면 잊음, 기기에 저장 안 함) */
+  /* 2026.10.19-E 입구: 운영자 비밀번호 → 12시간 출입증만 이 기기에 · 관리 키는 비상용(앱 닫으면 잊음, 기기에 저장 안 함) */
   var TOK = 'a99_paper_at', GMODE = 'pw';
   function tok() { try { var o = JSON.parse(ls(TOK) || 'null'); return o && o.t && o.e > Date.now() ? o : null; } catch (e) { return null; } }
   function setTok(j) { if (j && j.token) ls(TOK, JSON.stringify({ t: j.token, e: j.exp })); ss(KEY, null); }

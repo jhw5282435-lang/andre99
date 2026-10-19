@@ -643,7 +643,7 @@ window.A99E = A99E;
 'use strict';
 if (window.A99Paper) return;
 
-var VER = '2026.10.19-D';
+var VER = '2026.10.19-E';
 var Q = 'US' + 'DT';                              // 모의 계좌 단위 표기 (가상 · 실제 돈 아님). 가격은 하이퍼리퀴드 달러 시세
 var WSURL = 'wss://api.hyperliquid.xyz/ws';      // 실시간 시세: 하이퍼리퀴드 공개 자료
 var HLI = 'https://api.hyperliquid.xyz/info';
@@ -651,7 +651,7 @@ var DSP = { GOLD: 'XAU', SILVER: 'XAG', PLATINUM: 'XPT', PALLADIUM: 'XPD' };
 function bare(k) { var i = String(k).indexOf(':'); return i >= 0 ? k.slice(i + 1) : k; }
 function BS(k) { var b = bare(k); if (b !== k) return DSP[b] || b; return /^k[A-Z]/.test(k) ? '1000' + k.slice(1) : k; }   // 화면 표기: 금 = XAU · 은 = XAG · k로 시작 = 1000단위 · xyz: 접두어는 숨김   // 화면 표기: 금 = XAU · k로 시작 = 1000단위
 function NM(k) { return BS(k) + Q; }
-function NMH(k) { return esc(BS(k)) + '<i class="pp-q">' + Q + '</i>'; }   // 2026.10.19-D 화면 표기: 종목은 크게 · 단위는 작게 → 한 줄
+function NMH(k) { return esc(BS(k)) + '<span class="pp-q">' + Q + '</span>'; }   // <i>는 종목 고르기에서 장 마감 점으로 쓰여서 span   // 2026.10.19-E 화면 표기: 종목은 크게 · 단위는 작게 → 한 줄
 var API = window.A99P_API || 'https://andre99-paper.jhw5282435.workers.dev';
 var H9 = 9 * 3600e3;
 var FRESH = 30000;
@@ -694,7 +694,7 @@ face('651 950', 'd09GMgABAAAAAFkwABIAAAAA3oQAAFjHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 '.pp-pick b small{font-size:11px;font-weight:600;color:var(--pt2);border:1px solid var(--pl);border-radius:6px;padding:1px 6px;letter-spacing:0;white-space:nowrap;flex:none}',
 '.pp-pick{flex:0 1 auto} .pp-pick b{white-space:nowrap;min-width:0;max-width:100%} .pp-pick b>span{overflow:hidden;text-overflow:ellipsis}',
 '#pp-hname.lg{font-size:15px}',
-'.pp-q{font-style:normal;font-size:.62em;font-weight:600;color:var(--pt2);margin-left:1px;letter-spacing:0}',
+'span.pp-q{display:inline!important;width:auto!important;height:auto!important;background:none!important;border-radius:0!important;margin:0 0 0 1px!important;font-style:normal;font-size:.62em;font-weight:600;color:var(--pt2);margin-left:1px;letter-spacing:0;white-space:nowrap;vertical-align:baseline}',
 '.pp-pick .l2{display:flex;align-items:center;gap:6px;white-space:nowrap}',
 '.pp-pick .l2 .pp-mc{margin:0}',
 '.pp-vw{display:flex;gap:22px;margin:0 0 6px;border-bottom:1px solid var(--pl)}',
@@ -1502,7 +1502,7 @@ function setPub(on) {
     toast(ME.pub ? '내 포지션을 공개했어요' : '비공개로 바꿨어요');
   });
 }
-/* 2026.10.19-D 모의투자 맨 위 [거래 | 랭킹] — 랭킹은 아래 탭 대신 화면 하나를 통째로 */
+/* 2026.10.19-E 모의투자 맨 위 [거래 | 랭킹] — 랭킹은 아래 탭 대신 화면 하나를 통째로 */
 function setView(v) {
   U.view = v === 'rank' ? 'rank' : 'trade';
   $$('[data-pview]').forEach(function (b) { var on = b.dataset.pview === U.view; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
@@ -2232,7 +2232,7 @@ var CHEV = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3h8L5 8z"/><
 function skeleton() {
   return '<div class="pp-vw" role="tablist" aria-label="모의투자 화면"><button type="button" data-pview="trade" class="on" aria-selected="true">거래</button><button type="button" data-pview="rank" aria-selected="false">랭킹</button></div>' +
     '<div id="pp-rkv" class="pp-rkv" hidden><div id="pp-rkb"></div></div><div id="pp-trade">' +
-    '<div class="pp-hd"><button type="button" class="pp-pick" id="pp-hsym" aria-label="종목 바꾸기"><b><span id="pp-hname">BTC<i class="pp-q">' + Q + '</i></span><small>Perp</small>' + CHEV + '</b><span class="l2"><span id="pp-hchg">—</span><em class="pp-mc" id="pp-hmk" hidden>장 마감</em></span></button><span class="sp"></span>' +
+    '<div class="pp-hd"><button type="button" class="pp-pick" id="pp-hsym" aria-label="종목 바꾸기"><b><span id="pp-hname">BTC<span class="pp-q">' + Q + '</span></span><small>Perp</small>' + CHEV + '</b><span class="l2"><span id="pp-hchg">—</span><em class="pp-mc" id="pp-hmk" hidden>장 마감</em></span></button><span class="sp"></span>' +
     '<button type="button" class="pp-ib" data-pchart="full" aria-label="차트 크게 보기"><svg viewBox="0 0 24 24"><path d="M8 3v3M8 16v5M16 3v5M16 17v4"/><rect x="5.5" y="6" width="5" height="10" rx="1"/><rect x="13.5" y="8" width="5" height="9" rx="1"/></svg></button>' +
     '<button type="button" class="pp-ib" id="pp-guide" aria-label="설정 · 용어집"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>' +
     '<button type="button" class="pp-me cta" id="pp-me">Log In</button></div>' +
