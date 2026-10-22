@@ -643,7 +643,7 @@ window.A99E = A99E;
 'use strict';
 if (window.A99Paper) return;
 
-var VER = '2026.10.19-E';
+var VER = '2026.10.21-A';
 var Q = 'US' + 'DT';                              // 모의 계좌 단위 표기 (가상 · 실제 돈 아님). 가격은 하이퍼리퀴드 달러 시세
 var WSURL = 'wss://api.hyperliquid.xyz/ws';      // 실시간 시세: 하이퍼리퀴드 공개 자료
 var HLI = 'https://api.hyperliquid.xyz/info';
@@ -651,7 +651,7 @@ var DSP = { GOLD: 'XAU', SILVER: 'XAG', PLATINUM: 'XPT', PALLADIUM: 'XPD' };
 function bare(k) { var i = String(k).indexOf(':'); return i >= 0 ? k.slice(i + 1) : k; }
 function BS(k) { var b = bare(k); if (b !== k) return DSP[b] || b; return /^k[A-Z]/.test(k) ? '1000' + k.slice(1) : k; }   // 화면 표기: 금 = XAU · 은 = XAG · k로 시작 = 1000단위 · xyz: 접두어는 숨김   // 화면 표기: 금 = XAU · k로 시작 = 1000단위
 function NM(k) { return BS(k) + Q; }
-function NMH(k) { return esc(BS(k)) + '<span class="pp-q">' + Q + '</span>'; }   // <i>는 종목 고르기에서 장 마감 점으로 쓰여서 span   // 2026.10.19-E 화면 표기: 종목은 크게 · 단위는 작게 → 한 줄
+function NMH(k) { return esc(BS(k)) + '<span class="pp-q">' + Q + '</span>'; }   // <i>는 종목 고르기에서 장 마감 점으로 쓰여서 span   // 2026.10.21-A 화면 표기: 종목은 크게 · 단위는 작게 → 한 줄
 var API = window.A99P_API || 'https://andre99-paper.jhw5282435.workers.dev';
 var H9 = 9 * 3600e3;
 var FRESH = 30000;
@@ -824,6 +824,7 @@ face('651 950', 'd09GMgABAAAAAFkwABIAAAAA3oQAAFjHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 '.pp-rk{list-style:none;margin:0;padding:0}',
 '.pp-rk li{display:grid;grid-template-columns:26px minmax(0,1fr) auto 70px;gap:8px;align-items:center;min-height:42px;border-bottom:1px solid var(--pl);font-size:13px}',
 '.pp-rk li.me{background:var(--pc1)}',
+'.pp-rk-off li{opacity:.72}',
 '.pp-rk .r{color:var(--pt3);text-align:right;font-weight:700;font-family:var(--pn)}',
 '.pp-rk .nk{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}',
 '.pp-rk .nk small{color:var(--pt3);font-size:11px;margin-left:4px;font-weight:500}',
@@ -1418,7 +1419,18 @@ function candles(id, g, n) {
 }
 /* ── 순위 ── */
 var board = {};
-function loadBoard(m) { var q = m === 'w' ? 'period=week' : m === 'wp' ? 'period=lastweek' : 'month=' + m; return getJSON(API + '/p/board?' + q, 8000).then(function (j) { board[m] = j; }, function () { board[m] = { err: 1 }; }); }
+/* 2026.10.21-A 운영(OFFICIAL) 계정은 순위에서 뺀다 — 번호는 나머지로 다시 매기고, 운영 계정은 아래에 따로 */
+function offSplit(j) {
+  if (!j || !j.rows || j.offSplit) return j;
+  var off = [], rest = [];
+  j.rows.forEach(function (r) { (r.off ? off : rest).push(r); });
+  rest.forEach(function (r, i) { r.rank = i + 1; if (r.t5 && r.rank > 5) r.t5 = false; });
+  j.rows = rest; j.offRows = off; j.offSplit = 1;
+  if (j.n != null) j.n = Math.max(0, j.n - off.length);
+  return j;
+}
+function loadBoard(m) { var q = m === 'w' ? 'period=week' : m === 'wp' ? 'period=lastweek' : 'month=' + m; return getJSON(API + '/p/board?' + q, 8000).then(function (j) { board[m] = offSplit(j); }, function () { board[m] = { err: 1 }; }); }
+function isOffMe(j) { if (!ME || !j || !j.offRows) return false; for (var i = 0; i < j.offRows.length; i++) if (j.offRows[i].nick === ME.nick) return true; return false; }
 function rkKey() { return U.rk === 'w' ? (U.wk || 'w') : (U.month || monthKST()); }
 function metricOf(j) { return (j && j.metric) || INFO.metric || 'ret'; }
 function myRow(j) { if (!ME || !j || !j.rows) return null; for (var i = 0; i < j.rows.length; i++) if (j.rows[i].nick === ME.nick) return j.rows[i]; return null; }
@@ -1433,11 +1445,18 @@ function rankHTML() {
   else {
     var me = myRow(j);
     if (me) h += '<div class="pp-rk-me">내 순위 <b>' + me.rank + '위</b> · ' + (met === 'gain' ? '<span class="' + cls(me.gain) + '">' + sg(me.gain) + '</span>' : '<span class="' + cls(me.ret) + '">' + pct(me.ret) + '</span>') + ' · 순자산 ' + fu(me.eq) + '</div>';
+    else if (isOffMe(j)) h += '<div class="pp-rk-me">운영 계정은 순위에서 빠져요. 기록은 아래 「운영 계정」에 따로 보여요.</div>';
     else if (!ME) h += '<div class="pp-rk-me">로그인하면 내 순위가 보여요.</div>';
-    if (!j.rows || !j.rows.length) h += '<p class="pp-empty">아직 참가자가 없어요.</p>';
+    if (!j.rows || !j.rows.length) h += '<p class="pp-empty">아직 순위에 오른 참가자가 없어요. 첫 거래를 하면 바로 순위에 올라요.</p>';
     else h += '<ol class="pp-rk">' + j.rows.slice(0, 100).map(function (r) {
       var isMe = ME && r.nick === ME.nick, v = met === 'gain' ? r.gain : r.ret;
       return '<li data-pnick="' + esc(r.nick) + '"' + (isMe ? ' class="me"' : '') + '><span class="r">' + r.rank + '</span><span class="nk">' + esc(r.nick) + (r.off ? '<em class="pp-off">OFFICIAL</em>' : '') + (r.t5 ? '<em class="pp-t5">TOP 5</em>' : r.pub ? '<em class="pp-pub">공개</em>' : '') + (r.liqs ? '<small>청산 ' + r.liqs + '</small>' : '') + '</span><span class="e">' + fu(r.eq) + '</span><span class="p ' + cls(v) + '">' + (met === 'gain' ? sg(v) : pct(v)) + '</span></li>';
+    }).join('') + '</ol>';
+  }
+  if (j && j.offRows && j.offRows.length) {
+    h += '<p class="pp-note" style="margin:14px 0 4px">운영 계정 · 순위 제외</p><ol class="pp-rk pp-rk-off">' + j.offRows.map(function (r) {
+      var v = met === 'gain' ? r.gain : r.ret;
+      return '<li data-pnick="' + esc(r.nick) + '"><span class="r">–</span><span class="nk">' + esc(r.nick) + '<em class="pp-off">OFFICIAL</em></span><span class="e">' + fu(r.eq) + '</span><span class="p ' + cls(v) + '">' + (met === 'gain' ? sg(v) : pct(v)) + '</span></li>';
     }).join('') + '</ol>';
   }
   if (wkv) h += '<div class="pp-mo"><button type="button" data-pwk="w" class="' + ((U.wk || 'w') === 'w' ? 'on' : '') + '">이번 주</button><button type="button" data-pwk="wp" class="' + (U.wk === 'wp' ? 'on' : '') + '">지난주</button></div>';
@@ -1502,7 +1521,7 @@ function setPub(on) {
     toast(ME.pub ? '내 포지션을 공개했어요' : '비공개로 바꿨어요');
   });
 }
-/* 2026.10.19-E 모의투자 맨 위 [거래 | 랭킹] — 랭킹은 아래 탭 대신 화면 하나를 통째로 */
+/* 2026.10.21-A 모의투자 맨 위 [거래 | 랭킹] — 랭킹은 아래 탭 대신 화면 하나를 통째로 */
 function setView(v) {
   U.view = v === 'rank' ? 'rank' : 'trade';
   $$('[data-pview]').forEach(function (b) { var on = b.dataset.pview === U.view; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
@@ -1568,7 +1587,7 @@ function renderAcctNums() {
   $('eq').textContent = fu(eq);
   var r = $('roi'); r.textContent = pct(base > 0 ? eq / base - 1 : 0); r.className = cls(eq - base);
   var j = board[monthKST()], me = myRow(j);
-  $('rank').textContent = me ? '#' + me.rank : '—';
+  $('rank').textContent = me ? '#' + me.rank : (isOffMe(j) ? '운영' : '—');
   if ($('avail')) { $('avail').textContent = fu(availNow()) + ' ' + Q; }
 }
 /* 호가 · 펀딩 · 매수/매도 비율 */
