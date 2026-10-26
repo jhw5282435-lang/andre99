@@ -1222,7 +1222,7 @@ window.A99_FIN={"flow": "top", "turn": "line", "old": "off", "unit": "kr"};   /*
 </nav>
 
 <script>
-var BUILD_VER='v2026.10.26-C';
+var BUILD_VER='v2026.10.26-D';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -6028,7 +6028,7 @@ select.pa-in{padding-right:6px}
   var P = null, TAB = 'today', SEL = {}, UQ = { q: '', status: '', policy: '', page: 0 }, LAST = { users: [], ov: null }, OFF = [];
   /* 6섹션 · 섹션 안 칸 */
   var SECS = [['today', '오늘'], ['members', '회원'], ['paper', '모의투자'], ['cm', '커뮤니티'], ['main', '메인 앱'], ['sys', '시스템'], ['sec', '보안·설정']];
-  var SUBS = { members: [['users', '회원 목록'], ['invites', '초대코드'], ['resets', '초기화 요청']], paper: [['syms', '종목'], ['rules', '규칙']], cm: [['cmrep', '신고'], ['cmpoll', '오늘의 질문']], sec: [['audit', '관리 기록'], ['prefs', '비밀번호 · 문의 · 가입']] };
+  var SUBS = { members: [['users', '회원 목록'], ['invites', '초대코드'], ['resets', '초기화 요청']], paper: [['syms', '종목'], ['rules', '규칙']], cm: [['cmpost', '글 관리'], ['cmrep', '신고'], ['cmpoll', '오늘의 질문']], sec: [['audit', '관리 기록'], ['prefs', '비밀번호 · 문의 · 가입']] };
   function secOf(t) { for (var k in SUBS) for (var i = 0; i < SUBS[k].length; i++) if (SUBS[k][i][0] === t) return k; return t; }
   function open() {
     if (!P) {
@@ -6062,10 +6062,25 @@ select.pa-in{padding-right:6px}
     var B = $('paBody');
     if (locked) return keyView(B);
     B.innerHTML = '<p class="pa-st">불러오는 중…</p>';
-    ({ today: today, sys: home, main: mainView, users: users, syms: symsView, invites: invites, resets: resets, rules: settingsView, prefs: prefsView, audit: auditView, cmrep: cmRep, cmpoll: cmPoll })[t](B);
+    ({ today: today, sys: home, main: mainView, users: users, syms: symsView, invites: invites, resets: resets, rules: settingsView, prefs: prefsView, audit: auditView, cmpost: cmPost, cmrep: cmRep, cmpoll: cmPoll })[t](B);
   }
-  /* ── 커뮤니티 (2026.10.26-A): 신고 처리 · 오늘의 질문 내기 · 판정 ── */
-  var CMR = { 'post': '글', 'cmt': '댓글' };
+  /* ── 커뮤니티 (2026.10.26-D): 글 관리 · 신고 처리 · 오늘의 질문 내기 · 판정 ── */
+  var CMR = { 'post': '글', 'cmt': '댓글' }, PEND_TAB = null;   /* PEND_TAB: 앱 커뮤니티에서 바로 온 칸(로그인 뒤 그 칸으로) */
+  var CMCAT = { free: '자유', info: '정보', tech: '매매 기법', qna: '질문' };
+  function cmPost(B) {   /* 글 관리: 가린 글까지 최근 50개 — 가리기 · 보이기 · 지우기 */
+    call('cm/posts').then(function (x) {
+      if (cmOld(B, x) || denied(B, x)) return;
+      var rows = x.j.posts || [];
+      B.innerHTML = '<h3 class="pa-h3">최근 글 ' + rows.length + '개</h3><p class="pa-st">가리면 앱에서 안 보이고 언제든 다시 보이게 할 수 있어요. 지우면 댓글 · 좋아요까지 사라지고 되돌릴 수 없어요. 댓글 하나만 지우려면 앱에서 그 글을 열고 댓글 옆 「운영자 지우기」를 누르세요.</p>' +
+        (rows.length ? '<div class="pa-list">' + rows.map(function (p) {
+          return '<div class="pa-u" style="grid-template-columns:minmax(0,1fr)"><div><b>' + esc(p.nick) + (p.official ? ' · 공식' : '') + '</b> <span style="font-size:11px;color:var(--tx3)">' + esc(CMCAT[p.cat] || p.cat || '') + '</span>' +
+            '<div class="m" style="white-space:normal">' + esc((p.title ? p.title + ' — ' : '') + (p.body || '')) + '</div>' +
+            '<div class="m">' + kst(p.created_at) + ' · 좋아요 ' + n0(p.likes) + ' · 댓글 ' + n0(p.cmts) + (p.reps ? ' · 신고 ' + p.reps : '') + (p.hidden ? ' · <b style="color:var(--up)">가려짐</b>' : '') + '</div></div>' +
+            '<div class="pa-row" style="margin:6px 0 0">' + (p.hidden ? '<button type="button" data-cm="show" data-ck="post" data-ci="' + p.id + '">보이기</button>' : '<button type="button" data-cm="hide" data-ck="post" data-ci="' + p.id + '">가리기</button>') +
+            '<button type="button" data-cm="delete" data-ck="post" data-ci="' + p.id + '">지우기</button></div></div>';
+        }).join('') + '</div>' : '<p class="pa-st">아직 글이 없어요.</p>') + '<p class="pa-st" id="paMsg"></p>';
+    });
+  }
   function cmBadge(j) { var b = $('paCc'); if (b) b.textContent = (j.open || 0) + (j.judge || 0) ? String((j.open || 0) + (j.judge || 0)) : ''; }
   function cmOld(B, x) {
     if (x.s === 404 && x.j && x.j.err === 'path') { B.innerHTML = '<p class="pa-st">모의투자 서버가 아직 예전 판이에요. 모의투자 서버(10.26-A)를 먼저 배포해 주세요.</p>'; return true; }
@@ -6129,10 +6144,10 @@ select.pa-in{padding-right:6px}
   }
   function cmClick(t, d) {
     if (d.cm) {
-      var what = { hide: '가릴까요', show: '다시 보이게 할까요', delete: '지울까요? 되돌릴 수 없어요' }[d.cm];
+      var what = { hide: '가릴까요', show: '다시 보이게 할까요', delete: '지울까요? 댓글까지 지워지고 되돌릴 수 없어요' }[d.cm];
       if (!confirm('이 ' + CMR[d.ck] + '을 ' + what)) return true;
       t.disabled = true;
-      call('cm/mod', { kind: d.ck, id: +d.ci, act: d.cm }).then(function (x) { if (x.s !== 200) { t.disabled = false; return toast('실패 · ' + (x.j.err || x.s)); } toast('처리했어요'); go('cmrep'); });
+      call('cm/mod', { kind: d.ck, id: +d.ci, act: d.cm }).then(function (x) { if (x.s !== 200) { t.disabled = false; return toast('실패 · ' + (x.j.err || x.s)); } toast('처리했어요'); go(TAB); });
       return true;
     }
     if (t.id === 'cmQgo') {
@@ -6184,7 +6199,7 @@ select.pa-in{padding-right:6px}
     var B = $('paBody'), pw = GMODE === 'pw';
     (pw ? jfetch('login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pw: k }) }) : jfetch('ping', { headers: { 'x-admin-key': k } })).then(function (x) {
       btn.disabled = false;
-      if (x.s === 200 && pw && x.j.token) { forget(); setTok(x.j); go('today'); return; }
+      if (x.s === 200 && pw && x.j.token) { forget(); setTok(x.j); go(PEND_TAB || 'today'); PEND_TAB = null; return; }
       if (x.s === 200 && !pw && x.j.ok) { forget(); ss(KEY, k); go(x.j.pwSet ? 'today' : 'prefs'); return; }
       if (x.j.err === 'no_pw') { GMODE = 'key'; return keyView(B, '아직 운영자 비밀번호가 없어요. 관리 키로 한 번 들어와서 「보안·설정」에서 정해 주세요.'); }
       if (x.j.err === 'admin_locked') return keyView(B, lockedMsg(x.j));
@@ -6599,7 +6614,7 @@ select.pa-in{padding-right:6px}
     if (t.id === 'paFs') { UQ.status = t.value; UQ.page = 0; return go('users'); }
     if (t.id === 'paFp') { UQ.policy = t.value; UQ.page = 0; return go('users'); }
   }
-  window.A99PaperAdmin = { open: open, _usageHtml: usageHtml };
+  window.A99PaperAdmin = { open: open, _usageHtml: usageHtml, goto: function (t) { PEND_TAB = t; TAB = t; open(); if (key()) PEND_TAB = null; } };
 })();
 </script>
 
@@ -8928,9 +8943,23 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
 .pl-gs .gs.none{display:block;min-height:0;padding:9px 12px;background:var(--s2);font-size:12px;color:var(--tx3);line-height:1.4}
 .pl-myrow{margin-top:12px}
 .pl-my{display:inline-block;padding:4px 9px;border-radius:7px;border:1px solid var(--tx2);font-size:12px;font-weight:700;color:var(--tx)}
+
+/* ── 2026.10.26-D: 글 메뉴 · 운영자 버튼 ── */
+.cm-menu{position:fixed;inset:0;z-index:85}
+.cm-menu .bd{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.cm-menu .pn{position:absolute;left:0;right:0;bottom:0;display:grid;gap:6px;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));border-radius:16px 16px 0 0;background:var(--s1);border-top:1px solid var(--line)}
+.cm-menu .pn>b{padding:2px 4px 6px;font-size:12.5px;color:var(--tx3);font-weight:700}
+.cm-menu button{min-height:48px;border-radius:11px;background:var(--s2);color:var(--tx);font-size:15px;font-weight:700;text-align:left;padding:0 14px}
+.cm-menu button.dg{color:#E8A317}
+.cm-menu button.cx{text-align:center;background:transparent;border:1px solid var(--line);color:var(--tx2)}
+.cm-menu button:focus-visible{outline:2px solid var(--tx);outline-offset:2px}
+.cm-cmt .cm-m button.op{color:#E8A317}
+.cm-mk{margin-left:auto;min-height:34px;padding:0 12px;border-radius:17px;background:var(--tx);color:#0B0B0C;font-size:12.5px;font-weight:800}
+.cm-mk.wide{display:block;width:100%;margin:10px 0 0;min-height:42px;border-radius:11px}
+.cm-cmt .cm-m button+button{margin-left:0}
 </style>
 <script>
-/* 커뮤니티 ↔ 모의투자 서버(/p/c/*) — 배포본 전용 (2026.10.26-C). 시안은 cm_fake.js 를 쓴다.
+/* 커뮤니티 ↔ 모의투자 서버(/p/c/*) — 배포본 전용 (2026.10.26-D: 내 글 고치기 · 지우기 · 운영자 가리기 · 지우기). 시안은 cm_fake.js 를 쓴다.
  *  로그인은 오른쪽 위 「로그인」 · 모의투자와 같은 출입증(localStorage 'a99p.tok2', JSON 문자열)을 쓴다.
  *  비회원 투표는 이 기기 표시(a99_vdev, 커뮤니티 층이 만든 무작위 값)로 한다.
  *  글에 붙는 숫자 카드는 「지금 열어 둔 종목 화면의 요약 숫자」를 글 쓴 날 기준으로 찍어 둔다(다른 종목은 바로가기만). */
@@ -8974,6 +9003,13 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     }
     return c;
   }
+  /* 운영 센터 출입증(이 기기에서 운영 센터에 들어왔을 때만, 12시간) — 있으면 글 메뉴에 운영자 가리기 · 지우기가 붙는다 */
+  function atok() { try { var o = JSON.parse(localStorage.getItem('a99_paper_at') || 'null'); return o && o.t && o.e > Date.now() ? o.t : null; } catch (e) { return null; } }
+  function admin(path, body) {
+    return fetch(BASE + '/p/admin/' + path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-admin-token': atok() || '' }, body: JSON.stringify(body), cache: 'no-store' })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.err || 'http_' + r.status); e.code = j.err || 'http_' + r.status; e.status = r.status; throw e; } return j; }); },
+        function () { var e = new Error('net'); e.code = 'net'; throw e; });
+  }
   function vdev() { try { var v = localStorage.getItem('a99_vdev') || ''; return /^[a-f0-9]{32}$/.test(v) ? v : ''; } catch (e) { return ''; } }
   window.A99CM_API = {
     sig: function () { return tok() || ''; },
@@ -8988,11 +9024,15 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     vote: function (id, choice, dev) { return req('vote', { poll: id, choice: choice, dev: dev || vdev() }); },
     gvote: function (id, choice, dev) { return req('gvote', { poll: id, choice: choice, dev: dev || vdev() }); },
     write: function (o) { return req('write', { cat: o.cat, title: o.title, body: o.body, tags: o.tags || [], card: o.card ? snap(o.card) : null }).then(function (j) { return j.post; }); },
-    report: function (ref, reason) { var a = String(ref).split(':'); return req('report', { kind: a[0], id: a[1], reason: reason }); }
+    report: function (ref, reason) { var a = String(ref).split(':'); return req('report', { kind: a[0], id: a[1], reason: reason }); },
+    edit: function (id, o) { return req('edit', { post: id, body: o.body, cat: o.cat, tags: o.tags || [] }).then(function (j) { return j.post; }); },
+    del: function (ref) { var a = String(ref).split(':'); return req('del', { kind: a[0], id: a[1] }); },
+    isAdmin: function () { return !!atok(); },
+    amod: function (ref, act) { var a = String(ref).split(':'); return admin('cm/mod', { kind: a[0], id: +String(a[1]).replace(/^[pc]/, ''), act: act }); }
   };
 })();
 
-/* 안드레99 커뮤니티 (2026.10.26-C: 자유 글쓰기 · 비회원 투표)
+/* 안드레99 커뮤니티 (2026.10.26-D: 자유 글쓰기 · 비회원 투표 · 내 글 고치기 · 지우기 · 운영자 관리)
  *  하단 탭 「커뮤니티」 = 자유 글(분류는 고르면 붙는다) + 오늘의 질문(예/아니오, 운영자가 내고 마감 뒤 숫자로 판정)
  *  자료는 window.A99CM_API 로만 주고받는다 — 시안은 예시 자료(cm_fake.js), 배포본은 모의투자 서버(/p/c/*, cm_api.js).
  *  읽기 · 투표는 누구나(비회원 표는 이 기기 기준). 표는 회원 · 비회원 따로 저장하고 보여 줄 때는 합쳐서 하나, 인원만 나눠 적는다.
@@ -9043,8 +9083,28 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     already: '이 기기에서 이미 답했어요',
     ip_limit: '같은 인터넷에서 이미 여러 번 답했어요. 로그인하면 회원 표로 답할 수 있어요',
     not_found: '지워졌거나 가려진 글이에요',
-    net: '연결이 불안정해요. 잠시 뒤 다시 해 주세요'
+    net: '연결이 불안정해요. 잠시 뒤 다시 해 주세요',
+    not_mine: '내 글 · 내 댓글만 고치거나 지울 수 있어요',
+    admin_expired: '운영 센터 출입증이 끝났어요. 운영 센터에 다시 들어가 주세요',
+    admin: '운영 센터 출입증이 없어요. 운영 센터에 먼저 들어가 주세요'
   };
+  function isOp() { var a = api(); return !!((S.me && S.me.official) || (a && a.isAdmin && a.isAdmin())); }   /* 운영자: 공식 계정이거나 이 기기에 운영 센터 출입증이 있을 때 */
+  function opAdmin() { var a = api(); return !!(a && a.isAdmin && a.isAdmin()); }
+  function toCenter(tab) { closeAll(); if (window.A99PaperAdmin) { if (window.A99PaperAdmin.goto) window.A99PaperAdmin.goto(tab); else window.A99PaperAdmin.open(); } else toast('운영 센터를 열 수 없어요'); }
+  /* 아래에서 올라오는 작은 메뉴: [글자, 할 일, 위험 표시] */
+  function menu(title, items) {
+    var el = document.createElement('div'); el.className = 'cm-menu';
+    el.innerHTML = '<div class="bd"></div><div class="pn" role="dialog" aria-modal="true" aria-label="' + esc(title) + '"><b>' + esc(title) + '</b>' +
+      items.map(function (it, i) { return '<button type="button" data-mi="' + i + '" class="' + (it[2] ? 'dg' : '') + '">' + esc(it[0]) + '</button>'; }).join('') +
+      '<button type="button" data-mi="x" class="cx">닫기</button></div>';
+    document.body.appendChild(el);
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-mi]');
+      if (e.target.classList.contains('bd') || (b && b.dataset.mi === 'x')) { el.parentNode.removeChild(el); return; }
+      if (b) { el.parentNode.removeChild(el); items[+b.dataset.mi][1](); }
+    });
+    setTimeout(function () { var f = el.querySelector('[data-mi]'); if (f) f.focus(); }, 30);
+  }
   function fail(e) {
     var c = e && e.code;
     if (c === 'auth' || c === 'suspended') { S.me = { member: false }; }
@@ -9061,7 +9121,7 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
   function metaHTML(p) {
     var cat = p.official ? '<span class="ps-cat notice">공지</span>' : (p.cat && p.cat !== 'free' && CATN[p.cat] ? '<span class="ps-cat">' + esc(CATN[p.cat]) + '</span>' : '');
     var badge = p.official ? '<span class="ps-badge off">공식</span>' : (p.months != null ? '<span class="ps-badge">' + (p.months < 1 ? '이번 달 가입' : p.months + '개월째') + '</span>' : '');
-    return '<div class="ps-meta">' + cat + '<b class="ps-nick">' + esc(p.nick) + '</b>' + badge + '<span>· ' + ago(p.t) + '</span></div>';
+    return '<div class="ps-meta">' + cat + '<b class="ps-nick">' + esc(p.nick) + '</b>' + badge + '<span>· ' + ago(p.t) + (p.edited ? ' · 수정됨' : '') + '</span></div>';
   }
   /* 글 안의 $NVDA 는 누르면 그 종목이 열린다 */
   function linky(t) { return esc(t).replace(/\$([A-Za-z][A-Za-z.]{0,5})(?![A-Za-z])/g, function (m, x) { return '<span class="cm-tag in" role="button" tabindex="0" data-sym="' + x.toUpperCase() + '">$' + x.toUpperCase() + '</span>'; }); }
@@ -9102,6 +9162,7 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     } else {
       o += myTag + split(q, see) + '<p class="pl-note">지금까지 ' + who(q) + ' · 마감 뒤 숫자로 판정해요</p>';
     }
+    if (shut && isOp()) o += '<button type="button" class="cm-mk wide" data-act="judge">판정하기 (운영 센터)</button>';
     return o + '<p class="pl-foot">의견 모음이에요. 예측이나 투자 권유가 아니에요.</p></div>';
   }
 
@@ -9114,7 +9175,8 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     if (S.cat === 'all' || S.cat === 'poll') {
       var open = D.polls.filter(function (q) { return q.state !== 'done'; }), sh = function (q) { return q.closed || q.close <= Date.now() ? 1 : 0; };
       open.sort(function (a, b) { return sh(a) - sh(b) || a.close - b.close; });   /* 답할 수 있는 질문 먼저, 판정 기다리는 질문은 뒤로 */
-      if (open.length) o += '<div class="cm-sec-h"><h3>오늘의 질문</h3><span>운영자가 내고, 마감 뒤 숫자로 판정해요</span></div>' + open.map(pollHTML).join('');
+      var mk = isOp() ? '<button type="button" class="cm-mk" data-act="mkpoll">+ 질문 만들기</button>' : '';
+      if (open.length || mk) o += '<div class="cm-sec-h"><h3>오늘의 질문</h3>' + (mk || '<span>운영자가 내고, 마감 뒤 숫자로 판정해요</span>') + '</div>' + (open.length ? open.map(pollHTML).join('') : '<p class="cm-empty">진행 중인 질문이 없어요.</p>');
     }
     if (S.cat === 'poll') {
       var done = D.polls.filter(function (q) { return q.state === 'done'; });
@@ -9172,15 +9234,18 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
 
   function openPost(id) {
     var p = findPost(id); if (!p) return;
+    OPEN_PID = id;
     var el = sheet('글', '<div class="cm-post" style="border-bottom:0">' + metaHTML(p) + textHTML(p, true) + cardHTML(p.card) + '<button type="button" class="cm-like' + (p.liked ? ' on' : '') + '" data-like="' + esc(p.id) + '" aria-pressed="' + (p.liked ? 'true' : 'false') + '">♡ 좋아요 <span>' + p.likes + '</span></button></div>' +
         '<div class="cm-cmts" id="cmCmts"><p class="cm-empty">댓글 불러오는 중…</p></div>',
       S.me.member ? '<form class="cm-cin" data-cmt="' + esc(p.id) + '"><input id="cmCin" maxlength="500" placeholder="댓글 남기기" autocomplete="off" aria-label="댓글"><button type="submit" disabled>올리기</button></form>'
         : '<div class="cm-lock-note"><span>댓글은 회원만 쓸 수 있어요</span><button type="button" data-act="join">로그인</button></div>',
-      '<button type="button" class="mn" data-report="post:' + esc(p.id) + '" aria-label="신고">⋯</button>');
+      '<button type="button" class="mn" data-pmenu="' + esc(p.id) + '" aria-label="글 메뉴">⋯</button>');
     api().comments(id).then(function (list) {
       var c = el.querySelector('#cmCmts'); if (!c) return;
       c.innerHTML = '<h4>댓글 ' + list.length + '</h4>' + (list.length ? list.map(function (x) {
-        return '<div class="cm-cmt"><div class="cm-m"><b>' + esc(x.nick) + '</b><span>' + ago(x.t) + '</span><button type="button" data-report="cmt:' + esc(x.id) + '">신고</button></div><p>' + esc(x.text) + '</p></div>';
+        var acts = x.mine ? '<button type="button" data-cdel="' + esc(x.id) + '">지우기</button>' : '<button type="button" data-report="cmt:' + esc(x.id) + '">신고</button>';
+        if (opAdmin() && !x.mine) acts += '<button type="button" class="op" data-cadm="' + esc(x.id) + '">운영자 지우기</button>';
+        return '<div class="cm-cmt"><div class="cm-m"><b>' + esc(x.nick) + '</b><span>' + ago(x.t) + '</span>' + acts + '</div><p>' + esc(x.text) + '</p></div>';
       }).join('') : '<p class="cm-empty">첫 댓글을 남겨 보세요.</p>');
     }, function (e) { var c = el.querySelector('#cmCmts'); if (c) c.innerHTML = '<p class="cm-empty">' + esc(fail(e)) + '</p>'; });
     var f = el.querySelector('form.cm-cin');
@@ -9209,20 +9274,21 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     var out = []; String(t || '').replace(/\$([A-Za-z][A-Za-z.]{0,5})(?![A-Za-z])/g, function (m, x) { x = x.toUpperCase(); if (out.indexOf(x) < 0) out.push(x); return m; });
     return out.slice(0, 3);
   }
-  function openWrite() {
+  function openWrite(edit) {
     if (!need('글쓰기')) return;
-    var syms = recentSyms(), nick = (S.me && S.me.nick) || (window.A99Auth && window.A99Auth.nick()) || '나';
-    var el = sheet('글쓰기', '<form class="cm-form cm-free" id="cmWf" novalidate>' +
+    var syms = edit ? [] : recentSyms(), nick = (S.me && S.me.nick) || (window.A99Auth && window.A99Auth.nick()) || '나';
+    var el = sheet(edit ? '글 고치기' : '글쓰기', '<form class="cm-form cm-free" id="cmWf" novalidate>' +
         '<div class="cm-who"><b>' + esc(nick) + '</b><span>누구나 읽을 수 있어요</span></div>' +
         '<textarea id="cmWb" maxlength="2000" placeholder="자유롭게 적어 보세요.&#10;종목은 $NVDA 처럼 적으면 눌러서 바로 열 수 있어요." aria-label="글 내용"></textarea>' +
         '<div class="cm-wfoot"><span id="cmWt" class="cm-autot"></span><span class="cnt"><span id="cmWn">0</span> / 2,000</span></div>' +
-        '<div><span class="lb">분류 (고르지 않으면 「자유」)</span><div class="ct" role="group" aria-label="분류">' + [['free', '자유'], ['info', '정보'], ['tech', '매매 기법'], ['qna', '질문']].map(function (c) { return '<button type="button" data-wc="' + c[0] + '" aria-pressed="' + (c[0] === 'free' ? 'true' : 'false') + '">' + c[1] + '</button>'; }).join('') + '</div></div>' +
+        '<div><span class="lb">분류 (고르지 않으면 「자유」)</span><div class="ct" role="group" aria-label="분류">' + [['free', '자유'], ['info', '정보'], ['tech', '매매 기법'], ['qna', '질문']].map(function (c) { return '<button type="button" data-wc="' + c[0] + '" aria-pressed="' + (c[0] === ((edit && edit.cat) || 'free') ? 'true' : 'false') + '">' + c[1] + '</button>'; }).join('') + '</div></div>' +
+        (edit && edit.card ? '<p class="cm-hint">숫자 카드는 그대로 둬요 (글 쓴 날 기준)</p>' : '') +
         (syms.length ? '<div><span class="lb">숫자 카드 붙이기 (선택)</span><div class="ct" role="group" aria-label="카드">' + syms.map(function (s) { return '<button type="button" data-wcard="' + esc(s) + '" aria-pressed="false">' + esc(s) + '</button>'; }).join('') + '</div>' +
           (openSymNow() ? '<p class="cm-hint">지금 연 종목(' + esc(openSymNow()) + ')은 요약 숫자 3개가 글 쓴 날 기준으로 붙어요 · 다른 종목은 바로가기만 붙어요</p>' : '<p class="cm-hint">종목 화면을 연 채로 글을 쓰면 그 종목의 요약 숫자가 붙어요</p>') + '</div>' : '') +
         '<p class="cm-rline">종목 추천 · 목표가 · 유료방 안내는 지워요 · <button type="button" data-act="rules">이용 규칙</button></p>' +
         '<p class="err" id="cmWe" hidden></p></form>',
-      '<button type="button" class="cm-go" id="cmWgo" style="width:100%" disabled>올리기</button>');
-    var W = { cat: 'free', card: null };
+      '<button type="button" class="cm-go" id="cmWgo" style="width:100%" disabled>' + (edit ? '고치기' : '올리기') + '</button>');
+    var W = { cat: (edit && edit.cat) || 'free', card: null };
     var b = el.querySelector('#cmWb'), go = el.querySelector('#cmWgo'), er = el.querySelector('#cmWe'), at = el.querySelector('#cmWt');
     function valid() { return b.value.trim().length >= 5; }
     function upd() {
@@ -9230,6 +9296,7 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
       var tg = tagsOf(b.value); at.textContent = tg.length ? '태그 ' + tg.map(function (x) { return '$' + x; }).join(' ') : '';
     }
     b.addEventListener('input', upd);
+    if (edit) { b.value = edit.body || ''; upd(); }
     el.addEventListener('click', function (e) {
       var c = e.target.closest('[data-wc]'); if (c) { W.cat = c.dataset.wc; [].slice.call(el.querySelectorAll('[data-wc]')).forEach(function (x) { x.setAttribute('aria-pressed', x === c ? 'true' : 'false'); }); }
       var k = e.target.closest('[data-wcard]'); if (k) { W.card = W.card === k.dataset.wcard ? null : k.dataset.wcard; [].slice.call(el.querySelectorAll('[data-wcard]')).forEach(function (x) { x.setAttribute('aria-pressed', x.dataset.wcard === W.card ? 'true' : 'false'); }); }
@@ -9239,6 +9306,12 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
       var text = b.value.trim();
       if (!S.me.official && badLink(text)) { er.hidden = false; er.textContent = '오픈채팅 · 텔레그램 · 유료방처럼 밖으로 데려가는 안내는 올릴 수 없어요.'; return; }
       go.disabled = true;
+      if (edit) {
+        api().edit(edit.id, { cat: W.cat, body: text, tags: tagsOf(text) }).then(function (np) {
+          Object.assign(edit, np, { mine: true }); closeAll(); render(); openPost(edit.id); toast('고쳤어요');
+        }).catch(function (e) { go.disabled = false; er.hidden = false; er.textContent = fail(e); });
+        return;
+      }
       api().write({ cat: W.cat, title: '', body: text, tags: tagsOf(text), card: W.card }).then(function (p) {
         if (!findPost(p.id)) S.data.posts.unshift(p);
         close(el); S.cat = 'all'; paintCats(); render(); toast('올렸어요');
@@ -9247,6 +9320,41 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     setTimeout(function () { b.focus(); }, 60);
   }
 
+  function dropPost(id) { if (S.data) S.data.posts = S.data.posts.filter(function (p) { return p.id !== id; }); }
+  function postMenu(id) {
+    var p = findPost(id); if (!p) return;
+    var items = [];
+    if (p.mine) {
+      items.push(['글 고치기', function () { openWrite(p); }]);
+      items.push(['글 지우기', function () {
+        if (!confirm('이 글을 지울까요? 댓글 · 좋아요도 함께 지워지고 되돌릴 수 없어요.')) return;
+        api().del('post:' + id).then(function () { dropPost(id); closeAll(); render(); toast('지웠어요'); }, function (e) { toast(fail(e)); });
+      }, 1]);
+    } else items.push(['신고하기', function () { openReport('post:' + id); }]);
+    if (opAdmin()) {
+      items.push(['운영자 · 가리기 (되돌릴 수 있어요)', function () { opMod('post:' + id, 'hide'); }, 1]);
+      if (!p.mine) items.push(['운영자 · 지우기', function () { opMod('post:' + id, 'delete'); }, 1]);
+    }
+    menu('글 메뉴', items);
+  }
+  function opMod(ref, act) {
+    var post = ref.indexOf('post:') === 0, word = post ? '글' : '댓글';
+    if (!confirm(act === 'hide' ? '이 ' + word + '을 가릴까요? 운영 센터 「글 관리」에서 다시 보이게 할 수 있어요.' : '이 ' + word + '을 지울까요? 되돌릴 수 없어요.')) return;
+    api().amod(ref, act).then(function () {
+      if (post) { dropPost(ref.slice(5)); closeAll(); render(); }
+      else { var pid = openPid(); var pp = pid && findPost(pid); if (pp && pp.comments) pp.comments--; closeAll(); render(); if (pid) openPost(pid); }
+      toast(act === 'hide' ? '가렸어요' : '지웠어요');
+    }, function (e) { toast(fail(e)); if (e && (e.code === 'admin_expired' || e.code === 'admin')) toCenter('cmpost'); });
+  }
+  var OPEN_PID = null;
+  function openPid() { return OPEN_PID; }
+  function delCmt(cid) {
+    if (!confirm('이 댓글을 지울까요?')) return;
+    api().del('cmt:' + cid).then(function () {
+      var pid = openPid(), pp = pid && findPost(pid); if (pp && pp.comments) pp.comments--;
+      closeAll(); render(); if (pid) openPost(pid); toast('지웠어요');
+    }, function (e) { toast(fail(e)); });
+  }
   function openReport(ref) {
     if (!need('신고')) return;
     var R = ['종목 추천 · 목표가 · 리딩', '유료방 · 외부 대화방 안내', '허위 정보', '시세를 움직이려는 선동', '욕설 · 혐오', '개인정보 노출', '광고'];
@@ -9286,12 +9394,16 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     if ((x = e.target.closest('[data-sym]'))) { e.stopPropagation(); openSym(x.dataset.sym); return; }
     if ((x = e.target.closest('[data-vote]'))) { var pl = x.closest('[data-poll]'); vote(pl.dataset.poll, x.dataset.vote); return; }
     if ((x = e.target.closest('[data-like]'))) { like(x.dataset.like, x); return; }
+    if ((x = e.target.closest('[data-pmenu]'))) { postMenu(x.dataset.pmenu); return; }
+    if ((x = e.target.closest('[data-cdel]'))) { delCmt(x.dataset.cdel); return; }
+    if ((x = e.target.closest('[data-cadm]'))) { opMod('cmt:' + x.dataset.cadm, 'delete'); return; }
     if ((x = e.target.closest('[data-report]'))) { openReport(x.dataset.report); return; }
     if ((x = e.target.closest('[data-act]'))) {
       var a = x.dataset.act;
       if (a === 'write') openWrite(); else if (a === 'rules') openRules(); else if (a === 'join') openJoin();
       else if (a === 'paper') { closeAll(); if (window.show) window.show('paper'); }
       else if (a === 'retry') load();
+      else if (a === 'mkpoll' || a === 'judge') toCenter('cmpoll');
       return;
     }
     if ((x = e.target.closest('[data-cat]'))) { S.cat = x.dataset.cat; paintCats(); render(); window.scrollTo(0, 0); return; }
