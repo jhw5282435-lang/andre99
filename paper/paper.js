@@ -643,7 +643,7 @@ window.A99E = A99E;
 'use strict';
 if (window.A99Paper) return;
 
-var VER = '2026.10.21-A';
+var VER = '2026.10.26-C';
 var Q = 'US' + 'DT';                              // 모의 계좌 단위 표기 (가상 · 실제 돈 아님). 가격은 하이퍼리퀴드 달러 시세
 var WSURL = 'wss://api.hyperliquid.xyz/ws';      // 실시간 시세: 하이퍼리퀴드 공개 자료
 var HLI = 'https://api.hyperliquid.xyz/info';
@@ -1138,15 +1138,17 @@ function loadMe(quiet) {
     if (BAN === 'net') banner(null);
     var first = !ME;
     var fresh = applyServer(x.j);
+    if (ME && ME.nick && window.A99Auth && window.A99Auth.setNick) window.A99Auth.setNick(ME.nick);
     if (!first) toastFills(fresh.filter(function (f) { return f.kind !== 'open' && f.kind !== 'close'; }));
     changed(true);
     lowCheck();
   });
 }
 function logout(expired) {
-  TOK = null; ME = null; lsSet(LS_TOK, null);
+  TOK = null; ME = null; lsSet(LS_TOK, null); lsSet('a99_acct', null);
   st = E.newState(0); FILLS = []; lastFillTs = 0;
   changed(true);
+  if (window.A99Auth && window.A99Auth.refresh) window.A99Auth.refresh();   /* 오른쪽 위 버튼 · 회원 전용 화면도 바로 */
   if (expired) toast('로그인이 풀렸어요. 다시 로그인해 주세요.', true);
 }
 
@@ -2014,6 +2016,7 @@ function contactBox() {
     '<p class="hint">초대코드 · 비밀번호 분실 · 오류 제보는 ' + contactLine() + '으로 보내 주세요.</p></div>';
 }
 function authSheet(mode) {
+  if (window.A99Auth) { window.A99Auth.open(mode === 'signup' ? 'signup' : 'login'); return; }   /* 앱 공용 로그인 칸 하나로 */
   var su = mode === 'signup';
   openSheet(su ? '초대코드로 시작' : '로그인',
     '<form id="pp-authf" data-mode="' + mode + '" novalidate>' +
@@ -2351,7 +2354,15 @@ function theme(on) {
   var m = document.querySelector('meta[name="theme-color"]');
   if (m) { if (on) { if (TC == null) TC = m.getAttribute('content'); m.setAttribute('content', '#000000'); } else if (TC != null) m.setAttribute('content', TC); }
 }
+function syncTok() {   /* 2026.10.26-C 앱 오른쪽 위에서 로그인 · 로그아웃했으면 따라간다 */
+  var t = lsGet(LS_TOK);
+  if (t === TOK) return;
+  if (!t) { if (TOK) logout(); return; }
+  TOK = t; ME = null; st = E.newState(0); FILLS = []; lastFillTs = 0;
+  changed(true); loadMe();
+}
 function show() {
+  syncTok();
   ACTIVE = true; theme(true);
   syncSubs();
   dirty.quote = dirty.book = dirty.acct = dirty.est = true; kick();
@@ -2360,6 +2371,6 @@ function show() {
 }
 function hide() { ACTIVE = false; theme(false); if (CHART) closeChart(); if (PK || (SH && !SH.hidden)) closeSheet(); syncSubs(); }
 
-window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: openChart,
+window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: openChart, sync: syncTok,
   _st: function () { return st; }, _ME: function () { return ME; }, _M: M, _U: U };
 })();
