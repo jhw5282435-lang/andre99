@@ -1222,7 +1222,7 @@ window.A99_FIN={"flow": "top", "turn": "line", "old": "off", "unit": "kr"};   /*
 </nav>
 
 <script>
-var BUILD_VER='v2026.10.26-D';
+var BUILD_VER='v2026.10.31-A';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -1266,7 +1266,7 @@ function show(t){
   try{ marketStatus(); }catch(e){}
 }
 /* 모의투자 탭: 처음 누를 때만 paper/paper.js(차트 · 계산 엔진 · 화면)를 받아 온다 — 앱 첫 화면은 가볍게 */
-var PAPER_JS='paper/paper.js?v=2026.10.26-C', PAPER_LOADING=false;
+var PAPER_JS='paper/paper.js?v=2026.10.31-A', PAPER_LOADING=false;
 function paperOpen(){
   var host=$('paperHost');
   if(window.A99Paper){ window.A99Paper.mount(host); window.A99Paper.show(); return; }
