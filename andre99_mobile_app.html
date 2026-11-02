@@ -922,6 +922,119 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .fk-more{display:block;width:calc(100% - 32px);margin:12px 16px 0;min-height:40px;border-radius:11px;
   background:var(--s2);color:var(--tx2);font-size:12px;font-weight:700;border:none;font-family:inherit}
 </style>
+
+<style>
+/* ══ 2026.11.01-A 신용 경고등 · 약관 시트 · 가입 체크 ══ */
+:root{--ck-calm:#34C17B;--ck-watch:#F5C542;--ck-alert:#FF8A3D}
+.srclk{font:inherit;color:var(--tx2);text-decoration:underline;text-underline-offset:3px;background:none;border:0;padding:0;cursor:pointer}
+.sf-tva{margin:6px 0 0;font-size:11px;text-align:right}
+.sf-tva a{color:var(--tx3,#7a7a7e);text-decoration:none}
+.ck{margin:0 16px 4px;border:1px solid var(--line);border-radius:14px;background:var(--s1);overflow:hidden}
+.ck-h{display:flex;align-items:center;gap:8px;padding:14px 12px 0 16px}
+.ck-h b{font-size:15px;font-weight:800;letter-spacing:-.01em}
+.ck-tag{font-size:10.5px;font-weight:700;color:var(--tx2);border:1px solid var(--line);padding:0 7px;border-radius:999px;line-height:18px}
+.ck-h .sp{flex:1}
+.ck-i{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);color:var(--tx2);font:italic 800 13px Georgia,serif;display:inline-flex;align-items:center;justify-content:center}
+.ck-st{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:12px 16px 0}
+.ck-st div{display:flex;align-items:center;justify-content:center;gap:6px;min-height:38px;border-radius:10px;border:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--tx3,#7a7a7e)}
+.ck-st i{width:8px;height:8px;border-radius:50%;background:var(--tx3,#7a7a7e);opacity:.6}
+.ck-st .on{color:var(--tx);border-color:transparent}
+.ck-st .on i{opacity:1}
+.ck-st .on.calm{background:rgba(52,193,123,.16);box-shadow:inset 0 0 0 1.5px var(--ck-calm)} .ck-st .on.calm i{background:var(--ck-calm)}
+.ck-st .on.watch{background:rgba(245,197,66,.14);box-shadow:inset 0 0 0 1.5px var(--ck-watch)} .ck-st .on.watch i{background:var(--ck-watch)}
+.ck-st .on.alert{background:rgba(255,138,61,.16);box-shadow:inset 0 0 0 1.5px var(--ck-alert)} .ck-st .on.alert i{background:var(--ck-alert)}
+.ck-sum{display:flex;align-items:baseline;gap:8px;padding:12px 16px 0}
+.ck-sum b{font-size:15px;font-weight:800}
+.ck-sum span{font-size:12px;color:var(--tx3,#7a7a7e);font-family:var(--mono)}
+.ck-say{margin:4px 16px 0;font-size:13.5px;color:var(--tx);line-height:1.6}
+.ck-last{margin:2px 16px 0;font-size:12px;color:var(--tx3,#7a7a7e)}
+.ck-tg{display:flex;align-items:center;justify-content:space-between;width:calc(100% - 32px);margin:12px 16px 0;min-height:44px;padding:0 2px;border-top:1px solid var(--line);font-size:13px;font-weight:700;color:var(--tx2)}
+.ck-tg[aria-expanded="true"] .ar{transform:rotate(180deg)}
+.ck-tg .ar{display:inline-block;transition:transform .15s}
+.ck-rows{border-top:1px solid var(--line)}
+.ck-r{padding:12px 16px;border-bottom:1px solid var(--s2)}
+.ck-r .t{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.ck-r .nm{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.ck-r .nm em{font-style:normal;font-size:11.5px;font-weight:500;color:var(--tx3,#7a7a7e)}
+.ck-r .pr{font-size:10.5px;font-weight:800;color:var(--ck-watch);border:1px solid rgba(245,197,66,.55);padding:0 6px;border-radius:5px;line-height:17px}
+.ck-r .v{font-size:17px;font-weight:800;white-space:nowrap}
+.ck-r .tr{display:flex;align-items:center;gap:10px;margin-top:8px}
+.ck-bar{position:relative;flex:1;height:6px;border-radius:3px;background:var(--s3)}
+.ck-bar .z1,.ck-bar .z2{position:absolute;top:0;bottom:0}
+.ck-bar .z1{left:80%;width:15%;background:rgba(245,197,66,.35)}
+.ck-bar .z2{left:95%;width:5%;background:rgba(255,138,61,.6);border-radius:0 3px 3px 0}
+.ck-bar .mk{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--tx);box-shadow:0 0 0 3px var(--s1)}
+.ck-pt{flex:none;width:34px;text-align:right;font-size:12px;font-weight:800;color:var(--tx2)}
+.ck-pt.p1{color:var(--ck-watch)} .ck-pt.p2{color:var(--ck-alert)}
+.ck-r .m{display:flex;justify-content:space-between;gap:8px;margin-top:5px;font-size:11px;color:var(--tx3,#7a7a7e)}
+.ck-r .m b{font-weight:600;color:var(--tx2)}
+.ck-r .easy{font-size:11.5px;color:var(--tx2);margin-top:3px}
+.ck-ax{display:flex;justify-content:space-between;padding:8px 16px 0;font-size:10.5px;color:var(--tx3,#7a7a7e)}
+.ck-link{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-top:1px solid var(--line);font-size:13px;font-weight:700;color:var(--tx);text-decoration:none}
+.ck-link span{color:var(--tx3,#7a7a7e);font-weight:600;font-size:12px}
+.ck-f{padding:11px 16px 14px;border-top:1px solid var(--s2);font-size:11.5px;color:var(--tx3,#7a7a7e);line-height:1.6}
+.ck-f b{color:var(--tx2);font-weight:700}
+.ck-wait{margin:0 16px;padding:18px 16px;border:1px solid var(--line);border-radius:14px;background:var(--s1);font-size:13px;color:var(--tx3,#7a7a7e)}
+.ck-wait button{margin-left:6px;font-size:12.5px;color:var(--tx2);text-decoration:underline}
+.ck-ex h3{margin:20px 0 8px;font-size:14px;font-weight:800}
+.ck-ex h3:first-child{margin-top:0}
+.ck-ex p{margin:0;font-size:13.5px;color:var(--tx);line-height:1.7}
+.ck-ex .lead{font-size:15px;font-weight:700;line-height:1.6}
+.ck-story{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--s1);overflow:hidden}
+.ck-story .r{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
+.ck-story .r div{padding:10px 12px;font-size:12.5px;line-height:1.5}
+.ck-story .r div+div{border-left:1px solid var(--line)}
+.ck-story .r b{display:block;font-size:13px}
+.ck-story .r .n{font-size:16px;font-weight:800}
+.ck-story .q{padding:10px 12px;font-size:12.5px;color:var(--tx2);line-height:1.6}
+.ck-story .q b{color:var(--tx)}
+.ck-ex ol{margin:0;padding-left:18px;font-size:13px;line-height:1.7}
+.ck-lv{display:flex;gap:6px;margin-top:8px}
+.ck-lv span{flex:1;text-align:center;padding:7px 0;border-radius:9px;font-size:12px;font-weight:700;border:1px solid var(--line)}
+.ck-lv .c{box-shadow:inset 0 0 0 1.5px var(--ck-calm)} .ck-lv .w{box-shadow:inset 0 0 0 1.5px var(--ck-watch)} .ck-lv .a{box-shadow:inset 0 0 0 1.5px var(--ck-alert)}
+.ck-lv small{display:block;font-weight:500;color:var(--tx3,#7a7a7e);font-size:11px}
+.ck-th{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+.ck-th th,.ck-th td{border-bottom:1px solid var(--line);padding:7px 4px;text-align:left}
+.ck-th th{color:var(--tx3,#7a7a7e);font-weight:600}
+.ck-note{margin-top:10px;padding:10px 12px;border-radius:11px;background:var(--s1);border:1px solid var(--line);font-size:12.5px;color:var(--tx2);line-height:1.6}
+.ck-note b{color:var(--tx)}
+.ck-fred{margin-top:8px;font-size:11.5px;color:var(--tx3,#7a7a7e);line-height:1.6;font-style:italic}
+.ck-ex a{color:var(--tx2)}
+/* 약관 시트 */
+.lg-tabs{display:flex;border-bottom:1px solid var(--line);flex:none}
+.lg-tabs button{flex:1;padding:12px 0;font-size:14px;font-weight:700;color:var(--tx3,#7a7a7e);border-bottom:2px solid transparent}
+.lg-tabs button[aria-selected="true"]{color:var(--tx);border-color:var(--tx)}
+.lg-body{font-size:14px;line-height:1.75}
+.lg-no5{border:1px solid var(--line);border-radius:12px;background:var(--s1);padding:12px 14px;margin:0 0 12px}
+.lg-no5 b{display:block;font-size:14px;font-weight:800;margin-bottom:4px}
+.lg-no5 ol{margin:0;padding-left:18px;font-size:13px}
+.lg-ver{margin:0 0 6px;font-size:11.5px;color:var(--tx3,#7a7a7e)}
+.lg-art{border-bottom:1px solid var(--s2)}
+.lg-art summary{list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:48px;font-size:13.5px;font-weight:700;cursor:pointer}
+.lg-art summary::-webkit-details-marker{display:none}
+.lg-art summary::after{content:"⌄";color:var(--tx3,#7a7a7e);transition:transform .15s}
+.lg-art[open] summary::after{transform:rotate(180deg)}
+.lg-b{padding:0 0 12px;font-size:13px;color:var(--tx2);line-height:1.75}
+.lg-b p{margin:0 0 8px} .lg-b ol{margin:0 0 6px;padding-left:20px} .lg-b li{margin-bottom:4px}
+.lg-b b{color:var(--tx)}
+.lg-mail{color:var(--ck-watch)!important}
+.lg-tw{overflow-x:auto;margin:8px 0}
+.lg-tw table{border-collapse:collapse;width:100%;min-width:440px;font-size:12px}
+.lg-tw th,.lg-tw td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+.lg-tw th{background:var(--s2);color:var(--tx2);white-space:nowrap}
+.lg-url{margin:14px 0 0;font-size:11.5px;color:var(--tx3,#7a7a7e)}
+.lg-url b{color:var(--tx2);font-family:var(--mono);font-weight:600}
+/* 가입 체크 */
+.au-form .au-agree{display:flex;gap:11px;align-items:flex-start;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--s1);margin:0;cursor:pointer;font-size:inherit;font-weight:inherit;color:inherit}
+.au-form .au-agree input{flex:none;width:22px;height:22px;min-height:0;margin:1px 0 0;padding:0;border:0;border-radius:4px;background:none;accent-color:var(--tx)}
+.au-agt{display:block;min-width:0}
+.au-agt b{display:block;font-size:13.5px;font-weight:700;color:var(--tx);line-height:1.55}
+.au-agt b em{font-style:normal;font-size:11.5px;color:var(--ck-watch);margin-left:5px}
+.au-agt small{display:block;margin-top:4px;font-size:11.5px;color:var(--tx3,#7a7a7e);line-height:1.55;font-weight:500}
+.au-lk{display:flex;gap:14px;margin-top:6px}
+.au-lk button{font-size:12px;font-weight:600;color:var(--tx2);text-decoration:underline;text-underline-offset:3px;min-height:32px}
+@media(prefers-reduced-motion:reduce){.ck-tg .ar,.lg-art summary::after{transition:none}}
+</style>
 </head>
 <body>
 <script>
@@ -1096,6 +1209,9 @@ window.A99_FIN={"flow": "top", "turn": "line", "old": "off", "unit": "kr"};   /*
     <div class="srchead">안드레99 &middot; 자료 출처와 안내</div>
     <div class="srcrow"><b>소스</b><span>FRED · SEC EDGAR · Yahoo Finance · Finnhub</span></div>
     <div class="srcrow"><b>갱신 주기</b><span>주가 15분 지연 · 기관 보유 45일 지연 · 물가·고용 월 1회</span></div>
+    <div class="srcrow"><b>약관 · 정책</b><span><button type="button" class="srclk" data-legal="terms">이용약관</button> · <button type="button" class="srclk" data-legal="privacy">개인정보 처리방침</button></span></div>
+    <div class="srcrow"><b>표기 출처</b><span>VIX: Cboe · 신용 여건: Federal Reserve Bank of Chicago · 초과채권프리미엄 · 경기침체 확률: Federal Reserve Board · 차트: TradingView</span></div>
+    <div class="srcrow"><b>FRED</b><span>This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis. <a class="srclk" href="https://fred.stlouisfed.org/docs/api/terms_of_use.html" target="_blank" rel="noopener">FRED 이용약관</a> — 안드레99 이용자도 이 약관을 따라요.</span></div>
     <div class="srcrow"><b>버전</b><span><button type="button" class="srcver" id="verFoot">—</button></span></div>
     <div class="srcend">투자 자문이 아닙니다. 지나간 사실만 전합니다.</div>
   </div>
@@ -1222,7 +1338,7 @@ window.A99_FIN={"flow": "top", "turn": "line", "old": "off", "unit": "kr"};   /*
 </nav>
 
 <script>
-var BUILD_VER='v2026.10.31-A';
+var BUILD_VER='v2026.11.01-A';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -1266,7 +1382,7 @@ function show(t){
   try{ marketStatus(); }catch(e){}
 }
 /* 모의투자 탭: 처음 누를 때만 paper/paper.js(차트 · 계산 엔진 · 화면)를 받아 온다 — 앱 첫 화면은 가볍게 */
-var PAPER_JS='paper/paper.js?v=2026.10.31-A', PAPER_LOADING=false;
+var PAPER_JS='paper/paper.js?v=2026.11.01-A', PAPER_LOADING=false;
 function paperOpen(){
   var host=$('paperHost');
   if(window.A99Paper){ window.A99Paper.mount(host); window.A99Paper.show(); return; }
@@ -2221,11 +2337,10 @@ function drawFlow(j){
     });
     o+='<div class="fl-warn">최근 '+j.days+'일 변화입니다. 기준금리는 ±0.15%p, 10년물은 ±3%, 달러는 ±2% 안이면 큰 변화 없음으로 봅니다. 우리가 정한 기준입니다.</div></div>';
   }
-  if(ECO && (ECO.credit||{}).BAMLH0A0HYM2){
-    o+='<div class="ec-grp">시장이 걱정하는 정도</div>'+
-       '<div class="sec ec-sec">'+ecoRow(ECO.credit.BAMLH0A0HYM2)+
-       '<button type="button" class="ec-goto" id="goTemp">VIX(변동성 지수)는 마켓 › 시장 온도에서 함께 봐요 ›</button></div>';   /* 2026.10.19-D VIX는 마켓 한 곳에만 */
-  }
+  /* 2026.11.01-A 하이일드 스프레드(ICE · 재배포 금지) → 신용 경고등(공개 · 출처 표기 자료 4개) */
+  o+='<div class="ec-grp">시장이 걱정하는 정도</div>'+
+     '<div class="sec ec-sec"><div id="ckBox"></div>'+
+     '<button type="button" class="ec-goto" id="goTemp">VIX(변동성 지수)는 마켓 › 시장 온도에서 함께 봐요 ›</button></div>';   /* 2026.10.19-D VIX는 마켓 한 곳에만 */
   var it=(j.items||[]).slice();
   var mx=1; it.forEach(function(x){ if(Math.abs(x.pct)>mx) mx=Math.abs(x.pct); });
   function row(x){
@@ -2265,6 +2380,7 @@ function drawFlow(j){
   });
   o+='<div class="fl-warn">교과서적 설명입니다. 실제로는 다른 요인이 겹쳐 반대로 움직이는 경우도 많습니다.</div></div></div>';
   box.innerHTML=o;
+  if(window.A99Credit) window.A99Credit.paint($('ckBox'));
   box.querySelectorAll('.fl-d').forEach(function(b){
     b.addEventListener('click',function(){ FLOW_DAYS=Number(b.dataset.d); loadFlow(); });
   });
@@ -4050,10 +4166,6 @@ var ECO_INFO={
     b:'10년물에서 2년물을 뺀 값입니다.\n\n보통은 오래 빌려줄수록 이자를 더 받으므로 플러스입니다.',
     up:'정상적인 모습으로 돌아가는 중입니다. 과거에는 경기 회복 국면에서 이런 흐름이 나타나는 경향이 있었습니다.',
     dn:'0 아래로 내려가면 장기가 단기보다 싼 이상한 상태가 됩니다. 과거에는 1~2년 안에 침체가 뒤따르는 경향이 있었습니다.'},
-  BAMLH0A0HYM2:{ab:'HY', en:'High Yield Option-Adjusted Spread',
-    b:'신용도가 낮은 회사가 돈을 빌릴 때, 미국 국채보다 얼마나 더 높은 이자를 내는지 나타냅니다.',
-    up:'시장이 부도 위험을 더 크게 본다는 뜻입니다. 과거에는 주가 하락과 함께 움직이는 경향이 있었습니다.',
-    dn:'시장이 안심하고 있다는 뜻입니다. 과거에는 위험자산이 오르는 국면에서 낮아지는 경향이 있었습니다.'},
   VIXCLS:{ab:'VIX', en:'CBOE Volatility Index',
     b:'앞으로 30일간 주가가 얼마나 출렁일지에 대한 시장의 예상치입니다.\n\n옵션 거래 가격에서 계산되며 흔히 공포지수라 불립니다.\n\n20 아래면 평온한 편, 30을 넘으면 크게 흔들리고 있다는 신호로 봅니다.',
     up:'불안이 커진다는 뜻입니다. 과거에는 주가가 급락할 때 함께 치솟는 경향이 있었습니다.',
@@ -6381,12 +6493,15 @@ select.pa-in{padding-right:6px}
         return '<label class="pa-u"><input type="checkbox" data-uid="' + esc(u.id) + '"' + (SEL[u.id] ? ' checked' : '') + '>' +
           '<div><b>' + esc(u.nick) + '</b>' + (OFF.indexOf(u.id) >= 0 ? '<span class="pa-tag" style="color:#F5A524;border-color:#F5A524">OFFICIAL</span>' : '') + (u.status !== 'active' ? '<span class="pa-tag red">정지</span>' : '') + (u.policy !== 'default' ? '<span class="pa-tag">' + POL[u.policy] + '</span>' : '') +
           '<div class="m">가입 ' + kst(u.created_at) + ' · 접속 ' + ago(u.last_seen) + ' · 코드 ' + esc(u.invite || '—') + (u.note ? ' · ' + esc(u.note) : '') + '</div>' +
-          '<div class="m">거래 ' + n0(u.trades) + ' · 청산 ' + n0(u.liqs) + ' · 초기화 ' + n0(u.resets) + ' · 쿠폰 ' + n0(u.coupons) + ' · 포지션 ' + n0(u.npos) + '</div></div>' +
+          '<div class="m">거래 ' + n0(u.trades) + ' · 청산 ' + n0(u.liqs) + ' · 초기화 ' + n0(u.resets) + ' · 쿠폰 ' + n0(u.coupons) + ' · 포지션 ' + n0(u.npos) + (u.loan > 0 ? ' · 빌린 연습금 ' + n2(u.loan) : '') + '</div></div>' +
           '<div class="r"><b>' + n2(u.bal) + '</b><div class="m">' + (u.npos ? '현금(포지션 제외)' : '순자산') + '</div></div></label>';
       }).join('') : '<p class="pa-st">회원이 없어요.</p>') + '</div>';
       h += '<div class="pa-row">' + (UQ.page > 0 ? '<button type="button" data-pg="-1">이전 쪽</button>' : '') + (UQ.page + 1 < pages ? '<button type="button" data-pg="1">다음 쪽</button>' : '') + '<button type="button" id="paAll">이 쪽 모두 고르기</button></div>';
       h += '<div class="pa-sel"><p class="pa-st" id="paSelN"></p>' +
         '<div class="pa-row"><button type="button" data-bk="coupons" data-v="1">쿠폰 +1</button><button type="button" data-bk="coupons" data-v="2">쿠폰 +2</button><button type="button" data-bk="coupons" data-v="-1">쿠폰 −1</button><button type="button" data-bk="reset" class="red">지금 초기화</button></div>' +
+        '<div class="pa-row"><input class="pa-in" id="paGv" type="number" min="1" max="1000000" step="1" inputmode="decimal" placeholder="금액" style="width:110px"><input class="pa-in w" id="paGn" maxlength="60" placeholder="사유(필수 · 받는 사람에게 보여요)"></div>' +
+        '<div class="pa-row"><button type="button" data-bk="gift">가상머니 넣기</button><button type="button" data-bk="loan">연습금 빌려주기</button></div>' +
+        '<p class="pa-st">넣기 · 빌려주기는 순위(수익률 · 수익금)에 영향이 없어요. 빌려준 돈은 대출 뒤 늘어난 순자산이 금액의 2배 이상이고 현금이 있으면 자동으로 반납돼요. 초기화하면 정리돼요. 1번에 1,000,000까지.</p>' +
         '<div class="pa-row"><select class="pa-in" id="paPol">' + Object.keys(POL).map(function (k) { return '<option value="' + k + '">' + POL[k] + '</option>'; }).join('') + '</select><button type="button" data-bk="policy">정책 바꾸기</button></div>' +
         '<div class="pa-row"><button type="button" data-bk="suspend" class="red">정지</button><button type="button" data-bk="unsuspend">정지 풀기</button><button type="button" data-bk="logout">모든 기기 로그아웃</button><button type="button" data-bk="note">메모</button><button type="button" id="paPw">비밀번호 재설정</button></div>' +
         '<div class="pa-row"><button type="button" id="paRn">닉네임 바꾸기</button><button type="button" id="paOf">공식 계정 지정 · 해제</button></div>' +
@@ -6399,6 +6514,7 @@ select.pa-in{padding-right:6px}
   function bulk(act, v) {
     var ids = selIds(); if (!ids.length) return toast('회원을 먼저 고르세요');
     if (ids.length > 90) return toast('한 번에 90명까지예요');
+    if (act === 'gift' || act === 'loan') return giveBulk(act, ids);
     var body = { ids: ids, action: act };
     if (act === 'coupons') body.value = +v;
     if (act === 'policy') body.value = $('paPol').value;
@@ -6409,6 +6525,24 @@ select.pa-in{padding-right:6px}
       var m = (x.j.changed || 0) + '명 처리' + (x.j.fail && x.j.fail.length ? ' · 못 함 ' + x.j.fail.length + '명(포지션·주문 있음)' : '');
       toast(m); SEL = {}; go('users');
     });
+  }
+  /* 2026.10.31-B 가상머니 넣기 · 연습금 빌려주기 — 사유는 받는 사람에게 보이고 관리 기록에 남는다. 서버가 한 번에 5명씩 받으므로 나눠 보낸다 */
+  function giveBulk(act, ids) {
+    var v = Math.round(+$('paGv').value * 100) / 100, note = String($('paGn').value || '').trim();
+    if (!(v >= 1 && v <= 1000000)) return toast('금액은 1 ~ 1,000,000 사이로 넣어 주세요');
+    if (!note) return toast('사유를 넣어 주세요(받는 사람에게 보여요)');
+    var what = act === 'loan' ? '빌려줄까요?\n대출 뒤 늘어난 순자산이 ' + n2(v * 2) + ' 이상이 되고 현금이 있으면 자동으로 반납돼요.' : '넣어 줄까요?';
+    if (!confirm(ids.length + '명에게 ' + n2(v) + '씩 ' + what + '\n사유: ' + note + '\n순위에는 영향이 없어요.')) return;
+    var done = 0, fail = 0, rest = ids.slice();
+    (function next() {
+      if (!rest.length) { toast((act === 'loan' ? '빌려주기 ' : '넣기 ') + done + '명 완료' + (fail ? ' · 못 함 ' + fail + '명' : '')); SEL = {}; go('users'); return; }
+      var part = rest.splice(0, 5);
+      call('bulk', { ids: part, action: act, value: v, note: note }).then(function (x) {
+        if (x.s !== 200) { toast('실패: ' + (x.j.err === 'note' ? '사유 없음' : x.j.err === 'value' ? '금액 범위' : (x.j.err || x.s)) + ' · ' + done + '명까지 처리'); go('users'); return; }
+        done += x.j.changed || 0; fail += (x.j.fail || []).length;
+        setTimeout(next, 260);                         // 관리 요청 사이 간격(서버 0.2초 제한)
+      });
+    })();
   }
   function resetPw() {
     var ids = selIds(); if (ids.length !== 1) return toast('한 명만 고르세요');
@@ -8482,7 +8616,7 @@ html.st-on .nav-in{grid-template-columns:none;grid-auto-flow:column;grid-auto-co
 #mcTemp>.sec{margin-top:14px}
 .mc-h{margin-bottom:4px}
 .mc-sub{margin:0 16px 10px;font-size:11.5px;color:var(--tx3);line-height:1.55}
-#mcToday,#mcRel,#mcFlow{margin-top:26px}
+#mcToday,#mcRel,#mcCredit,#mcFlow{margin-top:26px}
 .mc-g{margin-top:12px}
 .mc-gh{display:flex;align-items:baseline;gap:8px;padding:0 16px;margin-bottom:6px}
 .mc-gh b{flex:none;font-size:13px;font-weight:700;color:var(--tx)}
@@ -8545,7 +8679,7 @@ html.st-on #sfHub .hb-h[data-tab="news"]>:not(:first-child){display:none}
     [].slice.call(home.children).forEach(function (e) { if (e.id === 'srcBox') return; e.dataset.mk = e.id === 'srcBtn' ? 'all' : 'stock'; });   /* 출처 상자는 제 열림 상태를 지킨다 */
     home.insertBefore(bar, home.firstChild);
     var mac = document.createElement('div'); mac.id = 'mcBox'; mac.dataset.mk = 'macro';
-    mac.innerHTML = '<div id="mcTemp"></div><div id="mcToday"></div><div id="mcRel"></div><div id="mcFlow"></div>';
+    mac.innerHTML = '<div id="mcTemp"></div><div id="mcToday"></div><div id="mcRel"></div><div id="mcCredit"></div><div id="mcFlow"></div>';
     home.insertBefore(mac, bar.nextSibling);
     $('mcTemp').appendChild(temp); temp.dataset.mk = '';
     var cal = document.createElement('div'); cal.id = 'mkCal'; cal.dataset.mk = 'cal';
@@ -8619,7 +8753,7 @@ html.st-on #sfHub .hb-h[data-tab="news"]>:not(:first-child){display:none}
   var REL = [
     ['연준이 보는 것', '물가와 일자리를 보고 금리를 정합니다', [['prices', 'CPIAUCNS'], ['prices', 'UNRATE'], ['prices', 'PAYEMS']]],
     ['연준이 정한 것', '위 숫자를 보고 정한 금리와 시장 금리입니다', [['rates', 'DFF'], ['rates', 'DGS2'], ['rates', 'T10Y2Y']]],
-    ['연준이 푸는 돈', '시중에 돈을 얼마나 풀고 있는지와 신용 부담입니다', [['rates', 'WALCL'], ['rates', 'M2SL'], ['credit', 'BAMLH0A0HYM2']]]
+    ['연준이 푸는 돈', '시중에 돈을 얼마나 풀고 있는지입니다 · 신용 부담은 아래 신용 경고등에서', [['rates', 'WALCL'], ['rates', 'M2SL']]]
   ];
   function relV(x) {
     var u = x.unit || '', v = x.value;
@@ -8689,7 +8823,12 @@ html.st-on #sfHub .hb-h[data-tab="news"]>:not(:first-child){display:none}
     o += '<p class="mc-note">' + f + '같은 기간의 움직임입니다. 원인과 결과를 뜻하지 않습니다.</p>';
     box.innerHTML = o;
   }
-  function paintMacro() { paintToday(); paintRel(); paintFlow(); }
+  function paintCredit() {   /* 2026.11.01-A 하이일드 스프레드(ICE · 재배포 금지) → 신용 경고등 */
+    var box = $('mcCredit'); if (!box || !window.A99Credit) return;
+    if (!box.dataset.ck) { box.dataset.ck = '1'; box.innerHTML = head('시장이 걱정하는 정도', '돈을 빌려주는 쪽의 겁을 공개 자료 4개로 재요') + '<div id="mcCk"></div>'; }
+    window.A99Credit.paint($('mcCk'));
+  }
+  function paintMacro() { paintToday(); paintRel(); paintCredit(); paintFlow(); }
   function onMacroClick(e) {
     var d = e.target.closest('.mc-days button'); if (d) { FLOW_D = +d.dataset.d; paintFlow(); return; }
     var r = e.target.closest('.mc-retry');
@@ -8763,6 +8902,7 @@ html.st-on #sfHub .hb-h[data-tab="news"]>:not(:first-child){display:none}
         : '<iframe title="' + esc(sym) + ' 차트" src="' + src + '" loading="lazy" referrerpolicy="no-referrer"></iframe><p class="sf-chph">차트 불러오는 중…</p>';
       el.innerHTML = '<div class="sec-h"><h2>차트</h2><span class="note">트레이딩뷰 · 일봉</span></div>' +
         '<div class="sf-chf">' + frame + '</div>' +
+        '<p class="sf-tva"><a href="https://www.tradingview.com/" target="_blank" rel="noopener nofollow">Track all markets on TradingView</a></p>' +
         '<p class="sf-chn">가격 흐름만 봅니다. 매수 · 매도 가격대 표시는 하지 않아요.</p>';
     }
   };
@@ -9524,7 +9664,7 @@ html.au-noscroll,html.au-noscroll body{overflow:hidden}
   }
   var API = window.A99AUTH_API || {
     login: function (nick, pw) { return post('/p/login', { nick: nick, pw: pw }); },
-    signup: function (code, nick, pw) { return post('/p/signup', { code: code, nick: nick, pw: pw }); },
+    signup: function (code, nick, pw, agree) { return post('/p/signup', { code: code, nick: nick, pw: pw, agree: agree }); },
     info: function () { return fetch(BASE + '/p/specs').then(function (r) { return r.json(); }).then(function (j) { return (j && j.info) || {}; }, function () { return {}; }); }
   };
   var INFO = null;
@@ -9570,7 +9710,8 @@ html.au-noscroll,html.au-noscroll body{overflow:hidden}
     code: '초대코드가 맞지 않거나 이미 다 쓰였어요.', nick_rule: '닉네임은 한글 · 영문 · 숫자 · 밑줄(_) 2~12자예요.', nick_block: '쓸 수 없는 단어가 들어 있어요.',
     nick_taken: '이미 있는 닉네임이에요.', pw_rule: '비밀번호는 8자 이상이에요.', closed: '지금은 새 가입을 받지 않아요.',
     login: '닉네임 또는 비밀번호가 맞지 않아요.', locked: '비밀번호를 5번 틀려 15분 동안 잠겼어요.', suspended: '이용이 정지된 계정이에요. 운영자에게 문의해 주세요.',
-    slow_down: '너무 빨라요. 잠깐 뒤 다시 해 주세요.', net: '서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.'
+    slow_down: '너무 빨라요. 잠깐 뒤 다시 해 주세요.', net: '서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.',
+    agree: '약관이 새로 바뀌었어요. 화면을 새로 고친 뒤 다시 동의해 주세요.'
   };
   function field(id, label, type, ac, max, ph) {
     return '<div><label for="' + id + '">' + label + '</label><input id="' + id + '" type="' + type + '" autocomplete="' + ac + '" maxlength="' + max + '"' +
@@ -9592,6 +9733,9 @@ html.au-noscroll,html.au-noscroll body{overflow:hidden}
         field('auNick', '닉네임', 'text', 'username', 12, su ? '한글 · 영문 · 숫자 · _ 2~12자' : '') +
         field('auPw', '비밀번호', 'password', su ? 'new-password' : 'current-password', 64, su ? '8자 이상' : '') +
         (su ? field('auPw2', '비밀번호 한 번 더', 'password', 'new-password', 64, '') : '') +
+        (su ? '<label class="au-agree"><input type="checkbox" id="auAgree"><span class="au-agt"><b>이용약관에 동의하고, 만 14세 이상이에요.<em>필수</em></b>' +
+          '<small>가입에 꼭 필요한 정보(닉네임 · 비밀번호 · 접속 기록)는 동의 없이 서비스 계약에 따라 처리돼요. 무엇을 얼마나 보관하는지는 처리방침에 있어요.</small>' +
+          '<span class="au-lk"><button type="button" data-legal="terms">이용약관 보기</button><button type="button" data-legal="privacy">처리방침 보기</button></span></span></label>' : '') +
         '<p class="au-err" id="auErr" role="alert" hidden></p>' +
         '<button type="submit" class="au-go" id="auGo">' + (su ? '가입하고 시작' : '로그인') + '</button>' +
         '<p class="au-hint" id="auHint">' + hint(su) + '</p>' +
@@ -9599,17 +9743,18 @@ html.au-noscroll,html.au-noscroll body{overflow:hidden}
       '<div class="au-one"><b>계정 하나로</b><span>모의투자 · 커뮤니티 · 종목 분석</span></div>');
     needInfo(function () { var h = $('auHint'); if (h) h.innerHTML = hint(su); });
     el.querySelector('.au-seg').addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b && b.dataset.m !== mode) open(b.dataset.m, why); });
-    var f = el.querySelector('#auForm'), er = el.querySelector('#auErr'), go = el.querySelector('#auGo');
+    var f = el.querySelector('#auForm'), er = el.querySelector('#auErr'), go = el.querySelector('#auGo'), ag = el.querySelector('#auAgree');
     function bad(t) { er.hidden = false; er.textContent = t; }
+    if (ag) { go.disabled = true; ag.addEventListener('change', function () { go.disabled = !ag.checked; if (ag.checked) er.hidden = true; }); }
     f.addEventListener('submit', function (e) {
       e.preventDefault();
       var nick = $('auNick').value.trim(), pw = $('auPw').value, code = su ? $('auCode').value.trim().toUpperCase() : '';
       if (!/^[가-힣a-zA-Z0-9_]{2,12}$/.test(nick)) return bad(AUTH_ERR.nick_rule);
-      if (su) { if (!code) return bad('초대코드를 넣어 주세요.'); if (pw.length < 8) return bad(AUTH_ERR.pw_rule); if (pw !== $('auPw2').value) return bad('비밀번호 두 칸이 달라요.'); }
+      if (su) { if (!code) return bad('초대코드를 넣어 주세요.'); if (pw.length < 8) return bad(AUTH_ERR.pw_rule); if (pw !== $('auPw2').value) return bad('비밀번호 두 칸이 달라요.'); if (!ag || !ag.checked) return bad('이용약관에 동의하고 만 14세 이상인지 확인해 주세요.'); }
       else if (!pw) return bad('비밀번호를 넣어 주세요.');
       er.hidden = true; go.disabled = true;
-      (su ? API.signup(code, nick, pw) : API.login(nick, pw)).then(function (x) {
-        go.disabled = false;
+      (su ? API.signup(code, nick, pw, (window.A99Legal && window.A99Legal.ver) || 1) : API.login(nick, pw)).then(function (x) {
+        go.disabled = !!(ag && !ag.checked);
         if (x.s === 200 && x.j.token) {
           lsSet(TOKK, x.j.token); lsSet(ACK, { nick: x.j.nick || nick, at: Date.now() });
           close(); changed(); toast(nick + ' 님, ' + (su ? '가입을 환영해요' : '어서 오세요'));
@@ -9725,6 +9870,134 @@ html.au-noscroll,html.au-noscroll body{overflow:hidden}
   var n = 0;
   function boot() { var a = buildBtn(), b = hook(); if (a && b && $('p-cm')) { applyAll(); return; } if (++n < 40) setTimeout(boot, 250); else applyAll(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 0); }); else setTimeout(boot, 0);
+})();
+</script>
+
+<script>
+/* ══ 2026.11.01-A 이용약관 · 개인정보 처리방침 원본 (legal_1101A.py 가 만든 것 — 손으로 고치지 말 것) ══ */
+window.A99_LEGAL = {"ver": 1, "date": "2026.11.02", "contact": "reanissanz@gmail.com", "terms": "<div class=\"lg-no5\"><b>안드레99가 하지 않는 것</b><ol><li>이용료를 받지 않아요 (유료방 · 유료 구독 없음)</li><li>사라 · 팔라고 추천하지 않아요</li><li>입금이나 1:1 연락을 요청하지 않아요</li><li>거래소를 소개하거나 추천하지 않아요</li><li>개인정보를 팔지 않아요</li></ol></div><p class=\"lg-ver\">판 1 · 시행 2026.11.02</p><details class=\"lg-art\" open><summary>제1조 목적</summary><div class=\"lg-b\"><p>이 약관은 안드레99(이하 「서비스」)를 쓰는 규칙과 운영자 · 이용자의 권리와 책임을 정해요. 서비스는 「안드레99 운영 담당」이 개인으로 운영하는 무료 · 비상업 정보 서비스예요.</p></div></details><details class=\"lg-art\"><summary>제2조 서비스 내용</summary><div class=\"lg-b\"><ol><li>서비스는 다음을 무료로 제공해요. ① 미국 주식 · 시장 · 경제 지표 정보 화면(공개 자료와 외부 시세를 정리해 보여줘요) ② 모의투자: 가상 자금으로 해 보는 연습용 거래 시뮬레이션 ③ 커뮤니티: 글 · 댓글 · 좋아요 · 투표 · 신고</li><li>서비스는 투자 자문이나 투자 권유가 아니고, 어떤 금융상품의 매수 · 매도도 추천하지 않아요.</li><li>운영자는 서비스의 일부를 바꾸거나 멈출 수 있어요. 이용자에게 영향이 큰 변경은 미리 앱에서 알려요.</li></ol></div></details><details class=\"lg-art\"><summary>제3조 가입 · 만 14세 이상</summary><div class=\"lg-b\"><ol><li>모의투자와 커뮤니티 글쓰기는 가입한 회원만 할 수 있어요. 가입에는 초대코드가 필요할 수 있어요.</li><li><b>만 14세 미만은 가입할 수 없어요.</b> 만 14세 미만으로 확인되면 계정을 지워요.</li><li>닉네임과 비밀번호는 회원이 직접 관리해요. 다른 사람의 계정을 쓰거나 계정을 넘기면 안 돼요.</li><li>다른 사람을 사칭하거나 운영자 · 공식 계정으로 오해될 닉네임은 쓸 수 없어요.</li></ol></div></details><details class=\"lg-art\"><summary>제4조 가상 자금은 돈이 아니에요</summary><div class=\"lg-b\"><ol><li>모의투자의 자금 · 수익 · 쿠폰 · 순위는 연습용 가상 값이에요. <b>현금이나 어떤 재산적 가치도 없어요.</b></li><li>가상 자금은 현금으로 바꾸거나, 충전 · 구매하거나, 다른 회원과 주고받거나 사고팔 수 없어요.</li><li>운영자는 연습금 지급 · 빌려주기 · 초기화 · 규칙 변경을 할 수 있고, 오류로 생긴 가상 값을 바로잡을 수 있어요.</li><li>순위에 상금 · 경품을 걸지 않아요.</li><li>모의투자 시세는 외부 공개 자료(하이퍼리퀴드 공개 시세 등)를 쓰며, 실제 거래소에서 거래되는 것이 아니에요.</li></ol></div></details><details class=\"lg-art\"><summary>제5조 정보 · 예측의 한계</summary><div class=\"lg-b\"><ol><li>화면의 시세 · 지표는 출처에 따라 늦거나 틀릴 수 있어요. 출처는 각 화면과 「출처 · 안내」에 적어요.</li><li>「예측」 표시가 붙은 값(예: 연준 연구진 모델의 경기침체 확률)은 기관 · 모델의 추정을 옮긴 것이며 틀릴 수 있어요.</li><li>투자 판단과 그 결과의 책임은 이용자에게 있어요.</li></ol></div></details><details class=\"lg-art\"><summary>제6조 커뮤니티 글과 지우는 기준</summary><div class=\"lg-b\"><ol><li>글의 권리는 쓴 사람에게 있어요. 다만 서비스 안에서 보여주고 알리는 데 필요한 범위에서 운영자가 쓸 수 있어요.</li><li>탈퇴해도 커뮤니티 글 · 댓글은 남고, 작성자 이름만 「탈퇴한 회원」으로 바뀌어요. 남기고 싶지 않은 글은 탈퇴 전에 지우거나, 탈퇴할 때 함께 지워 달라고 요청해 주세요.</li><li>다음 글은 알림 없이 숨기거나 지울 수 있어요. ① 특정 종목을 사라 · 팔라는 추천, 목표가, 리딩 ② 유료방 · 오픈채팅 · 텔레그램 같은 외부 대화방 안내, 광고 ③ 허위 정보, 시세를 움직이려는 선동 ④ 욕설 · 차별 · 괴롭힘, 다른 사람의 개인정보 노출 ⑤ 저작권 · 명예 등 다른 사람의 권리를 침해하는 글 ⑥ 그 밖에 법을 어기는 글</li></ol></div></details><details class=\"lg-art\"><summary>제7조 이용 제한과 이의 신청</summary><div class=\"lg-b\"><ol><li>제3조 · 제6조를 어기거나 서비스 운영을 방해하면 글쓰기 제한이나 계정 정지를 할 수 있어요.</li><li>제한한 사실과 이유는 앱 안 알림이나 계정 화면으로 알려요. 급히 막아야 할 때는 먼저 막고 뒤에 알려요.</li><li>이의가 있으면 아래 연락처로 알려 주세요. 확인한 뒤 결과를 알려 드려요.</li></ol></div></details><details class=\"lg-art\"><summary>제8조 권리 침해 신고 · 임시 가림</summary><div class=\"lg-b\"><ol><li>글 때문에 사생활 · 명예 · 저작권 같은 권리가 침해됐다면 누구나 아래 연락처로 삭제나 가림을 요청할 수 있어요. 침해된 내용과 근거를 함께 보내 주세요.</li><li>운영자는 바로 지우거나, 판단이 어려우면 최대 30일 동안 가려 둘 수 있어요(정보통신망법 제44조의2). 처리 결과는 요청한 사람과 글쓴이에게 알려요.</li></ol></div></details><details class=\"lg-art\"><summary>제9조 책임의 한계</summary><div class=\"lg-b\"><ol><li>서비스는 무료로 제공돼요. 시세 · 정보의 지연이나 오류, 외부 자료 제공 중단, 천재지변 · 통신 장애로 생긴 손해는 운영자에게 고의 또는 중대한 과실이 없으면 책임지지 않아요.</li><li>회원이 계정을 잘못 관리해 생긴 손해, 회원끼리 생긴 분쟁은 운영자에게 고의 또는 중대한 과실이 없으면 책임지지 않아요.</li></ol></div></details><details class=\"lg-art\"><summary>제10조 약관 변경 · 연락처 · 법</summary><div class=\"lg-b\"><ol><li>약관을 바꿀 때는 시행 7일 전(회원에게 불리하면 30일 전)부터 앱에서 알려요. 판 번호가 바뀌면 다시 동의를 받을 수 있어요.</li><li>연락처: 안드레99 운영 담당 · <b class=\"lg-mail\">reanissanz@gmail.com</b></li><li>이 약관은 대한민국 법을 따라요.</li></ol></div></details>", "privacy": "<p class=\"lg-ver\">판 1 · 시행 2026.11.02</p><details class=\"lg-art\" open><summary>1. 처리하는 정보 · 목적 · 보관 기간</summary><div class=\"lg-b\"><p>안드레99는 서비스에 꼭 필요한 정보만, 필요한 기간만 보관해요. <b>이름 · 전화번호 · 이메일은 받지 않아요.</b> 아래 정보는 서비스 이용 계약을 지키는 데 필요해 개인정보보호법 제15조 제1항 제4호에 따라 별도 동의 없이 처리해요.</p><div class=\"lg-tw\"><table><thead><tr><th>무엇을</th><th>왜</th><th>언제까지</th></tr></thead><tbody><tr><td>닉네임, 비밀번호(되돌릴 수 없게 암호화), 초대코드, 가입 · 마지막 접속 시각, 로그인 실패 횟수</td><td>회원 확인 · 로그인 · 계정 보호</td><td>탈퇴(삭제 요청)할 때까지</td></tr><tr><td>약관 동의 판 번호 · 시각</td><td>동의 사실 기록</td><td>탈퇴할 때까지</td></tr><tr><td>모의투자 계좌 · 포지션 · 주문 · 월간 순위 · 연습금 지급 기록</td><td>모의투자 제공 · 순위 계산</td><td>탈퇴할 때까지 (체결 기록은 180일)</td></tr><tr><td>커뮤니티 글 · 댓글 · 좋아요 · 투표 · 신고</td><td>커뮤니티 제공 · 운영</td><td>글 · 댓글: 지울 때까지 (탈퇴하면 작성자가 「탈퇴한 회원」으로 바뀌고 글은 남아요. 함께 지워 달라고 요청할 수 있어요) · 좋아요 · 투표 · 신고: 탈퇴할 때까지</td></tr><tr><td>비회원 투표: 기기 식별값, IP 주소를 되돌릴 수 없게 바꾼 값</td><td>중복 투표 막기</td><td>질문 마감 30일 뒤 자동 삭제</td></tr><tr><td>운영 기록: 운영자가 처리한 작업과 대상 회원</td><td>운영 센터 보안 · 분쟁 확인</td><td>1년 뒤 자동 삭제</td></tr></tbody></table></div></div></details><details class=\"lg-art\"><summary>2. 기기에 저장하는 정보</summary><div class=\"lg-b\"><p>쿠키 · 광고 추적 · 방문 분석 도구를 쓰지 않아요. 화면 설정(차트 지표 · 칸 크기 · 색), 로그인 상태를 유지하는 출입증, 최근 본 종목 같은 값은 이용자 기기(브라우저 저장소)에만 저장돼요. 브라우저에서 사이트 데이터를 지우면 함께 지워져요.</p></div></details><details class=\"lg-art\"><summary>3. 제3자 제공</summary><div class=\"lg-b\"><p>개인정보를 다른 곳에 주거나 팔지 않아요. 법령에 따라 수사기관 등이 정해진 절차로 요구하는 경우만 예외예요.</p></div></details><details class=\"lg-art\"><summary>4. 처리 위탁 · 국외 이전</summary><div class=\"lg-b\"><p>서비스는 미국 회사의 클라우드에서 운영돼요. 개인정보보호법 제28조의8 제1항 제3호(계약 이행에 필요한 보관)에 따라 아래와 같이 알려요.</p><div class=\"lg-tw\"><table><tbody><tr><th>받는 곳</th><td>Cloudflare, Inc. (101 Townsend St., San Francisco, CA 94107, USA · privacyquestions@cloudflare.com)</td></tr><tr><th>나라</th><td>미국 (Cloudflare가 운영하는 전 세계 데이터센터)</td></tr><tr><th>하는 일</th><td>앱 · 서버 · 데이터베이스 운영(호스팅)</td></tr><tr><th>옮기는 정보</th><td>위 1번의 모든 정보</td></tr><tr><th>언제 · 어떻게</th><td>서비스를 쓸 때 인터넷으로 전송 · 저장</td></tr><tr><th>보관 기간</th><td>위 1번의 기간과 같아요</td></tr><tr><th>거부하려면</th><td>가입하지 않거나 탈퇴하면 돼요. 이 경우 모의투자 · 커뮤니티 쓰기를 할 수 없어요.</td></tr></tbody></table></div></div></details><details class=\"lg-art\"><summary>5. 파기</summary><div class=\"lg-b\"><p>보관 기간이 끝나거나 탈퇴하면 지체 없이 지워요. 데이터베이스에서 지우는 방식이라 되살릴 수 없어요. 체결 기록 · 비회원 투표 기록 · 운영 기록은 매일 새벽 자동으로 정리돼요.</p></div></details><details class=\"lg-art\"><summary>6. 이용자의 권리와 행사 방법</summary><div class=\"lg-b\"><ol><li>내 정보의 열람 · 정정 · 삭제(탈퇴) · 처리정지를 요청할 수 있어요.</li><li>아래 연락처로 닉네임과 요청 내용을 보내 주세요. 본인임을 확인한 뒤 10일 안에 처리해요.</li><li>법정대리인이나 위임받은 사람도 위임장을 함께 보내 요청할 수 있어요.</li></ol></div></details><details class=\"lg-art\"><summary>7. 만 14세 미만</summary><div class=\"lg-b\"><p>만 14세 미만은 가입할 수 없어요. 만 14세 미만으로 확인되면 계정과 정보를 지워요.</p></div></details><details class=\"lg-art\"><summary>8. 안전 조치</summary><div class=\"lg-b\"><ol><li>비밀번호는 되돌릴 수 없게 암호화해 저장해요.</li><li>모든 통신은 HTTPS로 암호화돼요.</li><li>운영 센터는 운영자 비밀번호 · 잘못 입력 잠금 · 작업 기록으로 보호해요.</li><li>필요한 정보만 받아요.</li></ol></div></details><details class=\"lg-art\"><summary>9. 개인정보 보호책임자</summary><div class=\"lg-b\"><p>안드레99 운영 담당 · <b class=\"lg-mail\">reanissanz@gmail.com</b></p><p>개인정보 관련 문의 · 불만 · 피해 구제 요청은 이 연락처로 보내 주세요.</p></div></details><details class=\"lg-art\"><summary>10. 권익 침해 구제</summary><div class=\"lg-b\"><p>아래 기관에 상담 · 신고할 수 있어요.</p><ol><li>개인정보침해신고센터 · privacy.kisa.or.kr · 국번 없이 118</li><li>개인정보분쟁조정위원회 · www.kopico.go.kr · 국번 없이 1833-6972</li><li>대검찰청 · www.spo.go.kr · 국번 없이 1301</li><li>경찰청 · ecrm.police.go.kr · 국번 없이 182</li></ol></div></details><details class=\"lg-art\"><summary>11. 변경</summary><div class=\"lg-b\"><p>바뀌면 시행 7일 전부터 앱에서 알리고, 판 번호와 시행일을 바꿔요.</p></div></details>"};
+
+/* ══ 약관 시트 — 앱 안에서 본다. #terms · #privacy 주소로도 바로 열린다(SNS 링크용) ══ */
+(function () {
+  'use strict';
+  var L = window.A99_LEGAL; if (!L) return;
+  function noScroll(on) { document.documentElement.classList.toggle('au-noscroll', on || !!document.getElementById('auSheet') || !!document.getElementById('ckSheet')); }
+  function close() {
+    var el = document.getElementById('lgSheet'); if (el) el.parentNode.removeChild(el);
+    if (/^#(terms|privacy)$/.test(location.hash)) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { } }
+    noScroll(false);
+  }
+  function open(tab) {
+    var old = document.getElementById('lgSheet'); if (old) old.parentNode.removeChild(old);
+    var el = document.createElement('div'); el.className = 'au-sheet lg-sheet'; el.id = 'lgSheet'; el.style.zIndex = '95';
+    el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', '약관 · 정책');
+    el.innerHTML = '<div class="au-bar"><button type="button" class="bk" aria-label="닫기">‹</button><b>약관 · 정책</b></div>' +
+      '<div class="lg-tabs" role="tablist"><button type="button" role="tab" data-lt="terms">이용약관</button><button type="button" role="tab" data-lt="privacy">개인정보 처리방침</button></div>' +
+      '<div class="au-body lg-body" id="lgBody"></div>';
+    document.body.appendChild(el); noScroll(true);
+    function show(t) {
+      el.querySelectorAll('[data-lt]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.lt === t)); });
+      var bd = el.querySelector('#lgBody');
+      bd.innerHTML = (t === 'privacy' ? L.privacy : L.terms) + '<p class="lg-url">같은 내용을 이 주소로도 볼 수 있어요 · <b>andre99kr.pages.dev/' + t + '</b></p>';
+      bd.scrollTop = 0;
+    }
+    el.querySelector('.lg-tabs').addEventListener('click', function (e) { var b = e.target.closest('[data-lt]'); if (b) show(b.dataset.lt); });
+    el.querySelector('.bk').addEventListener('click', close);
+    show(tab === 'privacy' ? 'privacy' : 'terms');
+  }
+  window.A99Legal = { open: open, close: close, ver: L.ver };
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-legal]'); if (!b) return; e.preventDefault(); e.stopPropagation(); open(b.dataset.legal); }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.getElementById('lgSheet')) { e.stopImmediatePropagation(); close(); } }, true);
+  function fromHash() { var m = /^#(terms|privacy)$/.exec(location.hash); if (m) open(m[1]); }
+  window.addEventListener('hashchange', fromHash);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fromHash); else fromHash();
+})();
+
+/* ══ 신용 경고등 (2026.11.01-A) — /credit 한 번 받아 12시간 서버 캐시. 숫자는 서버가 계산한 것만 쓴다(지어낸 값 금지) ══ */
+(function () {
+  'use strict';
+  var D = null, LOADING = false, WAIT = [], OPEN = false;
+  var LV = { calm: ['평온', '돈을 빌려주는 사람들의 겁이 평소 수준이에요.'], watch: ['주의', '돈을 빌려주는 사람들의 겁이 평소보다 커졌어요.'], alert: ['경계', '돈을 빌려주는 사람들의 겁이 최근 30년 중 손꼽히게 커요.'] };
+  function e(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function load(cb) {
+    if (D) return cb(D);
+    WAIT.push(cb); if (LOADING) return; LOADING = true;
+    var u = (window.API || '') + '/credit';
+    (window.fetchT ? window.fetchT(u, 25000) : fetch(u)).then(function (r) { return r.json(); })
+      .then(function (j) { D = j || { status: 'error' }; }, function () { D = null; })
+      .then(function () { LOADING = false; var w = WAIT; WAIT = []; w.forEach(function (f) { f(D); }); });
+  }
+  function ym(s) { return s ? (+s.slice(0, 4)) + '년 ' + (+s.slice(5, 7)) + '월' : ''; }
+  function when(x) { var s = String(x.as_of || ''); return /월 1회/.test(x.freq) ? (+s.slice(5, 7)) + '월 기준' : (+s.slice(5, 7)) + '.' + (+s.slice(8, 10)) + ' 기준'; }
+  function val(x) { var v = +x.value; if (x.unit === '%') return Math.round(v) + '%'; return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + (x.unit || ''); }
+  function freqShort(x) { return /월 1회/.test(x.freq) ? '월 1회' : /주 1회/.test(x.freq) ? '주 1회' : '매일'; }
+  function row(x) {
+    var p = Math.max(1, Math.min(99, +x.risk_pct || 0));
+    return '<div class="ck-r"><div class="t"><span class="nm">' + e(x.name) + (x.kind === 'forecast' ? ' <span class="pr">예측</span>' : '') + ' <em>' + e(x.short) + '</em></span><span class="v n">' + val(x) + '</span></div>' +
+      '<div class="tr"><div class="ck-bar" role="img" aria-label="최근 30년 중 걱정 쪽 위치 ' + p + '%"><span class="z1"></span><span class="z2"></span><span class="mk" style="left:' + p + '%"></span></div><span class="ck-pt p' + x.points + '">' + x.points + '점</span></div>' +
+      (x.easy ? '<div class="easy">' + e(x.horizon || '') + ' · ' + e(x.easy) + ' — 틀릴 수 있는 예측이에요</div>' : '') +
+      '<div class="m"><span>' + (x.reverse ? '낮을수록 걱정 · ' : '') + '<b>' + e(x.pos) + '</b></span><span>' + freqShort(x) + ' · ' + when(x) + '</span></div></div>';
+  }
+  function lastLine(d) {
+    var m = d.months; if (!m) return '';
+    if (d.level === 'alert') return '지금 「경계」 · 최근 30년 중 「경계」였던 달 ' + m.alert + '개월';
+    if (m.last_alert) return '마지막 「경계」 ' + ym(m.last_alert) + ' · 최근 30년 중 ' + m.alert + '개월';
+    return '최근 30년 동안 「경계」였던 달은 없어요';
+  }
+  function card(d) {
+    var ok = d && d.level && LV[d.level], inds = (d && d.indicators) || [];
+    var st = ['calm', 'watch', 'alert'].map(function (k) { return '<div class="' + k + (ok && d.level === k ? ' on' : '') + '"><i></i>' + LV[k][0] + '</div>'; }).join('');
+    return '<div class="ck">' +
+      '<div class="ck-h"><b>신용 경고등</b><span class="ck-tag">시험 중</span><span class="sp"></span><button type="button" class="ck-i" data-ck="info" aria-label="신용 경고등 계산법">i</button></div>' +
+      '<div class="ck-st" role="img" aria-label="지금 단계: ' + (ok ? LV[d.level][0] : '계산 중') + '">' + st + '</div>' +
+      (ok ? '<div class="ck-sum"><b>' + LV[d.level][0] + '</b><span>' + d.score + ' / ' + d.max + '점</span></div><p class="ck-say">' + LV[d.level][1] + '</p><p class="ck-last">' + e(lastLine(d)) + '</p>'
+        : '<p class="ck-say">계산 중이에요 — 자료를 다 받지 못했어요(' + inds.length + ' / 4). 잠시 뒤 다시 확인해요.</p>') +
+      (inds.length ? '<button type="button" class="ck-tg" data-ck="tog" aria-expanded="' + OPEN + '"><span>지표 ' + inds.length + '개 보기</span><span class="ar">⌄</span></button>' +
+        '<div class="ck-rows"' + (OPEN ? '' : ' hidden') + '><div class="ck-ax"><span>← 걱정 적음</span><span>최근 30년 중 위치</span><span>걱정 큼 →</span></div>' + inds.map(row).join('') + '</div>' : '') +
+      '<a class="ck-link" href="' + e((d && d.raw_link) || 'https://fred.stlouisfed.org/series/BAMLH0A0HYM2') + '" target="_blank" rel="noopener">하이일드 스프레드 원자료 보기 <span>FRED ↗</span></a>' +
+      '<div class="ck-f"><b>사라 · 팔라는 뜻이 아니에요.</b> 점수 계산법은 ⓘ에 있어요.<br>출처: Federal Reserve Bank of Chicago · Federal Reserve Board · FRED®</div></div>';
+  }
+  function info() {
+    if (document.getElementById('ckSheet')) return;
+    var d = D || {}, inds = d.indicators || [];
+    var th = inds.length ? '<table class="ck-th"><thead><tr><th>지표</th><th>1점 기준</th><th>2점 기준</th></tr></thead><tbody>' + inds.map(function (x) {
+      var s = x.reverse ? '≤ ' : '≥ ', f = function (v) { return x.unit === '%' ? Math.round(v) + '%' : (+v).toFixed(2) + (x.unit || ''); };
+      return '<tr><td>' + e(x.name) + '</td><td>' + s + f(x.t1) + '</td><td>' + s + f(x.t2) + '</td></tr>'; }).join('') + '</tbody></table>' : '';
+    var el = document.createElement('div'); el.className = 'au-sheet'; el.id = 'ckSheet'; el.style.zIndex = '90';
+    el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', '신용 경고등 계산법');
+    el.innerHTML = '<div class="au-bar"><button type="button" class="bk" aria-label="닫기">‹</button><b>신용 경고등 · 계산법</b></div><div class="au-body ck-ex">' +
+      '<p class="lead">돈을 빌려주는 사람들이 지금 얼마나 겁내고 있는지 재는 신호등이에요.</p>' +
+      '<div class="ck-story"><div class="r"><div><b>민준이 = 나라</b>약속을 거의 항상 지켜요<br>1만 원 빌려주면 <span class="n">400원</span></div><div><b>철수 = 형편이 어려운 회사</b>가끔 못 지켜요<br>1만 원 빌려주면 <span class="n">700원</span></div></div>' +
+      '<div class="q">철수에게 더 받는 <b>300원이 「걱정 값」</b>이에요. 무서운 소식이 들리면 사람들이 걱정 값을 확 올려요. 그러면 회사들이 돈 빌리기 힘들어지고, 경기가 나빠질 수 있어요.</div></div>' +
+      '<h3>점수는 이렇게 매겨요</h3><ol><li>지표 4개마다 <b>최근 30년 중 지금 위치</b>를 봐요.</li><li>걱정이 큰 쪽 <b>상위 20% 안이면 1점, 상위 5% 안이면 2점</b>. 장단기 금리차는 낮을수록 걱정이에요.</li><li>4개를 더해요.</li></ol>' +
+      '<div class="ck-lv"><span class="c">평온<small>0~1점</small></span><span class="w">주의<small>2~3점</small></span><span class="a">경계<small>4~8점</small></span></div>' + th +
+      '<h3>「예측」 표시가 붙은 칸</h3><p>경기침체 확률은 연준 연구진 모델이 계산한 <b>예측</b>이에요. 매달 과거 값까지 고쳐질 수 있고, 틀릴 수 있어요.</p>' +
+      '<div class="ck-note"><b>시험 중이에요.</b> 2008년 · 2020년 같은 과거 위기 때 실제로 켜졌는지 확인하고 있어요.</div>' +
+      '<div class="ck-note"><b>하이일드 스프레드는 왜 직접 안 보여주나요?</b> 자료 회사(ICE)가 다른 곳에 옮겨 싣는 것을 막아 두었어요. 그래서 원자료 링크로 보내 드려요.</div>' +
+      '<h3>출처</h3><p style="font-size:12.5px;color:var(--tx2)">신용 여건: Federal Reserve Bank of Chicago (FRED 경유) · 초과채권프리미엄 · 경기침체 확률: Federal Reserve Board (Favara · Gilchrist · Lewis · Zakrajšek, 2016) · 장단기 금리차: FRED</p>' +
+      '<p class="ck-fred">This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis.</p>' +
+      '<p style="font-size:12px;color:var(--tx2);margin-top:6px"><a href="https://fred.stlouisfed.org/docs/api/terms_of_use.html" target="_blank" rel="noopener">FRED 이용약관 ↗</a> — 안드레99 이용자도 이 약관을 따라요.</p></div>';
+    document.body.appendChild(el); document.documentElement.classList.add('au-noscroll');
+    el.querySelector('.bk').addEventListener('click', function () { el.parentNode.removeChild(el); if (!document.getElementById('auSheet') && !document.getElementById('lgSheet')) document.documentElement.classList.remove('au-noscroll'); });
+  }
+  function paint(box) {
+    if (!box) return;
+    if (!D) box.innerHTML = '<div class="ck-wait">신용 경고등을 불러오는 중…</div>';
+    load(function (d) {
+      if (!box.isConnected) return;
+      if (!d) { box.innerHTML = '<div class="ck-wait">신용 경고등을 불러오지 못했어요<button type="button" data-ck="retry">다시 시도</button></div>'; return; }
+      box.innerHTML = card(d);
+    });
+    if (box.dataset.ckb) return; box.dataset.ckb = '1';
+    box.addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-ck]'); if (!b) return;
+      if (b.dataset.ck === 'info') info();
+      else if (b.dataset.ck === 'retry') { D = null; paint(box); }
+      else if (b.dataset.ck === 'tog') { OPEN = !OPEN; b.setAttribute('aria-expanded', String(OPEN)); var r = box.querySelector('.ck-rows'); if (r) r.hidden = !OPEN; }
+    });
+  }
+  document.addEventListener('keydown', function (ev) { var s = document.getElementById('ckSheet'); if (ev.key === 'Escape' && s && !document.getElementById('lgSheet')) { ev.stopImmediatePropagation(); s.parentNode.removeChild(s); if (!document.getElementById('auSheet')) document.documentElement.classList.remove('au-noscroll'); } }, true);
+  window.A99Credit = { paint: paint, _data: function () { return D; } };
 })();
 </script>
 </body>
