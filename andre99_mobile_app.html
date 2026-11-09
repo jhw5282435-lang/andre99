@@ -1382,7 +1382,7 @@ function show(t){
   try{ marketStatus(); }catch(e){}
 }
 /* 모의투자 탭: 처음 누를 때만 paper/paper.js(차트 · 계산 엔진 · 화면)를 받아 온다 — 앱 첫 화면은 가볍게 */
-var PAPER_JS='paper/paper.js?v=2026.11.09-A', PAPER_LOADING=false;
+var PAPER_JS='paper/paper.js?v=2026.11.09-B', PAPER_LOADING=false;
 function paperOpen(){
   var host=$('paperHost');
   if(window.A99Paper){ window.A99Paper.mount(host); window.A99Paper.show(); return; }
@@ -10135,7 +10135,7 @@ html.au-noscroll,html.au-noscroll body{overflow:hidden}
   function pct(v) { v = +v * 100; return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + '%'; }
   function showGate() {
     if (inNow() || $('auGate')) return;
-    if (/[?&]duel=/.test(location.search)) return;   /* 2026.11.09-A 관전 · 도전장 링크는 입구 화면 없이 바로 */
+    if (/[?&]duel=/.test(location.search)) return;   /* 2026.11.09-B 관전 · 도전장 링크는 입구 화면 없이 바로 */
     var g = document.createElement('div'); g.id = 'auGate'; g.className = 'au-entry';
     g.setAttribute('role', 'dialog'); g.setAttribute('aria-label', '안드레99 시작');
     g.innerHTML = '<div class="au-entry-in"><div class="sp"></div>' +
@@ -10205,7 +10205,7 @@ html.au-noscroll,html.au-noscroll body{overflow:hidden}
   };
   function blocked(k) {
     if (inNow()) return false;
-    if (k === 'paper' && /[?&]duel=/.test(location.search)) return false;   /* 2026.11.09-A 대결 관전 링크 */
+    if (k === 'paper' && /[?&]duel=/.test(location.search)) return false;   /* 2026.11.09-B 대결 관전 링크 */
     if (k === 'stock') return G.stock === 'lock';
     if (k === 'cm') return G.cm === 'lock';
     if (k === 'paper') return G.paper === 'lock';
@@ -10430,7 +10430,7 @@ window.A99_LEGAL = {"ver": 2, "date": "2026.11.03", "contact": "reanissanz@gmail
 .dl-bigline .k{color:#E8E8EA;white-space:nowrap}.dl-bigline .v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dl-bigline .t{font-family:ui-monospace,monospace;color:#F5C542;white-space:nowrap}
 </style>
 <script>
-/* 2026.11.09-A 마켓 탭 맨 위: 오늘의 빅매치 한 줄 — 진행 중인 대결이 있을 때만(없으면 아무것도 안 그림) · 3분에 한 번 · 관전 링크(?duel=)는 트레이딩 탭으로 */
+/* 2026.11.09-B 마켓 탭 맨 위: 오늘의 빅매치 한 줄 — 진행 중인 대결이 있을 때만(없으면 아무것도 안 그림) · 3분에 한 번 · 관전 링크(?duel=)는 트레이딩 탭으로 */
 (function(){
   var API = window.A99P_API || 'https://andre99-paper.jhw5282435.workers.dev', at = 0;
   function e(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
