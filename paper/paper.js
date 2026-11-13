@@ -652,7 +652,7 @@ window.A99E = A99E;
 'use strict';
 if (window.A99Paper) return;
 
-var VER = '2026.11.09-B';
+var VER = '2026.11.12-A';
 var Q = 'US' + 'DT';                              // 모의 계좌 단위 표기 (가상 · 실제 돈 아님). 가격은 하이퍼리퀴드 달러 시세
 var WSURL = 'wss://api.hyperliquid.xyz/ws';      // 실시간 시세: 하이퍼리퀴드 공개 자료
 var HLI = 'https://api.hyperliquid.xyz/info';
@@ -2059,23 +2059,54 @@ function rkKey() { return U.rk === 'w' ? (U.wk || 'w') : (U.month || monthKST())
 function metricOf(j) { return (j && j.metric) || INFO.metric || 'ret'; }
 function myRow(j) { if (!ME || !j || !j.rows) return null; for (var i = 0; i < j.rows.length; i++) if (j.rows[i].nick === ME.nick) return j.rows[i]; return null; }
 function monthsList() { var out = [], d = new Date(Date.now() + H9); for (var i = 0; i < 6; i++) out.push(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - i, 1)).toISOString().slice(0, 7)); return out; }
+document.addEventListener('change', function (e) {   /* 2026.11.12-A 랭킹 드롭다운 */
+  var t = e.target; if (!t || !t.matches || !t.matches('select[data-dzrk]')) return;
+  var k = t.dataset.dzrk, v = t.value;
+  if (k === 'prk') U.rk = v === 'w' ? 'w' : 'm';
+  else if (k === 'pmonth') U.month = v === monthKST() ? null : v;
+  else if (k === 'pwk') U.wk = v === 'wp' ? 'wp' : 'w';
+  else if (k === 'ptier') U.rkTier = +v < 0 ? null : +v;
+  renderList(); refreshRank();
+});
+var DZT = [['개미', 0], ['불개미', 0.05], ['슈퍼개미', 0.15], ['프로 트레이더', 0.30], ['탑 트레이더', 0.60], ['레전드 트레이더', null]];
+function dzTierOf(r, live) { if (live && r.rank && r.rank <= 3 && r.ret > 0) return 5; var t = 0; for (var i = 1; i < 5; i++) if ((r.ret || 0) >= DZT[i][1] - 1e-9) t = i; return t; }   /* 대결 티어와 같은 규칙(서버 duTier) */
+function dzTier(t) { return '<span class="dl-tier t' + t + '">' + DZT[t][0].replace(' 트레이더', '') + '</span>'; }
+function dzSel(k, opts, v, lab) { return '<label class="dz-sel"><select data-dzrk="' + k + '" aria-label="' + lab + '">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(v) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>'; }
+function dzPct(v) { v = (+v || 0) * 100; if (Math.abs(v) < 0.05) return '0.0%'; return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + '%'; }
 function rankHTML() {
-  var cur = monthKST(), wkv = U.rk === 'w', m = wkv ? null : (U.month || cur), j = board[rkKey()], met = metricOf(j);
-  var h = '<div class="pp-per" role="tablist" aria-label="순위 기간"><button type="button" data-prk="m" class="' + (wkv ? '' : 'on') + '">월간</button><button type="button" data-prk="w" class="' + (wkv ? 'on' : '') + '">주간</button></div>';
+  var cur = monthKST(), wkv = U.rk === 'w', m = wkv ? null : (U.month || cur), j = board[rkKey()], met = metricOf(j), live = wkv ? (U.wk || 'w') === 'w' : m === cur, tf = U.rkTier == null ? -1 : U.rkTier;
+  var h = '<div class="dz-rkbar">' + dzSel('prk', [['m', '월간 순위'], ['w', '주간 순위']], wkv ? 'w' : 'm', '순위 기간') +
+    (wkv ? dzSel('pwk', [['w', '이번 주'], ['wp', '지난주']], U.wk || 'w', '주') : dzSel('pmonth', monthsList().map(function (x) { return [x, x === cur ? '이번 달' : (+x.slice(5)) + '월 (' + x.slice(0, 4) + ')']; }), m, '달')) +
+    dzSel('ptier', [[-1, '모든 티어']].concat(DZT.map(function (x, i) { return [i, x[0].replace(' 트레이더', '')]; })), tf, '티어별 보기') + '</div>';
   var lbl = wkv ? ((U.wk || 'w') === 'w' ? '이번 주(월요일 0시부터)' : '지난주' + (j && j.week ? ' · ' + j.week.slice(5).replace('-', '/') + ' 시작' : '')) : (m === cur ? '이번 달' : (+m.slice(5)) + '월');
-  h += '<p class="pp-note" style="margin:0 0 4px">' + lbl + ' · ' + (j && j.n != null ? '참가 ' + j.n + '명 · ' : '') + (met === 'gain' ? '자산 증가액 순' : '수익률 순') + ((wkv ? (U.wk || 'w') === 'w' : m === cur) ? ' · 5분마다 갱신' : ' · 마감') + '</p>';
+  h += '<p class="pp-note" style="margin:0 0 4px">' + lbl + ' · ' + (j && j.n != null ? '참가 ' + j.n + '명 · ' : '') + (met === 'gain' ? '자산 증가액 순' : '수익률 순') + (live ? ' · 5분마다 갱신' : ' · 마감') + '</p>';
   if (!j) h += '<p class="pp-empty">순위를 불러오는 중…</p>';
   else if (j.err) h += '<p class="pp-empty">순위를 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</p>';
   else {
-    var me = myRow(j);
+    var me = myRow(j), rows = (j.rows || []).slice(0, 100);
     if (me) h += '<div class="pp-rk-me">내 순위 <b>' + me.rank + '위</b> · ' + (met === 'gain' ? '<span class="' + cls(me.gain) + '">' + sg(me.gain) + '</span>' : '<span class="' + cls(me.ret) + '">' + pct(me.ret) + '</span>') + ' · 순자산 ' + fu(me.eq) + '</div>';
     else if (isOffMe(j)) h += '<div class="pp-rk-me">운영 계정은 순위에서 빠져요. 기록은 아래 「운영 계정」에 따로 보여요.</div>';
     else if (!ME) h += '<div class="pp-rk-me">로그인하면 내 순위가 보여요.</div>';
-    if (!j.rows || !j.rows.length) h += '<p class="pp-empty">아직 순위에 오른 참가자가 없어요. 첫 거래를 하면 바로 순위에 올라요.</p>';
-    else h += '<ol class="pp-rk">' + j.rows.slice(0, 100).map(function (r) {
-      var isMe = ME && r.nick === ME.nick, v = met === 'gain' ? r.gain : r.ret;
-      return '<li data-pnick="' + esc(r.nick) + '"' + (isMe ? ' class="me"' : '') + '><span class="r">' + r.rank + '</span><span class="nk">' + esc(r.nick) + (r.off ? '<em class="pp-off">OFFICIAL</em>' : '') + (r.t5 ? '<em class="pp-t5">TOP 5</em>' : r.pub ? '<em class="pp-pub">공개</em>' : '') + (r.liqs ? '<small>청산 ' + r.liqs + '</small>' : '') + '</span><span class="e">' + fu(r.eq) + '</span><span class="p ' + cls(v) + '">' + (met === 'gain' ? sg(v) : pct(v)) + '</span></li>';
-    }).join('') + '</ol>';
+    if (live && !wkv && rows.length < 10) {   /* 참가자가 적을 때 = 티어 사다리(승급선) — 지어낸 리그 없이 실제 티어 규칙만 */
+      var myT = me ? dzTierOf(me, true) : 0;
+      h += '<div class="dz-league"><div class="hd"><b>티어 사다리 · 이번 달</b><span>참가 ' + rows.length + '명</span></div><ol class="dz-steps">' + DZT.map(function (x, i) { return '<li class="' + (i < myT ? 'done' : i === myT ? 'cur' : '') + '"><i>' + (i < myT ? '✓' : i + 1) + '</i>' + x[0].replace(' 트레이더', '') + '</li>'; }).join('') + '</ol>' +
+        '<div class="promo"><span>승급선 · ' + (myT < 4 ? '이번 달 +' + Math.round(DZT[myT + 1][1] * 100) + '%면 ' + DZT[myT + 1][0].replace(' 트레이더', '') : '그달 1~3위면 레전드') + '</span></div>' +
+        '<p>' + (rows.length ? '아직 참가자가 적어요. 거래를 시작하면 바로 순위에 올라요.' : '이번 달 1위 자리가 비어 있어요. 첫 거래를 하면 바로 순위에 올라요.') + '</p></div>';
+    }
+    if (!rows.length) h += '<p class="pp-empty">아직 순위에 오른 참가자가 없어요. 첫 거래를 하면 바로 순위에 올라요.</p>';
+    else {
+      var fr = tf < 0 ? rows : rows.filter(function (r) { return dzTierOf(r, live) === tf; }), pod = tf < 0 && fr.length >= 3;
+      var val = function (r) { var v = met === 'gain' ? r.gain : r.ret; return '<b class="' + cls(v) + '">' + (met === 'gain' ? sg(v) : pct(v)) + '</b>'; };
+      if (pod) h += '<div class="dz-pod">' + [fr[1], fr[0], fr[2]].map(function (r, i) { return '<button type="button" data-pnick="' + esc(r.nick) + '"><span class="nk">' + esc(r.nick) + '</span>' + dzTier(dzTierOf(r, live)) + val(r) + '<i class="h' + i + '">' + [2, 1, 3][i] + '</i></button>'; }).join('') + '</div>';
+      if (!fr.length) h += '<p class="pp-empty">이 티어에 든 참가자가 아직 없어요.</p>';
+      h += '<ol class="pp-rk dz-rk">' + (pod ? fr.slice(3) : fr).map(function (r) {
+        var isMe = ME && r.nick === ME.nick, v = met === 'gain' ? r.gain : r.ret, sub = [];
+        if (r.mdd != null) sub.push('<span class="' + (r.mdd <= -0.25 ? 'hi' : '') + '">최대 낙폭 ' + dzPct(r.mdd) + '</span>');
+        if (r.liqs) sub.push('청산 ' + r.liqs + '번');
+        if (!sub.length && r.trades != null) sub.push('거래 ' + r.trades + '번');
+        return '<li data-pnick="' + esc(r.nick) + '"' + (isMe ? ' class="me"' : '') + '><span class="r">' + r.rank + '</span><span class="nk">' + esc(r.nick) + dzTier(dzTierOf(r, live)) + (r.off ? '<em class="pp-off">OFFICIAL</em>' : '') + (r.t5 ? '<em class="pp-t5">TOP 5</em>' : r.pub ? '<em class="pp-pub">공개</em>' : '') + '<small class="dz-sub">' + sub.join(' · ') + '</small></span><span class="e">' + fu(r.eq) + '</span><span class="p ' + cls(v) + '">' + (met === 'gain' ? sg(v) : pct(v)) + '</span></li>';
+      }).join('') + '</ol>';
+    }
   }
   if (j && j.offRows && j.offRows.length) {
     h += '<p class="pp-note" style="margin:14px 0 4px">운영 계정 · 순위 제외</p><ol class="pp-rk pp-rk-off">' + j.offRows.map(function (r) {
@@ -2083,11 +2114,11 @@ function rankHTML() {
       return '<li data-pnick="' + esc(r.nick) + '"><span class="r">–</span><span class="nk">' + esc(r.nick) + '<em class="pp-off">OFFICIAL</em></span><span class="e">' + fu(r.eq) + '</span><span class="p ' + cls(v) + '">' + (met === 'gain' ? sg(v) : pct(v)) + '</span></li>';
     }).join('') + '</ol>';
   }
-  if (wkv) h += '<div class="pp-mo"><button type="button" data-pwk="w" class="' + ((U.wk || 'w') === 'w' ? 'on' : '') + '">이번 주</button><button type="button" data-pwk="wp" class="' + (U.wk === 'wp' ? 'on' : '') + '">지난주</button></div>';
-  else h += '<div class="pp-mo">' + monthsList().map(function (x) { return '<button type="button" data-pmonth="' + x + '" class="' + (x === m ? 'on' : '') + '">' + (x === cur ? '이번 달' : (+x.slice(5)) + '월') + '</button>'; }).join('') + '</div>';
-  h += '<p class="pp-note">닉네임을 누르면 그 트레이더의 기록이 나와요. <b>TOP 5</b> = 이번 달 월간 순위 상위 5명으로, 열린 포지션 · 거래 기록이 수량 · 금액까지 자동 공개돼요. <b>공개</b> = 본인이 공개를 켠 트레이더예요.</p>';
-  h += '<p class="pp-note">수익률 = 순자산 ÷ (기간 시작 순자산 + 그 기간 초기화로 받은 금액) − 1. 초기화해도 순위가 유리해지지 않아요.</p>';
-  h += '<p class="pp-note">탈퇴한 회원과 6개월 넘게 접속하지 않은 휴면 회원은 순위에서 빠져요. 휴면 회원은 다시 로그인하면 돌아와요.</p>';
+  h += '<details class="dz-acc"><summary>순위는 어떻게 매기나요?</summary>' +
+    '<p class="pp-note">닉네임을 누르면 그 트레이더의 기록이 나와요. <b>TOP 5</b> = 이번 달 월간 순위 상위 5명으로, 열린 포지션 · 거래 기록이 수량 · 금액까지 자동 공개돼요. <b>공개</b> = 본인이 공개를 켠 트레이더예요.</p>' +
+    '<p class="pp-note">수익률 = 순자산 ÷ (기간 시작 순자산 + 그 기간 초기화로 받은 금액) − 1. 초기화해도 순위가 유리해지지 않아요.</p>' +
+    '<p class="pp-note">최대 낙폭 = 이번 달 순자산이 고점에서 가장 깊게 내려간 비율이에요. 순위를 다시 셀 때(약 15분)마다 재서, 그 사이의 짧은 출렁임은 빠질 수 있어요. 티어는 이번 달 수익률로 매겨요(1~3위면 레전드).</p>' +
+    '<p class="pp-note">탈퇴한 회원과 6개월 넘게 접속하지 않은 휴면 회원은 순위에서 빠져요. 휴면 회원은 다시 로그인하면 돌아와요.</p></details>';
   return h;
 }
 /* 트레이더 프로필 */
@@ -2126,7 +2157,7 @@ function profileHTML(j) {
         '<small>수량 ' + fq(p.sym, p.qty) + ' · 진입 ' + fp(p.sym, p.entry) + ' · Mark ' + fp(p.sym, p.mark) + ' · 증거금 ' + fu(p.margin) + '</small></span><span class="r ' + cls(p.upnl) + '">' + sg(p.upnl) + '<small>' + pct(p.roe) + '</small></span></div>';
     }).join('') + '</div>' : '<p class="hint">지금 열린 포지션이 없어요.</p>') + '</div>';
     h += '<div class="pp-box"><b>최근 닫은 거래</b>' + ((j.recent || []).length ? '<div class="pp-pl">' + j.recent.map(function (x) {
-      return '<div><span>' + NMH(x.sym) + ' <span class="' + (x.side === 1 ? 'up' : 'dn') + '">' + (x.side === 1 ? 'Long' : 'Short') + '</span> · ' + (KIND[x.kind] || 'Close') + '<small>' + kstWhen(x.ts) + ' · ' + fq(x.sym, x.qty) + ' @ ' + fp(x.sym, x.price) + '</small></span><span class="r ' + cls(x.net) + '">' + sg(x.net) + '</span></div>';
+      return '<div data-ts="' + (+x.ts || 0) + '"><span>' + NMH(x.sym) + ' <span class="' + (x.side === 1 ? 'up' : 'dn') + '">' + (x.side === 1 ? 'Long' : 'Short') + '</span> · ' + (KIND[x.kind] || 'Close') + '<small>' + kstWhen(x.ts) + ' · ' + fq(x.sym, x.qty) + ' @ ' + fp(x.sym, x.price) + '</small></span><span class="r ' + cls(x.net) + '">' + sg(x.net) + '</span></div>';
     }).join('') + '</div>' : '<p class="hint">아직 없어요.</p>') + '</div>';
   } else h += '<p class="hint">이 트레이더는 포지션을 공개하지 않았어요. 월간 순위 상위 5명이 되면 자동으로 공개돼요.</p>';
   if (mine) h += pubBox();
@@ -2156,6 +2187,7 @@ function setView(v) {
   else if (U.view === 'rank') { if (CHART) closeChart(); renderList(); refreshRank(); }
   else { dirty.quote = dirty.book = dirty.acct = true; kick(); }
   try { window.scrollTo(0, 0); } catch (e) { }
+  try { document.dispatchEvent(new CustomEvent('a99:pview', { detail: U.view })); } catch (e) { }
 }
 function refreshRank(force) {
   var m = rkKey();
@@ -3027,7 +3059,7 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
   /* 2026.11.09-B 1:1 트레이딩 대결 */
   _api: api, _me: function () { return ME; }, _acctDuel: function () { return ME ? ME.duel || null : null; }, _marks: function () { return marks(); },
   _switch: function () { lastFillTs = 0; FILLS = []; return loadMe(true).then(function () { changed(true); }); }, _setView: setView, _view: function () { return U.view; },
-  _profileHTML: function (j) { return profileHTML(j); }, _toast: toast, _equity: function () { return equity(); }, _sym: function () { return U.sym; }, _sp: function () { return SP; }, _chart: function () { return !!CHART; } };
+  _profileHTML: function (j) { return profileHTML(j); }, _pos: function () { return st.pos; }, _meSheet: function () { meSheet(); }, _toast: toast, _equity: function () { return equity(); }, _sym: function () { return U.sym; }, _sp: function () { return SP; }, _chart: function () { return !!CHART; } };
 })();
 /* ══ 2026.11.09-B 1:1 트레이딩 대결 (화면) ══ */
 (function () { if (document.getElementById('dl-css')) return; var s = document.createElement('style'); s.id = 'dl-css'; s.textContent = ":root{--dla:#F5C542;--dla-rgb:245,197,66;--dlb:#8FD3FF;--dlo:#8FA3C0;--dlink:#16130A;--dlbg:#19140A}\nhtml.dlp-neon{--dla:#FF3D8B;--dla-rgb:255,61,139;--dlb:#00E5FF;--dlo:#00E5FF;--dlink:#1A0610;--dlbg:#1C0A13}\nhtml.dlp-purple{--dla:#B07CFF;--dla-rgb:176,124,255;--dlb:#C6FF3D;--dlo:#C6FF3D;--dlink:#12081F;--dlbg:#150D22}\nhtml.dlp-rb{--dla:#FF4655;--dla-rgb:255,70,85;--dlb:#3DA5FF;--dlo:#3DA5FF;--dlink:#FFFFFF;--dlbg:#1E0B0E}\nhtml.dlp-white{--dla:#E8E8EA;--dla-rgb:232,232,234;--dlb:#F5C542;--dlo:#6B6B70;--dlink:#0B0B0C;--dlbg:#141416}\n/* 대결 체험판 — 모의투자 테마 변수(--up --dn --s1…)를 그대로 쓴다. 노랑 = 대결(경기장) 강조 */\n.dl-live{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:var(--dla)}\n.dl-live i{width:7px;height:7px;border-radius:50%;background:var(--dla);box-shadow:0 0 0 4px rgba(var(--dla-rgb),.18);animation:dlbl 1.4s infinite}\n@keyframes dlbl{50%{opacity:.35}}\n.pp-vw .dl-live{display:none}\n.pp-vw b.dl-live,#pp-dlive{display:inline-block;margin-left:5px;font-size:10.5px;font-weight:800;color:var(--dlink);background:var(--dla);border-radius:7px;padding:1px 6px;vertical-align:3px;letter-spacing:0}\n#pp-dlive:empty{display:none}\n.pp-dlv{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}\n.dl-tier{display:inline-block;font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 6px;white-space:nowrap;vertical-align:1px}\n.dl-tier.t0{background:#2A2A30;color:#E8E8EA}.dl-tier.t1{background:#4A1820;color:#FF9BA3}.dl-tier.t2{background:#14304D;color:#8FD3FF}.dl-tier.t3{background:#1E3A22;color:#8BE29A}.dl-tier.t4{background:#3B2F5C;color:#C9B8FF}.dl-tier.t5{background:#4A3A10;color:#F5C542}\n.dl-num{font-family:var(--mono,ui-monospace,monospace);font-variant-numeric:tabular-nums;color:var(--dla);font-weight:800}\n.dl-board{border-radius:16px;padding:12px;background:linear-gradient(180deg,var(--dlbg),#0C0C0E);border:1.5px solid var(--dla);transition:border-color .2s}\n.dl-board.hot{animation:dlhot 1s infinite}\n@keyframes dlhot{0%,100%{border-color:var(--dla);box-shadow:none}50%{border-color:#FF4D4F;box-shadow:0 0 0 3px rgba(255,77,79,.25)}}\n.dl-bt{font-size:12.5px;font-weight:800;color:var(--dla);text-align:center}\n.dl-bt b{color:#FF6B6D}\n.dl-vs{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:4px;align-items:center;text-align:center;margin-top:6px}\n.dl-vs > i{font-style:normal;font-size:15px;font-weight:900;color:var(--dla)}\n.dl-vs .nm{display:block;font-size:14px;font-weight:800;margin-top:3px;color:var(--tx,#FAFAFA);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n.dl-vs .rt{display:block;font-size:24px;font-weight:800;font-family:var(--mono,ui-monospace,monospace);font-variant-numeric:tabular-nums;letter-spacing:-.02em}\n.dl-vs small{display:block;font-size:11px;color:var(--tx3,#63636B);font-family:var(--mono,ui-monospace,monospace)}\n.dl-lead{margin:6px 0 0;text-align:center;font-size:12.5px;font-weight:800}\n.dl-eq{width:100%;height:64px;display:block;margin-top:6px}\n.dl-tbar,.dl-pbar{margin-top:8px;height:6px;border-radius:3px;background:var(--s3,#212125);overflow:hidden}\n.dl-tbar i{display:block;height:100%;background:var(--dla)}\n.dl-pbar{background:var(--dlo)}.dl-pbar i{display:block;height:100%;background:var(--dla)}\n.dl-meta{display:flex;justify-content:space-between;gap:8px;margin-top:7px;font-size:12px;color:var(--tx2,#9A9AA2)}\n.dl-tiny{margin:6px 0 0;font-size:11px;color:var(--tx3,#63636B);line-height:1.55}\n.dl-pick{display:flex;gap:6px;align-items:center;margin-top:8px;font-size:12.5px;color:var(--tx2,#9A9AA2)}\n.dl-pick span{flex:1;min-width:0}\n.dl-pick button{min-height:38px;padding:0 12px;border-radius:10px;border:1px solid var(--line,#1C1C20);background:var(--s2,#17171A);color:var(--tx,#FAFAFA);font-size:13px;font-weight:800}\n.dl-pick button[aria-pressed=true]{border-color:var(--dla);color:var(--dla);background:rgba(var(--dla-rgb),.1)}\n.dl-lbl{margin:16px 0 6px;font-size:12px;font-weight:800;color:var(--tx3,#63636B)}\n.dl-card{margin-top:12px;background:var(--s1,#0E0E10);border:1px solid var(--line,#1C1C20);border-radius:14px;padding:13px}\n.dl-card.pad0{padding:2px 12px}\n.dl-row{display:flex;justify-content:space-between;align-items:center;gap:8px}\n.dl-h{font-size:16px;font-weight:800;color:var(--tx,#FAFAFA)}\n.dl-info{min-height:34px;padding:0 10px;border-radius:9px;border:1px solid rgba(143,211,255,.45);background:transparent;color:var(--dlb);font-size:12.5px;font-weight:800}\n.dl-p{margin:6px 0 0;font-size:13px;line-height:1.6;color:var(--tx2,#9A9AA2)}\n.dl-p b{color:var(--tx,#FAFAFA)}\n.dl-sub{margin:14px 0 6px;font-size:12px;font-weight:800;color:var(--tx3,#63636B)}\n.dl-opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}\n.dl-opts button{min-height:58px;border-radius:12px;border:1.5px solid var(--line,#1C1C20);background:var(--s2,#17171A);color:var(--tx,#FAFAFA);font-size:12.5px;font-weight:800;line-height:1.3;padding:6px 4px}\n.dl-opts button small{display:block;font-size:10.5px;font-weight:600;color:var(--tx3,#63636B);margin-top:2px}\n.dl-opts button[aria-pressed=true]{border-color:var(--dla);color:var(--dla);background:rgba(var(--dla-rgb),.08)}\n.dl-chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}\n.dl-chips button{min-height:44px;border-radius:10px;border:1px solid var(--line,#1C1C20);background:var(--s2,#17171A);color:var(--tx,#FAFAFA);font-size:14px;font-weight:800;font-family:var(--mono,ui-monospace,monospace);line-height:1.15}\n.dl-chips button small{display:block;font-size:10px;font-family:inherit;color:var(--tx3,#63636B)}\n.dl-chips button[aria-pressed=true]{border-color:var(--dla);color:var(--dla);background:rgba(var(--dla-rgb),.08)}\n.dl-chips button[disabled]{opacity:.38}\n.dl-note{margin:8px 0 0;font-size:12px;line-height:1.6;color:var(--tx2,#9A9AA2)}\n.dl-note b{color:var(--tx,#FAFAFA)}\n.dl-k{font-size:12.5px;font-weight:700;color:var(--tx2,#9A9AA2)}\n.dl-in{flex:1;min-width:0;min-height:40px;border-radius:10px;border:1px solid var(--line,#1C1C20);background:var(--s2,#17171A);color:var(--tx,#FAFAFA);padding:0 10px;font-size:14px;font-family:inherit}\n.dl-cta{display:block;width:100%;min-height:50px;margin-top:12px;border:0;border-radius:13px;background:var(--dla);color:var(--dlink);font-size:15px;font-weight:900}\n.dl-cta[disabled]{opacity:.4}\n.dl-ghost{display:block;width:100%;min-height:44px;margin-top:8px;border-radius:12px;border:1px solid var(--line,#1C1C20);background:transparent;color:var(--tx2,#9A9AA2);font-size:13.5px;font-weight:800}\n.dl-ghost.gold{color:var(--dla);border-color:rgba(var(--dla-rgb),.5)}\n.dl-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}\n.dl-two .dl-ghost{margin-top:8px}\n.dl-match{margin-top:12px;padding:14px;border-radius:14px;border:1px dashed var(--dla);text-align:center;color:var(--tx,#FAFAFA);font-size:14px}\n.dl-spin{display:inline-block;width:16px;height:16px;border:2px solid var(--s3,#212125);border-top-color:var(--dla);border-radius:50%;animation:dlsp .8s linear infinite;vertical-align:-3px;margin-right:6px}\n@keyframes dlsp{to{transform:rotate(360deg)}}\n.dl-lr{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line,#1C1C20);font-size:12.5px;color:var(--tx,#FAFAFA)}\n.dl-lr:last-child{border-bottom:0}\n.dl-lr b{font-family:var(--mono,ui-monospace,monospace)}\n.dl-lr .c{font-size:10.5px;color:var(--tx3,#63636B);text-align:center;line-height:1.35}.dl-lr .r{text-align:right}\n.dl-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}\n.dl-stats div{background:var(--s2,#17171A);border-radius:10px;padding:8px;text-align:center;font-size:11px;color:var(--tx3,#63636B)}\n.dl-stats b{display:block;font-size:15.5px;color:var(--tx,#FAFAFA);margin-top:2px;font-family:var(--mono,ui-monospace,monospace)}\n.dl-bdgs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}\n.dl-bdg{border-radius:10px;padding:8px 4px;text-align:center;background:var(--s2,#17171A);border:1px solid var(--line,#1C1C20);font-size:12px;font-weight:800;color:var(--tx3,#63636B);opacity:.55}\n.dl-bdg small{display:block;font-size:10px;font-weight:600;margin-top:2px;line-height:1.35}\n.dl-bdg.on{opacity:1;color:var(--dla);border-color:rgba(var(--dla-rgb),.55)}\n.dl-ln{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line,#1C1C20);font-size:12.5px;color:var(--tx,#FAFAFA)}\n.dl-ln:last-child{border-bottom:0}\n.dl-ln b{font-family:var(--mono,ui-monospace,monospace)}\n.dl-ladder .dl-ln{display:grid;grid-template-columns:auto minmax(0,1fr) auto}\n.dl-ladder .dl-ln .dl-tiny{margin:0}\n.dl-ladder .dl-ln.me{background:rgba(var(--dla-rgb),.08);border-radius:8px;padding:8px 6px}\n.dl-muted{color:var(--tx3,#63636B)}\n.dl-tag{display:inline-block;font-size:11px;font-weight:800;border-radius:5px;padding:0 6px;margin-right:5px}\n.dl-tag.u{background:rgba(34,192,131,.14);color:var(--up,#22C083)}.dl-tag.d{background:rgba(240,71,90,.14);color:var(--dn,#F0475A)}\n.dl-res{margin-top:4px;border-radius:16px;padding:16px;text-align:center}\n.dl-res.win{background:linear-gradient(180deg,rgba(var(--dla-rgb),.16),var(--s1,#0E0E10));border:1.5px solid var(--dla)}\n.dl-res.lose{background:var(--s1,#0E0E10);border:1px solid var(--line,#1C1C20)}\n.dl-res h3{margin:4px 0 0;font-size:21px;font-weight:900;color:var(--tx,#FAFAFA)}\n.dl-pp{font-size:27px;font-weight:800;margin-top:4px;font-family:var(--mono,ui-monospace,monospace)}\n.dl-newb{margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(var(--dla-rgb),.08);border:1px solid rgba(var(--dla-rgb),.45);font-size:13px;font-weight:800;color:var(--dla)}\n.dl-newb span{font-weight:600;color:var(--tx2,#9A9AA2)}\n.dl-why{margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(143,211,255,.06);border:1px solid rgba(143,211,255,.35);font-size:13px;line-height:1.6;color:#D7EEFF}\n.dl-why b{color:var(--dlb)}\n.dl-share{margin-top:12px;border-radius:16px;padding:15px;background:linear-gradient(160deg,var(--dlbg),#111113 60%,#0E1520);border:1px solid rgba(var(--dla-rgb),.4);color:var(--tx,#FAFAFA)}\n.dl-share .k{font-size:10.5px;letter-spacing:.12em;color:var(--dla);font-weight:800}\n.dl-share h4{margin:6px 0 8px;font-size:18px;font-weight:900;font-family:var(--mono,ui-monospace,monospace)}\n.dl-share .f{margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;font-size:10.5px;color:var(--tx3,#63636B)}\n.dl-spect{margin-bottom:10px;padding:10px 12px;border-radius:12px;border:1px dashed var(--dlb);font-size:12.5px;line-height:1.6;color:var(--dlb)}\n.dl-foot{margin:14px 0 0;font-size:11px;color:var(--tx3,#63636B);text-align:center;line-height:1.6}\n/* 거래 화면 */\n.dl-acc{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}\n.dl-acc button{min-height:38px;border-radius:10px;border:1px solid var(--line,#1C1C20);background:transparent;color:var(--tx3,#63636B);font-size:12.5px;font-weight:800;font-family:var(--mono,ui-monospace,monospace);padding:0 4px}\n.dl-acc button[aria-pressed=true]{border-color:var(--dla);color:var(--dla);background:rgba(var(--dla-rgb),.08)}\n.dl-strip{display:flex;width:100%;justify-content:space-between;align-items:center;gap:6px;min-height:40px;margin:4px 0 6px;padding:0 11px;border-radius:11px;border:1.5px solid var(--dla);background:var(--dlbg);color:var(--tx,#FAFAFA);font-size:13px;font-weight:800;text-align:left}\n.dl-strip > span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n.dl-strip b{font-family:var(--mono,ui-monospace,monospace)}\n.dl-strip em{font-style:normal;color:var(--tx3,#63636B);font-weight:600}\n.dl-strip.hot{animation:dlhot2 1s infinite}\n@keyframes dlhot2{0%,100%{border-color:var(--dla);background:var(--dlbg)}50%{border-color:#FF4D4F;background:#2A0E10}}\n.dl-drop{margin-bottom:8px}\n#dl-st-ord .dl-strip{font-size:12px;padding:0 8px;min-height:38px}\n#dl-st-ord .dl-strip > span:first-child{white-space:normal;line-height:1.25}\n.dl-guard{margin:4px 0;font-size:11.5px;font-weight:800;color:var(--dla);text-align:center}\n.dl-guard.warn{color:#FF8A3D;text-align:left;line-height:1.4}\n.dl-float{position:fixed;left:0;right:0;bottom:calc(118px + env(safe-area-inset-bottom,0px));z-index:60;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));pointer-events:none}\n.dl-float > *{pointer-events:auto;max-width:440px;margin-left:auto;margin-right:auto}\n.dl-float .dl-strip{box-shadow:0 8px 24px rgba(0,0,0,.6);margin:0}\n.dl-float .dl-drop{margin:0 auto 6px;max-height:60vh;overflow:auto}\n.dl-float.open{display:flex;flex-direction:column-reverse}\n/* 팝업 */\n.dl-pop{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.66);display:flex;align-items:flex-end;justify-content:center;padding:16px max(12px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}\n.dl-popc{width:100%;max-width:440px;max-height:86vh;overflow:auto;background:#121214;border:1px solid #2A2A2F;border-radius:18px;padding:16px;color:#FAFAFA}\n.dl-popc ol{margin:10px 0 0;padding-left:20px;font-size:13.5px;line-height:1.65;color:#C9C9CE}\n.dl-popc li{margin-bottom:5px}.dl-popc li b{color:#FAFAFA}\n.dl-chk{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:#9A9AA2}\n/* 체험판 설정 */\n.dl-devb{writing-mode:vertical-rl;min-height:56px;width:20px;padding:6px 0;border-radius:0 9px 9px 0;border:1px solid var(--dlb);border-left:0;background:#0B1A24;color:var(--dlb);font-size:11px;font-weight:800;letter-spacing:.1em;box-shadow:0 4px 14px rgba(0,0,0,.5)}\n.dl-devm{position:fixed;left:calc(26px + env(safe-area-inset-left,0px));top:calc(64px + env(safe-area-inset-top,0px));max-height:calc(100vh - 150px);overflow:auto;width:min(290px,calc(100vw - 24px));background:#0F1418;border:1px solid #2B4656;border-radius:14px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.6);color:#D7EEFF;font-size:12.5px}\n.dl-devm button{display:block;width:100%;text-align:left;min-height:44px;margin-top:6px;border-radius:10px;border:1px solid #23323C;background:#121A20;color:#E8F4FB;font-size:13px;font-weight:800;padding:6px 10px}\n.dl-devm button small{display:block;font-size:11px;font-weight:600;color:#8AA3B3}\n.dl-devm button[aria-pressed=true]{border-color:var(--dlb);background:#13293A}\n/* 마켓 탭 빅매치 한 줄 */\n.dl-bigline{display:flex;width:calc(100% - 32px);margin-left:16px !important;margin-right:16px !important;align-items:center;gap:8px;min-height:44px;margin:8px 0;padding:0 12px;border-radius:12px;border:1.5px solid var(--dla);background:var(--dlbg);color:#FAFAFA;font-size:12.5px;font-weight:800;text-align:left;font-family:inherit}\n.dl-bigline .k{color:var(--dla);white-space:nowrap}\n.dl-bigline .v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n.dl-bigline .t{font-family:ui-monospace,monospace;color:var(--dla);white-space:nowrap}\n@media (prefers-reduced-motion:reduce){.dl-board.hot,.dl-strip.hot,.dl-live i,.dl-spin{animation:none}.dl-board.hot,.dl-strip.hot{border-color:#FF4D4F}}\n\n\nhtml.dl-duelw .pp-ac .r{visibility:hidden}\n/* v2: 매칭 수락 · VS 화면 · 프로필 · 승급 */\n.dl-pop.center{align-items:center}\n.dl-acc2{text-align:center}\n.dl-ring{position:relative;width:96px;height:96px;margin:4px auto 10px}\n.dl-ring svg{width:100%;height:100%;transform:rotate(-90deg)}\n.dl-ring circle{fill:none;stroke-width:7}.dl-ring .bg{stroke:#26262B}.dl-ring .fg{stroke:var(--dla);stroke-linecap:round;transition:stroke-dashoffset 1s linear}\n.dl-ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:var(--dla);font-family:ui-monospace,monospace}\n.dl-wl{display:inline-flex;gap:3px;margin-top:6px}\n.dl-wl i{font-style:normal;width:20px;height:20px;border-radius:5px;font-size:10.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}\n.dl-wl i.w,.dl-r10 i.w{background:rgba(var(--dla-rgb),.18);color:var(--dla)}\n.dl-wl i.l,.dl-r10 i.l{background:#1E2430;color:var(--dlo)}\n.dl-vsx{position:fixed;inset:0;z-index:95;display:flex;align-items:center;justify-content:center;background-color:#09090A;background-image:radial-gradient(circle at 50% 40%,rgba(var(--dla-rgb),.16) 0,rgba(9,9,10,0) 60%);padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px));animation:dlfade .25s ease-out}\n@keyframes dlfade{from{opacity:0}}\n.dl-vs-in{width:100%;max-width:440px;color:#FAFAFA}\n.dl-vs-top{text-align:center;font-size:12.5px;font-weight:800;color:var(--dla);margin:0 0 14px}\n.dl-vs-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px}\n.dl-vs-s{text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}\n.dl-vs-a{animation:dlinl .45s ease-out}.dl-vs-b{animation:dlinr .45s ease-out}\n@keyframes dlinl{from{transform:translateX(-40px);opacity:0}}@keyframes dlinr{from{transform:translateX(40px);opacity:0}}\n.dl-vs-n{font-size:17px;font-weight:900;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n.dl-vs-rec{margin:0;font-size:13px;color:#C9C9CE;font-weight:700}\n.dl-vs-s small{font-size:11px;color:#8A8A92;line-height:1.4}\n.dl-vs-x{font-size:26px;font-weight:900;color:var(--dla)}\n.dl-vs-cd{text-align:center;font-size:34px;font-weight:900;color:var(--dla);margin:18px 0 0;font-family:ui-monospace,monospace}\n.dl-emb{width:64px;height:72px;display:flex;align-items:center;justify-content:center;clip-path:polygon(50% 0,100% 22%,100% 78%,50% 100%,0 78%,0 22%);font-size:12px;font-weight:900;text-align:center;line-height:1.15;padding:0 6px;word-break:keep-all}\n.dl-emb.t0{background:linear-gradient(160deg,#5A5A62,#2A2A30);color:#F0F0F2}.dl-emb.t1{background:linear-gradient(160deg,#C2414F,#4A1820);color:#FFE3E6}.dl-emb.t2{background:linear-gradient(160deg,#3B8FD9,#14304D);color:#E3F3FF}\n.dl-emb.t3{background:linear-gradient(160deg,#3FAE5A,#1E3A22);color:#E6FFEA}.dl-emb.t4{background:linear-gradient(160deg,#8B6FE0,#3B2F5C);color:#F1ECFF}.dl-emb.t5{background:linear-gradient(160deg,#F5C542,#6B4E0E);color:#1A1405}\n.dl-emb.big{width:76px;height:86px;font-size:13.5px}.dl-emb.huge{width:120px;height:136px;font-size:20px;margin:6px auto 0;animation:dlpop .6s cubic-bezier(.2,1.4,.4,1)}\n@keyframes dlpop{from{transform:scale(.3);opacity:0}}\n.dl-pfh{display:flex;gap:14px;align-items:center;border-color:rgba(59,143,217,.55);box-shadow:inset 0 0 0 1px rgba(59,143,217,.25)}\n.dl-pfm{min-width:0;display:grid;gap:4px}.dl-pfh .dl-p{margin:2px 0 0}\n.dl-r10{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin-top:8px}\n.dl-r10 i{font-style:normal;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}\n.dl-r10 i.e{background:var(--s2,#17171A)}\n.dl-promo{position:fixed;inset:0;z-index:96;overflow:auto;background-color:#060708;background-image:radial-gradient(circle at 50% 30%,rgba(59,143,217,.35) 0,rgba(6,7,8,0) 62%);display:flex;justify-content:center;padding:calc(24px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));animation:dlfade .3s ease-out}\n.dl-pm-in{width:100%;max-width:440px;text-align:center;color:#FAFAFA}\n.dl-pm-k{margin:0;font-size:11px;letter-spacing:.3em;color:var(--dlb);font-weight:800}\n.dl-pm-h{margin:10px 0 4px;font-size:30px;font-weight:900}\n.dl-pm-ft{margin:0;font-size:14px}\n@media (prefers-reduced-motion:reduce){.dl-vsx,.dl-vs-s,.dl-emb.huge,.dl-promo{animation:none}}\n.dl-vs-top{background:none;padding:0}.dl-vs-cd{background:none}\n.dl-pm-ft{display:flex;gap:8px;align-items:center;justify-content:center}\n/* v3: 대기열 · 시작 예고 · 봇 · 푸시 미리보기 · 강등 */\n.dl-qcard{margin-top:12px;padding:13px;border-radius:14px;border:1.5px dashed var(--dla);background:rgba(var(--dla-rgb),.05)}\n.dl-qcard .dl-h{display:flex;align-items:center;gap:2px}\n.dl-steps{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:5px}\n.dl-steps li{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:9px;background:var(--s2,#17171A);font-size:12.5px;color:var(--tx3,#63636B)}\n.dl-steps li small{font-size:11px}\n.dl-steps li.done{color:var(--tx2,#9A9AA2)}\n.dl-steps li.now{color:var(--dla);background:rgba(var(--dla-rgb),.1);box-shadow:inset 0 0 0 1px rgba(var(--dla-rgb),.5)}\n.dl-qbig{margin-top:10px;text-align:center;font-size:34px;font-weight:900;color:var(--dla);font-family:ui-monospace,monospace;font-variant-numeric:tabular-nums}\n.dl-botc{display:block;width:100%;text-align:left;min-height:52px;margin-top:8px;padding:8px 12px;border-radius:12px;border:1px solid #2A2A2F;background:#18181B;color:#FAFAFA;font-size:14px}\n.dl-botc small{display:block;margin-top:2px;font-size:11.5px;color:#9A9AA2}\n.dl-promo.down{background-image:radial-gradient(circle at 50% 30%,rgba(143,163,192,.18) 0,rgba(6,7,8,0) 62%)}\n.dl-cta.warn{background:#2A2F3A;color:#D7E6FF;border:1px solid var(--dlo);font-size:14px}\n.dl-ask{margin-top:10px;padding:12px;border-radius:12px;border:1px solid var(--dlo);background:#141820;color:#E6EEF8;font-size:13.5px}\n.dl-ask p{margin:4px 0 0;font-size:12.5px;color:#B8C4D4;line-height:1.55}\n.dl-ask p b{color:#FAFAFA}\n.dl-strip.flash,.dl-board.flash{animation:dlflash .5s 4}\n@keyframes dlflash{50%{border-color:var(--dlb);box-shadow:0 0 0 4px rgba(143,211,255,.35);background:#0F2232}}\n@media (prefers-reduced-motion:reduce){.dl-strip.flash,.dl-board.flash{animation:none;border-color:var(--dlb)}}\n/* v6: 탭 이름 · 대기 연출 · 매칭 연출 · Asset */\n.pp-vw{gap:16px !important;overflow-x:auto;scrollbar-width:none}\n.pp-vw::-webkit-scrollbar{display:none}\n.pp-vw button{font-size:16px !important;white-space:nowrap;flex:none}\n#pp-dlive{font-size:9.5px;padding:1px 5px;margin-left:4px}\n.dl-radar{position:relative;width:132px;height:132px;margin:2px auto 0;border-radius:50%;background:radial-gradient(circle,rgba(var(--dla-rgb),.10) 0,rgba(var(--dla-rgb),.02) 60%,transparent 61%),repeating-radial-gradient(circle,transparent 0 21px,rgba(var(--dla-rgb),.18) 21px 22px);border:1px solid rgba(var(--dla-rgb),.35);overflow:hidden}\n.dl-radar .sw{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(var(--dla-rgb),.55),rgba(var(--dla-rgb),0) 70deg,transparent 360deg);animation:dlsweep 2.2s linear infinite}\n@keyframes dlsweep{to{transform:rotate(360deg)}}\n.dl-radar .d{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--dla);box-shadow:0 0 8px var(--dla);opacity:0;animation:dlblip 2.2s infinite}\n.dl-radar .d1{left:28%;top:24%;animation-delay:.3s}.dl-radar .d2{left:70%;top:38%;animation-delay:.9s}.dl-radar .d3{left:44%;top:74%;animation-delay:1.6s}\n@keyframes dlblip{0%{opacity:0;transform:scale(.4)}10%{opacity:1;transform:scale(1.2)}60%{opacity:0}}\n.dl-radar .me{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;background:var(--dla);color:var(--dlink);font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 6px rgba(var(--dla-rgb),.18)}\n.dl-reel{margin:2px 0 0;font-size:12.5px;color:var(--tx3,#63636B)}\n.dl-reel b{display:inline-block;color:var(--dla);font-weight:800}\n.dl-reel b.flip{animation:dlflip .35s ease-out}\n@keyframes dlflip{from{transform:translateY(-8px);opacity:0}}\n.dl-mkt{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:var(--tx3,#63636B)}\n.dl-mkt b{font-family:var(--mono,ui-monospace,monospace);color:var(--tx,#FAFAFA)}\n.dl-spark{display:block;width:100%;height:54px;margin-top:4px;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent);border-radius:8px}\n.dl-warn{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,138,61,.1);border:1px solid rgba(255,138,61,.45);color:#FFB27D;font-size:12.5px;font-weight:700}\n.dl-mfx{position:fixed;inset:0;z-index:97;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(6,6,7,.94);overflow:hidden;animation:dlfade .15s ease-out;transition:opacity .2s}\n.dl-mfx.out{opacity:0}\n.dl-mfx .rays{position:absolute;left:50%;top:50%;width:160vmax;height:160vmax;margin:-80vmax 0 0 -80vmax;background:repeating-conic-gradient(rgba(var(--dla-rgb),.16) 0 6deg,transparent 6deg 18deg);animation:dlsweep 6s linear infinite;mask:radial-gradient(circle,#000 0,transparent 55%);-webkit-mask:radial-gradient(circle,#000 0,transparent 55%)}\n.dl-mfx b{position:relative;font-size:34px;font-weight:900;letter-spacing:.06em;color:var(--dla);text-shadow:0 0 24px rgba(var(--dla-rgb),.6);animation:dlslam .5s cubic-bezier(.2,1.6,.4,1)}\n.dl-mfx span{position:relative;font-size:13.5px;font-weight:700;color:#E8E8EA}\n@keyframes dlslam{from{transform:scale(2.4);opacity:0}}\n.dl-vs-x{animation:dlslam .55s .35s cubic-bezier(.2,1.6,.4,1) both}\n.dl-vs-mkt{margin-top:16px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.04)}\n.dl-vs-mkt span{font-size:12px;color:#9A9AA2}.dl-vs-mkt b{color:#FAFAFA;font-family:ui-monospace,monospace}\n.dl-vs-mkt svg{display:block;width:100%;height:46px;margin-top:4px}\n.dl-asset{border-color:rgba(59,143,217,.4)}\n.dl-assetv{display:block;margin-top:6px;font-size:28px;font-weight:800;font-family:var(--mono,ui-monospace,monospace);color:var(--tx,#FAFAFA);letter-spacing:-.02em}\n.dl-assetv small{font-size:13px;color:var(--tx3,#63636B)}\n.dl-abar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:10px;background:var(--s3,#212125)}\n.dl-abar i{display:block;height:100%}\n.dl-aleg{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:8px;font-size:12px;color:var(--tx2,#9A9AA2)}\n.dl-aleg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}\n.dl-aleg b{color:var(--tx,#FAFAFA);font-family:var(--mono,ui-monospace,monospace)}\n@media (prefers-reduced-motion:reduce){.dl-radar .sw,.dl-radar .d,.dl-mfx .rays,.dl-mfx b,.dl-vs-x,.dl-reel b.flip{animation:none}.dl-radar .d{opacity:1}}\n/* v7: 대기 = 실시간 차트 흐름 · MATCH FOUND 차트 선 · 효과음 고르기 */\n.dl-qchart{position:relative;margin:2px -4px 0;padding:10px 10px 6px;border-radius:12px;background:linear-gradient(180deg,var(--dlbg),#0D0D0F);border:1px solid rgba(var(--dla-rgb),.25);overflow:hidden}\n.dl-qchart .hd{display:flex;align-items:baseline;gap:8px;font-size:12px;color:var(--tx3,#63636B)}\n.dl-qchart .hd b{font-size:18px;color:var(--tx,#FAFAFA);font-family:var(--mono,ui-monospace,monospace)}\n.dl-qchart .hd em{font-style:normal;font-size:12px;font-weight:800;margin-left:auto}\n.dl-qchart svg{display:block;width:100%;height:120px;margin-top:4px}\n.dl-qchart .dot{position:absolute;right:6px;width:10px;height:10px;margin-top:22px;border-radius:50%;background:var(--dla);box-shadow:0 0 0 0 rgba(var(--dla-rgb),.6);transform:translateY(-50%);animation:dlpulse 1.2s infinite}\n@keyframes dlpulse{70%{box-shadow:0 0 0 10px rgba(var(--dla-rgb),0)}100%{box-shadow:0 0 0 0 rgba(var(--dla-rgb),0)}}\n.dl-mfx .ln{position:absolute;inset:18% 0 30%;width:100%;height:52%;opacity:.9}\n.dl-mfx .ln polyline{stroke-dasharray:1;stroke-dashoffset:1;animation:dldraw .7s ease-out forwards;filter:drop-shadow(0 0 6px rgba(var(--dla-rgb),.7))}\n@keyframes dldraw{to{stroke-dashoffset:0}}\n@media (prefers-reduced-motion:reduce){.dl-qchart .dot,.dl-mfx .ln polyline{animation:none;stroke-dashoffset:0}}\n.dl-pals{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}\n.dl-pals button{margin:0 !important;min-height:40px !important;font-size:12px !important;display:flex !important;align-items:center;gap:4px}\n.dl-pals i{flex:none;width:12px;height:12px;border-radius:3px}\n/* v9: 연승 불꽃 · 다음 티어 막대 · GG */\n.dl-fire{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;background:rgba(255,120,40,.16);color:#FF9A4D;font-size:11px;font-weight:900;vertical-align:2px;animation:dlfire 1.6s infinite}\n@keyframes dlfire{50%{box-shadow:0 0 10px rgba(255,140,60,.55)}}\n.dl-next{margin-top:8px;font-size:12px;color:var(--tx2,#9A9AA2)}\n.dl-next .dl-row b{color:var(--tx,#FAFAFA);font-family:var(--mono,ui-monospace,monospace)}\n.dl-nbar{margin-top:5px;height:7px;border-radius:4px;background:var(--s3,#212125);overflow:hidden}\n.dl-nbar i{display:block;height:100%;background:linear-gradient(90deg,var(--dlo),var(--dla))}\n.dl-next small{display:block;margin-top:3px;font-size:10.5px;color:var(--tx3,#63636B);font-family:var(--mono,ui-monospace,monospace)}\n.dl-gg{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--s1,#0E0E10);border:1px solid var(--line,#1C1C20);font-size:12.5px;color:var(--tx2,#9A9AA2)}\n.dl-gg span{flex:1;min-width:0}\n.dl-gg button{min-height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--line,#1C1C20);background:var(--s2,#17171A);color:var(--tx,#FAFAFA);font-size:13px;font-weight:800}\n.dl-gg b{color:var(--dla)}\n.dl-gg em{flex-basis:100%;font-style:normal;color:var(--dlb);font-weight:700}\n.dl-stats{grid-template-columns:repeat(2,minmax(0,1fr)) !important}\n@media (prefers-reduced-motion:reduce){.dl-fire{animation:none}}\n/* v12: 30초 준비 화면 */\n.dl-rdy{margin-top:4px;font-size:11.5px;font-weight:800;color:#8A8A92;border:1px solid #2A2A2F;border-radius:999px;padding:2px 9px}\n.dl-rdy.on{color:#0B0B0C;background:var(--dla);border-color:var(--dla)}\n.dl-prep-msg{margin:14px 0 0;text-align:center;font-size:13px;font-weight:700;color:#C9C9CE}\n.dl-prep-msg.hot{color:var(--dlb);animation:dlbl 1s infinite}\n.dl-vsx .dl-cta[disabled]{opacity:.6}\n\n.dl-sel{width:100%;min-height:44px;margin-top:6px;border-radius:10px;border:1px solid var(--line,#1C1C20);background:var(--s2,#17171A);color:var(--tx,#FAFAFA);font-size:14px;padding:0 10px}\n.dl-lr{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line,#1C1C20);color:inherit;font:inherit}\n.dl-mini{min-height:34px;margin-left:6px;padding:0 10px;border-radius:8px;border:1px solid var(--line,#1C1C20);background:var(--s2,#17171A);color:var(--tx,#FAFAFA);font-size:12px;font-weight:800}\n.dl-wl i.e{background:#2A2A30;color:#9A9AA2}\n.dl-inv{border-color:var(--dla)}\n.pp-dlv{max-width:720px;margin-left:auto;margin-right:auto}\n.dl-botnow small{display:block;font-size:11.5px;font-weight:600;opacity:.7;margin-top:2px}\n"; document.head.appendChild(s); })();
@@ -3043,15 +3075,15 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
   var WALLET = 10000, HOT = 600;
   var TIERS = [['개미', 0, 1000, 't0'], ['불개미', 5, 2000, 't1'], ['슈퍼개미', 15, 3000, 't2'], ['프로 트레이더', 30, 5000, 't3'], ['탑 트레이더', 60, 7000, 't4'], ['레전드 트레이더', null, 10000, 't5']];
   var BADGES = [
-    ['first', '가즈아', '첫 대결 참가'], ['win1', '첫 승', '대결에서 처음 승리'], ['upset', '하극상', '높은 티어 상대를 이김'],
-    ['streak3', '무패', '3연승'], ['revenge', '복수 성공', '진 상대에게 재대결 승'], ['moon', '떡상 인증', '대결 수익률 +50% 이상'],
-    ['broke', '깡통 클럽', '대결 중 청산'], ['sl', '손절의 신', '손절을 건 채 이긴 대결'], ['calm', '존버 성공', '한 포지션으로 끝까지 버텨 승리'],
+    ['first', '첫 출전', '첫 대결 참가'], ['win1', '첫 승', '대결에서 처음 승리'], ['upset', '하극상', '높은 티어 상대를 이김'],
+    ['streak3', '무패', '3연승'], ['revenge', '복수 성공', '진 상대에게 재대결 승'], ['moon', '+50% 달성', '대결 수익률 +50% 이상'],
+    ['broke', '청산 경험', '대결 중 청산 · 레버리지를 다시 점검해 보세요'], ['sl', '손절의 신', '손절을 건 채 이긴 대결'], ['calm', '존버 성공', '한 포지션으로 끝까지 버텨 승리'],
   ];
-  var BOTS = [['trend', '추세봇', '1시간마다 오른 쪽으로 따라가요 · BTC 3배'], ['contra', '역추세봇', '1시간마다 반대로 가요 · BTC 3배'], ['moth', '불나방봇', 'BTC 10배 롱 · 크게 먹거나 크게 잃어요']];
+  var BOTS = [['trend', '추세봇', '1시간마다 오른 쪽으로 따라가요 · BTC 3배'], ['contra', '역추세봇', '1시간마다 반대로 가요 · BTC 3배'], ['moth', '고배율봇', 'BTC 10배 롱 · 작은 움직임에도 크게 흔들려요']];
   var ERRS = {
     stake: '1,000 단위로 골라 주세요.', stake_tier: '내 티어의 한 판 최대 판돈을 넘었어요.', stake_cap: '걸 수 있는 금액을 넘었어요(잔고의 30% · 쓸 수 있는 돈 안에서).', stake_avail: '쓸 수 있는 돈이 모자라요.',
     in_duel: '이미 진행 중인 대결이 있어요.', opp_busy: '상대가 다른 대결 중이에요.', prep: '준비 30초가 끝나야 기권할 수 있어요(매칭은 확정이에요).',
-    no_invite: '도전장이 없어졌거나 기한이 지났어요.', not_found: '그 닉네임의 회원이 없어요.', self: '나에게는 도전장을 보낼 수 없어요.', inv_max: '보낸 도전장은 3개까지예요.',
+    no_invite: '도전장이 없어졌거나 기한이 지났어요.', not_found: '그 닉네임의 회원이 없어요.', no_ch: '지금 도전장을 받지 않는 상대예요.', self: '나에게는 도전장을 보낼 수 없어요.', inv_max: '보낸 도전장은 3개까지예요.',
     no_duel: '대결을 찾지 못했어요.', slow_down: '너무 빨라요. 잠깐 뒤 다시 해 주세요.', busy: '잠시 뒤 다시 해 주세요.', book: '시세를 받지 못했어요. 잠시 뒤 다시 해 주세요.', net: '서버에 연결하지 못했어요.',
   };
   var S = null, SKEW = 0, LOADING = false, NEXT = 0, FAILS = 0, PUB = null, PUBAT = 0, VIEW = null, VIEWAT = 0, VIEWID = null;
@@ -3066,6 +3098,12 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
 
   function P() { return window.A99Paper; }
   function E() { return window.A99E; }
+  var DZ_BOTF = { trend: ['#2F7D58', '<path d="M5 17l6-6 4 4 5-6"/><path d="M15 9h5v5"/>', 'BTC 3배', '1시간마다 오른 쪽으로 따라가요'], contra: ['#2D5DA8', '<path d="M5 7l6 6 4-4 5 6"/><path d="M15 15h5v-5"/>', 'BTC 3배', '1시간마다 반대로 가요'], moth: ['#B4552D', '<path d="M12 3c2 3 5 5 5 9a5 5 0 01-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-8z"/>', 'BTC 10배 롱', '작은 움직임에도 크게 흔들려요'] };
+  var DZ_SEEN = {};
+  function dzSteps(L, at) { return '<ol class="dz-steps">' + L.map(function (x, i) { return '<li class="' + (i < at ? 'done' : i === at ? 'cur' : '') + '"><i>' + (i < at ? '✓' : i + 1) + '</i>' + x + '</li>'; }).join('') + '</ol>'; }
+  function dzRing(p, txt) { var r = 27, c = 2 * Math.PI * r; p = Math.max(0, Math.min(1, p)); return '<svg class="dz-ring" width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="27" fill="none" stroke="#2A2A2E" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" style="stroke:var(--dla)" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + (c * p).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 32 32)"/><text x="32" y="36.5" text-anchor="middle" font-size="12" font-weight="800" fill="#F3F3F4">' + txt + '</text></svg>'; }
+  function dzHm(s) { s = Math.max(0, Math.floor(s)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h ? h + ':' + ('0' + m).slice(-2) : m + '분'; }
+
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function sp(x, d) { d = d == null ? 2 : d; return (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x).toFixed(d) + '%'; }
@@ -3198,8 +3236,8 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
       '<div class="dl-vs"><div>' + tierTag(S.me.tier) + '<b class="nm">나' + fire(st.streak) + '</b><b class="rt" data-dk="ra" style="color:' + col(ra) + '">' + sp(ra) + '</b><small>' + usd(myEq(d)) + ' USD · ' + st.w + '승 ' + st.l + '패</small></div><i>VS</i>' +
       '<div>' + tierTag(d.opp.tier) + '<b class="nm">' + esc(d.opp.nick) + fire(d.opp.streak || 0) + '</b><b class="rt" style="color:' + col(rb) + '">' + sp(rb) + '</b><small>' + usd(WALLET * (1 + rb / 100)) + ' USD · ' + (d.opp.bot ? '하우스 트레이더' : d.opp.w + '승 ' + d.opp.l + '패') + '</small></div></div>' +
       '<p class="dl-lead" style="color:' + (diff >= 0 ? 'var(--dla)' : 'var(--dlo)') + '">' + lead + '</p>' + curve(d) +
-      '<div class="dl-tbar"><i style="width:' + ((1 - L / ((d.end - d.start) / 1000)) * 100).toFixed(1) + '%"></i></div>' +
-      '<div class="dl-meta"><span>남은 시간 <b class="dl-num">' + leftTxt(L) + '</b></span><span>' + (d.kind === 'bot' ? '봇 포지션은 끝나면 공개' : !d.oppIn ? '<b style="color:var(--dlo)">상대가 아직 들어오지 않았어요</b>' : '상대 방향은 끝나면 공개') + '</span></div>' +
+      '<div class="dz-lring">' + dzRing(L / ((d.end - d.start) / 1000), dzHm(L)) + '<div><small>남은 시간</small><b class="dl-num">' + leftTxt(L) + '</b><small>24시간 중</small></div></div>' +
+      '<div class="dl-meta"><span></span><span>' + (d.kind === 'bot' ? '봇 포지션은 끝나면 공개' : !d.oppIn ? '<b style="color:var(--dlo)">상대가 아직 들어오지 않았어요</b>' : '상대 방향은 끝나면 공개') + '</span></div>' +
       '<p class="dl-tiny">상대 수익률은 1분마다 갱신돼요' + (onWallet(d) ? '' : ' · 내 수익률은 대결 지갑을 고르면 실시간') + '</p></div>';
   }
   function liveRow(x) {
@@ -3239,7 +3277,6 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
     } else if (S.duel) h += '<section class="dl-card"><b class="dl-h">매칭 확정 · 곧 시작</b><p class="dl-p">상대 <b>' + esc(S.duel.opp.nick) + '</b> ' + tierTag(S.duel.opp.tier) + ' · ' + (S.duel.stake ? '판돈 ' + usd(S.duel.stake) + ' USD씩' : '명예전') + '</p><div class="dl-qbig">' + mmss((S.duel.start - now()) / 1000) + '</div><button type="button" class="dl-cta" data-dl="prep">준비 화면 열기</button></section>';
     else h += vApply();
     if (L.length) { h += '<div id="dl-big">' + bigBoard(L[0]) + '</div>'; if (L.length > 1) h += '<div class="dl-lbl">다른 대결 LIVE</div><div class="dl-card pad0" id="dl-live">' + L.slice(1).map(liveRow).join('') + '</div>'; }
-    h += '<button type="button" class="dl-ghost" data-dl="goprof">내 전적 · 배지 · 티어는 프로필 탭에서 →</button>';
     return h + foot();
   }
   function foot() { return '<p class="dl-foot">가상 연습금이에요 · 사고팔거나 현금으로 바꿀 수 없어요 · 상금 · 경품 없음 · 투자 권유 아님</p>'; }
@@ -3258,11 +3295,11 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
       return h + head + '<div id="dl-qbox">' + qHTML() + '</div><button type="button" class="dl-ghost" data-dl="qcancel">대기 취소</button></section>';
     }
     if (U.stake > Math.max(1000, cap)) U.stake = Math.max(1000, cap);
-    h += head + '<p class="dl-p">성사되면 <b>둘 다 10,000 USD 대결 지갑</b>으로 24시간 수익률을 겨뤄요. 걸 돈은 내 <b>모의투자 계좌</b>에서 떼어 두고, 이긴 사람이 모두 가져가요. 대결은 <b>암호화폐만</b> 거래해요.</p>';
-    h += '<div class="dl-sub">상대 찾기</div><div class="dl-opts">' + [['auto', '⚔ 자동 매칭', '비슷한 티어끼리'], ['nick', '닉네임 지정', '도전장 보내기'], ['link', '링크 도전장', '친구 초대']].map(function (x) { return '<button type="button" data-dl="mode:' + x[0] + '" aria-pressed="' + (U.mode === x[0]) + '">' + x[1] + '<small>' + x[2] + '</small></button>'; }).join('') + '</div>';
+    h += head + dzSteps(['상대', '판돈', '신청'], 1) + '<p class="dl-p dz-intro">24시간 수익률 대결 · 이긴 사람이 판돈을 가져가요 <button type="button" class="dz-ib" data-dztip="1" aria-label="대결 설명 보기" aria-expanded="false">?</button></p><div class="dz-tipb" hidden>성사되면 <b>둘 다 10,000 USD 대결 지갑</b>으로 24시간 수익률을 겨뤄요. 걸 돈은 내 <b>모의투자 계좌</b>에서 떼어 두고, 이긴 사람이 모두 가져가요. 대결은 <b>암호화폐만</b> 거래해요.</div>';
+    h += '<div class="dl-sub"><span class="dz-n">1</span>상대 찾기</div><div class="dz-rl" role="radiogroup" aria-label="상대 찾기">' + [['auto', '자동 매칭', '비슷한 티어끼리'], ['nick', '닉네임 지정', '도전장 보내기'], ['link', '링크 도전장', '친구 초대']].map(function (x) { return '<button type="button" role="radio" data-dl="mode:' + x[0] + '" aria-checked="' + (U.mode === x[0]) + '"><span class="rad" aria-hidden="true"></span><span class="t">' + x[1] + '<small>' + x[2] + '</small></span></button>'; }).join('') + '</div>';
     if (U.mode === 'nick') h += '<div class="dl-row" style="margin-top:8px"><label class="dl-k" for="dl-nick">상대 닉네임</label><input id="dl-nick" class="dl-in" maxlength="12" autocomplete="off" placeholder="닉네임" value="' + esc(U.nick) + '"></div>';
     if (U.mode === 'link') h += '<p class="dl-note">링크를 받은 회원이 수락하면 30초 뒤 시작해요 · 24시간 안에 아무도 수락하지 않으면 없어져요</p>';
-    h += '<div class="dl-sub">걸 금액 (USD)</div><div class="dl-chips">' + [1000, 2000, 3000, 5000, 7000, 10000].map(function (v) { var off = v > lim ? '티어' : v > cap ? '30%' : ''; return '<button type="button" data-dl="stake:' + v + '" aria-pressed="' + (U.stake === v) + '"' + (off ? ' disabled' : '') + '>' + (v / 1000) + ',000' + (off ? '<small>' + (off === '티어' ? '🔒' : '잔고') + '</small>' : '') + '</button>'; }).join('') + '</div>';
+    h += '<div class="dl-sub"><span class="dz-n">2</span>걸 금액 (USD)</div><label class="dz-sel dz-stk"><select id="dz-stake" aria-label="걸 금액">' + [1000, 2000, 3000, 5000, 7000, 10000].map(function (v) { var off = v > lim ? '티어' : v > cap ? '30%' : ''; return '<option value="' + v + '"' + (U.stake === v ? ' selected' : '') + (off ? ' disabled' : '') + '>' + usd(v) + ' USD' + (off ? (off === '티어' ? ' · 🔒 티어 승급 필요' : ' · 잔고 30% 넘음') : '') + '</option>'; }).join('') + '</select></label>';
     h += '<p class="dl-note">' + tierTag(t) + ' 한 판 최대 <b>' + usd(lim) + ' USD</b> · 어느 티어든 잔고의 30%까지 · 지금 걸 수 있는 최대 <b>' + usd(cap) + '</b></p>';
     h += '<button type="button" class="dl-cta" data-dl="apply"' + (cap < 1000 ? ' disabled' : '') + '>' + (U.mode === 'auto' ? usd(U.stake) + ' USD 걸고 대결 신청' : '도전장 보내기 · ' + usd(U.stake) + ' USD') + '</button>';
     h += '<button type="button" class="dl-ghost dl-botnow" data-dl="botask">🤖 봇과 바로 연습 <small>기다림 없음 · 판돈 없음 · 봇전으로 따로 기록</small></button>';
@@ -3361,7 +3398,7 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
     var st = S.stats, o = d.opp;
     var paint0 = function () {
       var dd = S.duel; if (!dd || dd.id !== d.id) return;
-      w.innerHTML = '<div class="dl-vs-in"><p class="dl-vs-top">' + (dd.kind === 'bot' ? '명예전 · 판돈 없음' : '대결 확정 · 판돈 ' + usd(dd.stake) + ' USD씩') + ' · 24시간</p><div class="dl-vs-row">' +
+      w.innerHTML = '<div class="dl-vs-in">' + dzSteps(['상대 찾기', '30초 준비', '시작'], 1) + '<p class="dl-vs-top">' + (dd.kind === 'bot' ? '명예전 · 판돈 없음' : '대결 확정 · 판돈 ' + usd(dd.stake) + ' USD씩') + ' · 24시간</p><div class="dl-vs-row">' +
         card('나', S.me.tier, st.w + '승 ' + st.l + '패', (S.recent || []).slice(0, 5), '이번 달 ' + sp(S.me.ret * 100, 1), 'a', st.streak, dd.rdy.me ? '준비 완료 ✓' : '준비 중…') + '<b class="dl-vs-x">VS</b>' +
         card(o.nick, o.tier, o.bot ? '하우스 트레이더' : o.w + '승 ' + o.l + '패', o.recent || [], oppInfo(o), 'b', o.streak || 0, dd.rdy.opp ? '준비 완료 ✓' : '준비 중…') +
         '</div><p class="dl-prep-msg' + (dd.rdy.opp && !dd.rdy.me ? ' hot' : '') + '" id="dl-pmsg">' + (dd.rdy.me && dd.rdy.opp ? '둘 다 준비 완료 ✓ · 30초가 끝나면 시작해요' : dd.rdy.opp ? '상대 준비 완료 ✓ · 당신만 남았어요' : '30초 뒤 자동으로 시작해요') + '</p>' +
@@ -3387,10 +3424,10 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
     w.addEventListener('click', function (e) { if (e.target.closest('.dl-cta')) { w.remove(); useDuel(true); if (P()._setView) P()._setView('trade'); } });
   }
   function botOffer() {
-    var w = document.createElement('div'); w.className = 'dl-pop center'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true'); w.setAttribute('aria-label', '하우스 트레이더와 연습할까요');
+    var w = document.createElement('div'); w.className = 'dl-pop dz-bsheet'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true'); w.setAttribute('aria-label', '하우스 트레이더와 연습할까요');
     var inQ = !!(S && S.q);
     w.innerHTML = '<div class="dl-popc"><b class="dl-h">하우스 트레이더(봇)와 명예전</b><p class="dl-p">실제 시세로 매매하는 연습 상대예요. <b>바로 시작</b>하고, <b>판돈은 걸리지 않아요.</b> 전적은 「봇전」으로 따로 쌓여요.' + (inQ ? ' 시작하면 사람 상대 대기는 취소돼요.' : '') + '</p>' +
-      BOTS.map(function (b) { return '<button type="button" class="dl-botc" data-bot="' + b[0] + '"><b>🤖 ' + b[1] + '</b><small>' + b[2] + '</small></button>'; }).join('') +
+      BOTS.map(function (b) { var F = DZ_BOTF[b[0]] || ['#444', '', '', b[2]]; return '<button type="button" class="dl-botc dz-botc" data-bot="' + b[0] + '"><span class="face" style="background:' + F[0] + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + F[1] + '</svg></span><span class="t"><b>' + b[1] + '</b><small>' + F[3] + '</small></span><em>' + F[2] + '</em></button>'; }).join('') +
       (inQ ? '<button type="button" class="dl-ghost" data-bot="wait">사람 상대를 계속 기다리기</button>' : '<button type="button" class="dl-ghost" data-bot="wait">닫기</button>') + '</div>';
     document.body.appendChild(w);
     w.addEventListener('click', function (e) {
@@ -3425,7 +3462,8 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
     };
     if (r.void) return '<section class="dl-res lose"><div class="dl-k">' + (r.opp.nick ? 'vs ' + esc(r.opp.nick) : '도전장') + '</div><h3>' + (/^esc_/.test(r.why || '') ? '매칭 취소' : '도전장 종료') + '</h3></section><div class="dl-why"><b>안내</b> · ' + whyLine(r) + '</div><button type="button" class="dl-ghost" data-dl="ack:' + esc(r.id) + '">닫기</button>';
     var st = S.stats;
-    var h = '<section class="dl-res ' + (r.win ? 'win' : 'lose') + '"><div class="dl-k">대결 종료 · vs ' + esc(r.opp.nick) + '</div><h3>' + (r.draw ? '무승부' : r.win ? '🏆 승리!' : '패배') + '</h3>' +
+    var dzA = !DZ_SEEN[r.id]; DZ_SEEN[r.id] = 1;
+    var h = '<section class="dl-res dz-st ' + (r.win ? 'win' : 'lose') + '"><div class="dz-stamp' + (dzA ? ' anim' : '') + (r.draw ? ' draw' : r.win ? '' : ' lose') + '">' + (r.draw ? 'DRAW' : r.win ? 'WIN' : 'LOSE') + '</div><div class="dl-k">대결 종료 · vs ' + esc(r.opp.nick) + '</div><h3>' + (r.draw ? '무승부' : r.win ? '🏆 승리!' : '패배') + '</h3>' +
       '<div class="dl-pp" style="color:' + (r.win ? 'var(--dla)' : r.draw ? 'var(--tx2,#9A9AA2)' : col(-1)) + '">' + (r.honor ? '명예전 · 연습' : r.draw ? '±0 USD (판돈 반환)' : (r.win ? '+' : '−') + usd(r.stake) + ' USD') + '</div>' +
       '<p class="dl-p" style="text-align:center">나 <b style="color:' + col(r.ra) + '">' + sp(r.ra * 100) + '</b> · ' + esc(r.opp.nick) + ' <b style="color:' + col(r.rb) + '">' + sp(r.rb * 100) + '</b></p>' +
       '<p class="dl-tiny" style="text-align:center">' + (r.honor ? '판돈 없는 연습 대결이에요 · 봇전 ' + st.bw + '승 ' + st.bl + '패' : !r.paid ? '정산 중이에요 · 곧 모의투자 계좌에 반영돼요' : '딴 돈 · 잃은 돈은 모의투자 계좌 잔고에 반영돼요 · 랭킹 수익률은 그대로') + '</p></section>';
@@ -3473,17 +3511,31 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
     var lo = TIERS[t][1] || 0, hi = TIERS[t + 1][1], r = S.me.ret * 100, pc = Math.max(0, Math.min(100, (r - lo) / (hi - lo) * 100));
     return '<div class="dl-next"><div class="dl-row"><span>다음 티어 ' + tierTag(t + 1) + '까지</span><b>+' + Math.max(0, hi - r).toFixed(1) + '%p</b></div><div class="dl-nbar"><i style="width:' + pc.toFixed(1) + '%"></i></div><small>' + sp(r, 1) + ' / +' + hi + '%</small></div>';
   }
+  function dzNext(t) {   /* 다음 티어까지 = 원형 진행률 */
+    if (t >= 4) return '<p class="dl-tiny">' + (t === 5 ? '레전드 · 그달 1~3위' : '탑 트레이더 · 다음은 그달 1~3위(레전드)') + '</p>';
+    var lo = TIERS[t][1] || 0, hi = TIERS[t + 1][1], r = S.me.ret * 100, pc = Math.max(0, Math.min(1, (r - lo) / (hi - lo)));
+    var rr = 24, c = 2 * Math.PI * rr;
+    return '<div class="dz-next"><svg width="58" height="58" viewBox="0 0 58 58" aria-hidden="true"><circle cx="29" cy="29" r="24" fill="none" stroke="#2A2A2E" stroke-width="6"/><circle cx="29" cy="29" r="24" fill="none" style="stroke:var(--dla)" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + (c * pc).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 29 29)"/><text x="29" y="33" text-anchor="middle" font-size="12" font-weight="800" fill="#F3F3F4">' + Math.round(pc * 100) + '%</text></svg><div><span>다음 티어 ' + tierTag(t + 1) + '까지</span><b>+' + Math.max(0, hi - r).toFixed(1) + '%p</b><small>' + sp(r, 1) + ' / +' + hi + '%</small></div></div>';
+  }
+  function dzRisk() {   /* 위험 표시 = 지금 열린 포지션의 평균 레버리지(증거금 가중) */
+    var po = (P() && P()._pos && P()._pos()) || {}, m = 0, w = 0;
+    Object.keys(po).forEach(function (k) { var p = po[k] || {}, mg = +p.margin || 0, lv = +p.lev || 1; m += mg * lv; w += mg; });
+    var lev = w > 0 ? m / w : 0, lv = !w ? 0 : lev <= 2 ? 1 : lev <= 5 ? 2 : lev <= 10 ? 3 : 4, nm = ['', '낮음', '보통', '높음', '아주 높음'][lv];
+    return '<section class="dl-card dz-risk"><div class="dl-row"><span class="dl-sub" style="margin:0">위험도 · ' + (w ? '열린 포지션 평균 레버리지 ' + (Math.round(lev * 10) / 10) + '배' : '지금 열린 포지션 없음') + '</span><b>' + (nm || '—') + '</b></div><div class="dz-strg l' + lv + '"><i></i><i></i><i></i><i></i></div><div class="dz-strl"><span>낮음</span><span>높음</span></div><p class="dl-tiny">레버리지가 높을수록 작은 움직임에도 청산될 수 있어요 · 수익률 순위에는 반영하지 않아요</p></section>';
+  }
   function profile() {
     var host = $('pp-pfv'); if (!host) return;
     if (!logged()) { host.innerHTML = '<section class="dl-card"><b class="dl-h">프로필</b><p class="dl-p">로그인하면 티어 · 대결 전적 · 배지 · 매매 기록을 볼 수 있어요.</p><button type="button" class="dl-cta" data-dl="login">로그인</button></section>'; return; }
     if (!S) { host.innerHTML = '<p class="dl-tiny" style="text-align:center;margin-top:24px">불러오는 중…</p>'; load(); return; }
     var t = S.me.tier, r10 = S.recent || [], w10 = r10.filter(function (x) { return x === 1; }).length, l10 = r10.filter(function (x) { return x === 0; }).length, st = S.stats, nick = (P()._me() || {}).nick || '';
-    var h = '<section class="dl-card dl-pfh"><div class="dl-emb big ' + TIERS[t][3] + '">' + TIERS[t][0].replace(' 트레이더', '') + '</div><div class="dl-pfm"><b class="dl-h">' + esc(nick) + ' ' + fire(st.streak) + '</b><div>' + tierTag(t) + '</div><p class="dl-p">이번 달 실전 <b style="color:' + col(S.me.ret) + '">' + sp(S.me.ret * 100) + '</b></p>' + nextBar(t) + '</div></section>';
+    var h = '<section class="dl-card dl-pfh dz-avh"><div class="dz-avc ' + TIERS[t][3] + '" aria-hidden="true">' + esc((nick || '나').charAt(0)) + '</div><b class="dl-h">' + esc(nick) + ' ' + fire(st.streak) + '</b><div>' + tierTag(t) + '</div><p class="dl-p">이번 달 실전 <b style="color:' + col(S.me.ret) + '">' + sp(S.me.ret * 100) + '</b></p>' + dzNext(t) + '</section>';
+    h += dzRisk();
     h += assetHTML();
     h += '<section class="dl-card"><div class="dl-row"><b class="dl-sub" style="margin:0">최근 10판 · ' + w10 + '승 ' + l10 + '패</b><span class="dl-tiny" style="margin:0">왼쪽이 최근</span></div><div class="dl-r10">' +
       Array.apply(null, Array(10)).map(function (_, i) { var x = r10[i]; return '<i class="' + (x == null ? 'e' : x === 1 ? 'w' : x === 0 ? 'l' : 'e') + '">' + (x == null ? '' : x === 1 ? '승' : x === 0 ? '패' : '무') + '</i>'; }).join('') + '</div></section>';
     h += vRecord();
-    h += '<div class="dl-lbl">매매 기록 · 모의투자 계좌</div><div id="dl-pftr" class="dl-card"><p class="dl-tiny">불러오는 중…</p></div>';
+    h += '<div class="dl-lbl">매매 기록 · 모의투자 계좌</div><div class="dz-range" id="dz-range"><div class="ch"><button type="button" data-dzr="7">7일</button><button type="button" data-dzr="30">30일</button><button type="button" data-dzr="0" aria-pressed="true">전체</button></div><div class="dt"><label><span>시작</span><input type="date" id="dz-rf"></label><i>~</i><label><span>끝</span><input type="date" id="dz-rt"></label></div><p class="dl-tiny" id="dz-rn"></p></div><div id="dl-pftr" class="dl-card"><p class="dl-tiny">불러오는 중…</p></div>';
+    h += '<div class="dl-lbl">계정</div><div class="dl-card pad0 dz-menu"><button type="button" data-dzm="pw">비밀번호 바꾸기<span>›</span></button><button type="button" data-dzm="terms">이용약관 · 운영방침<span>›</span></button><button type="button" data-dzm="quit">탈퇴 안내<span>›</span></button><button type="button" data-dzm="out" class="out">로그아웃</button></div>';
     host.innerHTML = h;
     if (nick && P()._profileHTML) pub('/p/trader?nick=' + encodeURIComponent(nick)).then(function (x) { var el = $('dl-pftr'); if (!el) return; el.innerHTML = x.s === 200 ? '<div style="display:grid;gap:10px">' + P()._profileHTML(x.j) + '</div><p class="dl-tiny">랭킹에서 닉네임을 누르면 보이는 「트레이더 프로필」과 같은 내용이에요</p>' : '<p class="dl-tiny">매매 기록을 불러오지 못했어요</p>'; });
   }
@@ -3492,9 +3544,9 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
     var h = '<section class="dl-card"><div class="dl-row"><b class="dl-h">내 대결 기록</b>' + tierTag(t) + '</div>' +
       '<div class="dl-stats"><div>전적<b>' + st.w + '승 ' + st.l + '패' + (st.d ? ' ' + st.d + '무' : '') + '</b></div><div>받은 GG<b>🤝 ' + st.gg + '</b></div><div>대결 손익<b style="color:' + col(st.net) + '">' + (st.net >= 0 ? '+' : '−') + usd(Math.abs(st.net)) + '</b></div><div>최고 연승<b>' + st.best + '</b></div></div>' +
       (st.bw || st.bl ? '<p class="dl-tiny">봇전(명예전) ' + st.bw + '승 ' + st.bl + '패 · 전적과 따로 쌓여요</p>' : '') +
-      '<div class="dl-sub">배지 ' + n + ' / ' + BADGES.length + '</div><div class="dl-bdgs">' + BADGES.map(function (b) { return '<div class="dl-bdg ' + ((st.badges || {})[b[0]] ? 'on' : '') + '">' + b[1] + '<small>' + b[2] + '</small></div>'; }).join('') + '</div>' +
-      '<div class="dl-sub">티어 · 이번 달 실전 수익률 <b style="color:' + col(S.me.ret) + '">' + sp(S.me.ret * 100) + '</b></div><div class="dl-ladder">' +
-      TIERS.map(function (x, i) { return '<div class="dl-ln' + (i === t ? ' me' : '') + '"><span>' + tierTag(i) + '</span><span class="dl-tiny">' + (x[1] == null ? '그달 1~3위' : x[1] ? '+' + x[1] + '% 이상' : '참여') + '</span><span class="dl-tiny">판돈 최대 ' + usd(x[2]) + (i === t ? ' ← 나' : '') + '</span></div>'; }).reverse().join('') + '</div></section>';
+      '<div class="dl-sub dz-bh">받은 배지 ' + n + '<button type="button" class="dz-ball" data-dzb="1" aria-expanded="false">전체 ' + BADGES.length + '개 보기 ›</button></div><div class="dl-bdgs dz-got">' + (n ? BADGES.filter(function (b) { return (st.badges || {})[b[0]]; }).map(function (b) { return '<div class="dl-bdg on">' + b[1] + '<small>' + b[2] + '</small></div>'; }).join('') : '<p class="dl-tiny" style="grid-column:1/-1">아직 받은 배지가 없어요 · 첫 대결에 참가하면 「첫 출전」</p>') + '</div><div class="dl-bdgs dz-all" hidden>' + BADGES.map(function (b) { return '<div class="dl-bdg ' + ((st.badges || {})[b[0]] ? 'on' : '') + '">' + b[1] + '<small>' + b[2] + '</small></div>'; }).join('') + '</div>' +
+      '<details class="dz-acc dz-tiers"><summary>티어 표 · 이번 달 실전 수익률 <b style="color:' + col(S.me.ret) + '">' + sp(S.me.ret * 100) + '</b></summary><div class="dl-ladder">' +
+      TIERS.map(function (x, i) { return '<div class="dl-ln' + (i === t ? ' me' : '') + '"><span>' + tierTag(i) + '</span><span class="dl-tiny">' + (x[1] == null ? '그달 1~3위' : x[1] ? '+' + x[1] + '% 이상' : '참여') + '</span><span class="dl-tiny">판돈 최대 ' + usd(x[2]) + (i === t ? ' ← 나' : '') + '</span></div>'; }).reverse().join('') + '</div></details></section>';
     if ((S.hist || []).length) h += '<section class="dl-card"><div class="dl-sub" style="margin-top:0">최근 대결</div>' + S.hist.slice(0, 10).map(function (x) { return '<div class="dl-ln"><span>vs ' + esc(x.opp) + (x.honor ? ' · 명예전' : '') + '</span><b style="color:' + (x.draw ? 'var(--tx2)' : x.win ? 'var(--dla)' : col(-1)) + '">' + (x.draw ? '무' : x.win ? '승' : '패') + (x.honor ? '' : (x.draw ? ' ±' : x.win ? ' +' : ' −') + usd(x.stake)) + ' · ' + sp((x.ra || 0) * 100, 1) + ' vs ' + sp((x.rb || 0) * 100, 1) + '</b></div>'; }).join('') + '</section>';
     return h;
   }
@@ -3659,6 +3711,7 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
     if (k === 'unspect') { VIEWID = null; VIEW = null; try { history.replaceState(null, '', location.pathname); } catch (e) { } render(); return; }
   }
   document.addEventListener('click', function (e) { var b = e.target.closest('[data-dl]'); if (!b || b.disabled) return; onAct(b.dataset.dl); });
+  document.addEventListener('change', function (e) { var t = e.target; if (t && t.id === 'dz-stake') onAct('stake:' + t.value); });   /* 11.12-A 판돈 드롭다운 */
   document.addEventListener('input', function (e) { if (e.target.id === 'dl-nick') U.nick = e.target.value; });
   document.addEventListener('change', function (e) { if (e.target.id === 'dl-snd') { U.snd = e.target.value; lsSet('a99.duel.snd2', U.snd); sfx(U.snd); } });
   /* ⚙ 설정 · 체결음 옆: 매칭 효과음 */
@@ -3691,4 +3744,188 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
   }, 400);
 
   window.A99Duel = { render: function () { if (VIEWID) loadView(); render(); }, profile: profile, sync: syncTrade, sndBox: sndBox, kick: function () { NEXT = 0; }, spect: function () { return VIEWID; } };
+})();
+
+/* ══ 2026.11.12-A 고른 부품 층 · 트레이딩(대결 · 랭킹 · 프로필) — 주문 화면은 손대지 않는다 ══ */
+(function () {
+  'use strict';
+  if (document.getElementById('pz-css')) return;
+  var css = [
+    /* 트레이딩 위 탭 = 종목 탭과 같은 밑줄 · 프로필 탭은 오른쪽 위 ⋮ 메뉴로 */
+    '.pp-vw{gap:0 !important;padding:0 2px}',
+    '.pp-vw button{font-size:15px !important;font-weight:700 !important;padding:0 13px !important;min-height:44px}',
+    '.pp-vw button[data-pview="prof"]{display:none !important}',
+    /* 단계 표시 */
+    '.dz-steps{display:flex;list-style:none;margin:12px 0 4px;padding:0}',
+    '.dz-steps li{flex:1;text-align:center;font-size:11.5px;color:var(--tx3,#6B6B70);position:relative}',
+    '.dz-steps li i{display:grid;place-items:center;width:22px;height:22px;margin:0 auto 4px;border-radius:50%;background:#26262A;font-style:normal;font-size:11px;font-weight:800;position:relative;z-index:1;color:#C9C9CE}',
+    '.dz-steps li.done i{background:var(--dla,#F5C542);color:#16130A}',
+    '.dz-steps li.cur i{background:#0B0B0C;box-shadow:inset 0 0 0 2px var(--dla,#F5C542);color:var(--dla,#F5C542)}',
+    '.dz-steps li.cur{color:#FAFAFA;font-weight:700}',
+    '.dz-steps li::before{content:"";position:absolute;top:11px;left:-50%;width:100%;height:2px;background:#26262A}',
+    '.dz-steps li:first-child::before{display:none}',
+    '.dz-steps li.done::before,.dz-steps li.cur::before{background:var(--dla,#F5C542)}',
+    '.dz-n{display:inline-grid;place-items:center;width:18px;height:18px;margin-right:6px;border-radius:50%;background:#26262A;color:#FAFAFA;font-size:10.5px;vertical-align:1px}',
+    /* 설명 = 한 줄 + 툴팁 */
+    '.dz-intro{display:flex;align-items:center;gap:6px}',
+    '.dz-ib{flex:none;display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1px solid #4A4A50;background:none;color:#C9C9CE;font-size:12px;font-weight:800}',
+    '.dz-ib[aria-expanded="true"]{background:#FAFAFA;color:#0B0B0C;border-color:#FAFAFA}',
+    '.dz-tipb{margin:8px 0 0;padding:10px 12px;border-radius:12px;background:#1F1F23;border:1px solid #33333A;font-size:12.5px;line-height:1.6;color:#C9C9CE;position:relative}',
+    '.dz-tipb::before{content:"";position:absolute;top:-6px;left:calc(100% - 40px);width:10px;height:10px;background:#1F1F23;border-left:1px solid #33333A;border-top:1px solid #33333A;transform:rotate(45deg)}',
+    '.dz-tipb b{color:#FAFAFA}',
+    /* 상대 찾기 = 라디오 목록 */
+    '.dz-rl{display:grid;border:1px solid #2A2A2F;border-radius:12px;overflow:hidden}',
+    '.dz-rl button{display:flex;align-items:center;gap:10px;min-height:50px;padding:8px 12px;background:transparent;border:0;border-top:1px solid #2A2A2F;color:#FAFAFA;text-align:left;font-size:14px;font-weight:700}',
+    '.dz-rl button:first-child{border-top:0}',
+    '.dz-rl .rad{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid #5A5A60;display:grid;place-items:center}',
+    '.dz-rl button[aria-checked="true"] .rad{border-color:var(--dla,#F5C542)}',
+    '.dz-rl button[aria-checked="true"] .rad::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--dla,#F5C542)}',
+    '.dz-rl .t small{display:block;font-size:11.5px;font-weight:500;color:#9A9AA2}',
+    '.dz-rl button[aria-checked="true"]{background:rgba(var(--dla-rgb,245,197,66),.06)}',
+    /* 판돈 = 드롭다운 (드롭다운 모양은 앱 공통 .dz-sel) */
+    '.dz-stk{display:block}',
+    '.dz-stk select{min-height:48px !important;font-size:15px !important}',
+    /* 진행 중인 대결 = 원형 남은 시간 */
+    '.dz-lring{display:flex;align-items:center;gap:12px;margin-top:10px}',
+    '.dz-lring small{display:block;font-size:11px;color:#9A9AA2}',
+    '.dz-lring b{display:block;font-size:17px}',
+    /* 봇 고르기 = 바텀시트 · 캐릭터 카드 */
+    '.dl-pop.dz-bsheet{padding:0;align-items:flex-end}',
+    '.dl-pop.dz-bsheet .dl-popc{max-width:none;border-radius:20px 20px 0 0;border-bottom:0;padding:22px 16px calc(18px + env(safe-area-inset-bottom,0px));animation:dzUp .22s ease-out;position:relative}',
+    '.dl-pop.dz-bsheet .dl-popc::before{content:"";position:absolute;left:50%;top:8px;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:#3A3A40}',
+    '@keyframes dzUp{from{transform:translateY(40%);opacity:.4}}',
+    '.dz-botc{display:flex !important;align-items:center;gap:12px;min-height:64px !important}',
+    '.dz-botc .face{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center}',
+    '.dz-botc .face svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}',
+    '.dz-botc .t{flex:1;min-width:0}',
+    '.dz-botc .t b{display:block;font-size:15px}',
+    '.dz-botc em{flex:none;font-style:normal;font-size:11.5px;font-weight:800;padding:3px 8px;border-radius:999px;background:#26262A;color:#FAFAFA}',
+    /* 대결 끝 = 완료 화면 + 도장 */
+    '.dl-res.dz-st{position:relative;overflow:hidden}',
+    '.dz-stamp{position:absolute;right:14px;top:12px;padding:2px 10px;border:3px solid var(--dla,#F5C542);border-radius:8px;color:var(--dla,#F5C542);font-size:20px;font-weight:900;letter-spacing:.08em;transform:rotate(-12deg);opacity:.92}',
+    '.dz-stamp.lose{border-color:#8FA3C0;color:#8FA3C0}.dz-stamp.draw{border-color:#9A9AA2;color:#9A9AA2}',
+    '.dz-stamp.anim{animation:dzStamp .45s cubic-bezier(.2,1.6,.4,1) both}',
+    '@keyframes dzStamp{from{transform:rotate(-12deg) scale(2.6);opacity:0}to{transform:rotate(-12deg) scale(1);opacity:.92}}',
+    /* 안내 문구 = 회색 띠 */
+    '.dl-foot{margin:16px 0 0 !important;padding:10px 12px;border-radius:10px;background:#141416;text-align:left !important;color:#9A9AA2 !important}',
+    /* 랭킹: 드롭다운 줄 · 시상대 · 티어 · 최대 낙폭 · 리그 · 설명 접기 */
+    '.dz-rkbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:0 0 8px}',
+    '.dz-rkbar .dz-sel select{min-height:38px;padding:0 26px 0 10px;font-size:13px}',
+    '.dz-rkbar .dz-sel::after{right:9px}',
+    '.dz-pod{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:end;margin:10px 0 6px}',
+    '.dz-pod button{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;color:inherit;min-width:0;padding:0}',
+    '.dz-pod .nk{max-width:100%;font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.dz-pod b{font-size:12.5px}',
+    '.dz-pod i{display:grid;place-items:center;align-self:stretch;margin-top:4px;font-style:normal;font-size:22px;font-weight:900;border-radius:10px 10px 0 0;background:var(--pc2,#1B1B1D)}',
+    '.dz-pod i.h0{height:68px}.dz-pod i.h1{height:92px;background:rgba(var(--dla-rgb,245,197,66),.18);color:var(--dla,#F5C542)}.dz-pod i.h2{height:54px}',
+    '.dz-rk .dl-tier{margin-left:5px;vertical-align:1px}',
+    '.dz-rk li{min-height:52px}',
+    '.dz-rk .nk small.dz-sub{display:block;margin:2px 0 0;font-weight:500}',
+    '.dz-rk .nk small.dz-sub .hi{color:#F5A524}',
+    '.dz-league{margin:10px 0;padding:14px;border-radius:14px;background:var(--pc1,#151516);border:1px solid var(--pl,#242427)}',
+    '.dz-league .hd{display:flex;justify-content:space-between;font-size:12.5px;color:var(--pt3,#6B6B70)}',
+    '.dz-league .hd b{color:var(--pt1,#F3F3F4)}',
+    '.dz-league .promo{margin:14px 0 8px;border-top:1px dashed #2F7D58;position:relative}',
+    '.dz-league .promo span{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--pc1,#151516);padding:0 8px;font-size:11.5px;color:#7FD1A8;font-weight:700;white-space:nowrap}',
+    '.dz-league p{margin:14px 0 0;font-size:12.5px;color:var(--pt2,#A0A0A5)}',
+    '.dz-acc{margin-top:12px;border:1px solid var(--pl,#242427);border-radius:12px;padding:0 12px}',
+    '.dz-acc>summary{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;font-size:13px;font-weight:700;color:var(--pt2,#A0A0A5);list-style:none}',
+    '.dz-acc>summary::-webkit-details-marker{display:none}',
+    '.dz-acc>summary::after{content:"펼치기 ›";font-size:12px;font-weight:500;color:var(--pt3,#6B6B70)}',
+    '.dz-acc[open]>summary::after{content:"접기 ‹"}',
+    '.dz-acc[open]{padding-bottom:10px}',
+    /* 프로필: 아바타 가운데 · 다음 티어 원 · 위험 칸 · 배지 · 기간 · 계정 메뉴 */
+    '.dz-avh{display:flex !important;flex-direction:column;align-items:center;text-align:center;gap:4px}',
+    '.dz-avc{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;font-size:32px;font-weight:900;background:#26262A;color:#FAFAFA;box-shadow:0 0 0 3px #0B0B0C,0 0 0 5px var(--dla,#F5C542);margin-bottom:6px}',
+    '.dz-next{display:flex;align-items:center;gap:12px;margin-top:10px;text-align:left}',
+    '.dz-next>div>span{display:block;font-size:12px;color:#9A9AA2}',
+    '.dz-next .dl-tier{display:inline-block;margin:0 2px}',
+    '.dz-next b{display:block;font-size:17px}',
+    '.dz-next small{display:block;font-size:11px;color:#9A9AA2}',
+    '.dz-risk .dl-row b{font-size:13px}',
+    '.dz-strg{display:flex;gap:4px;margin-top:10px}.dz-strg i{flex:1;height:7px;border-radius:4px;background:#26262A}',
+    '.dz-strg.l1 i:nth-child(-n+1){background:#2F7D58}.dz-strg.l2 i:nth-child(-n+2){background:#C8A23A}.dz-strg.l3 i:nth-child(-n+3){background:#D2723A}.dz-strg.l4 i{background:#FF4D4F}',
+    '.dz-strl{display:flex;justify-content:space-between;font-size:11px;color:#9A9AA2;margin-top:5px}',
+    '.dz-bh{display:flex;align-items:center;justify-content:space-between}',
+    '.dz-ball{background:none;border:0;color:#9A9AA2;font-size:12px;font-weight:700;min-height:32px}',
+    '.dz-range{margin:0 0 8px}',
+    '.dz-range .ch{display:flex;gap:6px}',
+    '.dz-range .ch button{min-height:34px;padding:0 13px;border-radius:999px;border:1px solid #333338;background:transparent;color:#A0A0A5;font-size:13px;font-weight:700}',
+    '.dz-range .ch button[aria-pressed="true"]{background:#FAFAFA;color:#0B0B0C;border-color:#FAFAFA}',
+    '.dz-range .dt{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end;margin-top:8px}',
+    '.dz-range .dt i{font-style:normal;color:#6B6B70;padding-bottom:12px}',
+    '.dz-range label span{display:block;font-size:11px;color:#9A9AA2;margin-bottom:3px}',
+    '.dz-range input{width:100%;min-height:42px;padding:0 10px;border-radius:12px;border:1px solid #333338;background:#141416;color:#FAFAFA;font:inherit;font-size:13.5px;color-scheme:dark}',
+    '.dz-menu button{display:flex;width:100%;justify-content:space-between;align-items:center;min-height:50px;padding:0 14px;background:none;border:0;border-top:1px solid #222226;color:#FAFAFA;font-size:14px;text-align:left}',
+    '.dz-menu button:first-child{border-top:0}',
+    '.dz-menu button span{color:#6B6B70}',
+    '.dz-menu button.out{color:#FF6B6B}',
+    /* 배지를 딴 순간 = 튀어나옴 */
+    '.dz-bpop{position:fixed;inset:0;z-index:2400;display:grid;place-items:center;background:rgba(0,0,0,.6)}',
+    '.dz-bpop .in{width:min(300px,86vw);padding:22px 18px 16px;border-radius:20px;background:#141416;border:1px solid #2A2A2F;text-align:center}',
+    '.dz-bpop .k{font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--dla,#F5C542)}',
+    '.dz-bpop .bd{margin:14px auto 12px;width:120px;padding:14px 8px;border-radius:16px;border:1.5px solid var(--dla,#F5C542);background:rgba(var(--dla-rgb,245,197,66),.1);animation:dzUnlock .6s cubic-bezier(.2,1.5,.4,1) both}',
+    '.dz-bpop .bd b{display:block;font-size:16px}.dz-bpop .bd small{display:block;font-size:11px;color:#9A9AA2;margin-top:4px}',
+    '.dz-bpop button{width:100%;min-height:46px;border-radius:12px;background:#FAFAFA;color:#0B0B0C;font-weight:800;border:0}',
+    '@keyframes dzUnlock{0%{transform:scale(.2) rotate(-20deg);opacity:0}70%{transform:scale(1.12) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0)}}',
+    '@media(prefers-reduced-motion:reduce){.dz-stamp.anim,.dz-bpop .bd{animation:none}}'
+  ].join('\n');
+  var st = document.createElement('style'); st.id = 'pz-css'; st.textContent = css; document.head.appendChild(st);
+
+  function $(id) { return document.getElementById(id); }
+  function P() { return window.A99Paper; }
+  function toast(t) { if (window.A99Toast) window.A99Toast(t); }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target, b;
+    // 설명 툴팁
+    if ((b = t.closest && t.closest('[data-dztip]'))) { var tip = b.closest('.dl-card') && b.closest('.dl-card').querySelector('.dz-tipb'); if (tip) { tip.hidden = !tip.hidden; b.setAttribute('aria-expanded', String(!tip.hidden)); } return; }
+    // 배지 전체 보기
+    if ((b = t.closest && t.closest('[data-dzb]'))) { var sec = b.closest('section'), all = sec && sec.querySelector('.dz-all'), got = sec && sec.querySelector('.dz-got'); if (all) { all.hidden = !all.hidden; if (got) got.hidden = !all.hidden; b.setAttribute('aria-expanded', String(!all.hidden)); b.textContent = all.hidden ? '전체 ' + all.children.length + '개 보기 ›' : '받은 것만 보기 ‹'; } return; }
+    // 매매 기록 기간 빠른 선택
+    if ((b = t.closest && t.closest('[data-dzr]'))) { var d = +b.dataset.dzr, f = $('dz-rf'), to = $('dz-rt'); if (f && to) { if (d) { var now = new Date(Date.now() + 9 * 3600e3); to.value = now.toISOString().slice(0, 10); f.value = new Date(now.getTime() - (d - 1) * 864e5).toISOString().slice(0, 10); } else { f.value = ''; to.value = ''; } } [].slice.call(b.parentNode.children).forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); range(); return; }
+    // 계정 메뉴
+    if ((b = t.closest && t.closest('[data-dzm]'))) {
+      var k = b.dataset.dzm, A = window.A99Auth;
+      if (k === 'out') { if (window.A99Dz && window.A99Dz.logout) window.A99Dz.logout(); return; }
+      if (k === 'terms') { location.hash = '#terms'; return; }
+      if (k === 'pw') { if (window.A99Dz && window.A99Dz.pwChange) window.A99Dz.pwChange(); return; }
+      if (k === 'quit') { if (window.A99Dz && window.A99Dz.quitInfo) window.A99Dz.quitInfo(); return; }
+    }
+  });
+  // 매매 기록 기간 고르기 (최근 닫은 거래 줄을 날짜로 거른다)
+  function range() {
+    var f = $('dz-rf'), to = $('dz-rt'), box = $('dl-pftr'), n = $('dz-rn'); if (!f || !to || !box) return;
+    var a = f.value ? Date.parse(f.value + 'T00:00:00+09:00') : 0, z = to.value ? Date.parse(to.value + 'T23:59:59+09:00') : Infinity;
+    var rows = [].slice.call(box.querySelectorAll('[data-ts]')), shown = 0;
+    rows.forEach(function (r) { var ts = +r.dataset.ts || 0, on = ts >= a && ts <= z; r.hidden = !on; if (on) shown++; });
+    if (n) n.textContent = rows.length ? (a || z !== Infinity ? '고른 기간 닫은 거래 ' + shown + '건 / 보이는 ' + rows.length + '건 중' : '최근 닫은 거래 ' + rows.length + '건') : '';
+  }
+  document.addEventListener('change', function (e) { if (e.target && (e.target.id === 'dz-rf' || e.target.id === 'dz-rt')) { var ch = document.querySelectorAll('#dz-range [data-dzr]'); [].forEach.call(ch, function (x) { x.setAttribute('aria-pressed', 'false'); }); range(); } });
+  // 기록이 늦게 와도 기간을 다시 적용 · 새 배지는 한 번 튀어나오게
+  function seenB() { try { return JSON.parse(localStorage.getItem('a99_dz_badges') || 'null'); } catch (e) { return null; } }
+  function popBadge(name, desc) {
+    if ($('dzBpop')) return;
+    var w = document.createElement('div'); w.className = 'dz-bpop'; w.id = 'dzBpop'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true'); w.setAttribute('aria-label', '새 배지');
+    w.innerHTML = '<div class="in"><div class="k">NEW BADGE</div><div class="bd"><b>' + name + '</b><small>' + desc + '</small></div><button type="button">확인</button></div>';
+    document.body.appendChild(w); w.addEventListener('click', function (e) { if (e.target === w || e.target.closest('button')) w.remove(); });
+  }
+  var obs = null;
+  function watch() {
+    var pf = $('pp-pfv'), tr = $('dl-pftr');
+    if (tr && !tr.dataset.dz) { tr.dataset.dz = '1'; new MutationObserver(range).observe(tr, { childList: true, subtree: false }); }
+    // 받은 배지: 지난번에 본 것과 견주어 새로 생긴 것만 (처음엔 기억만 한다)
+    var got = [].slice.call(document.querySelectorAll('#pp-pfv .dz-got .dl-bdg.on')).map(function (x) { return x.firstChild ? String(x.firstChild.textContent || '').trim() : ''; }).filter(Boolean);
+    if (pf && document.querySelector('#pp-pfv .dz-got')) {
+      var old = seenB();
+      if (old) got.forEach(function (g) { if (old.indexOf(g) < 0) { var el = [].filter.call(document.querySelectorAll('#pp-pfv .dz-got .dl-bdg.on'), function (x) { return x.firstChild && String(x.firstChild.textContent).trim() === g; })[0]; popBadge(g, el && el.querySelector('small') ? el.querySelector('small').textContent : ''); } });
+      try { localStorage.setItem('a99_dz_badges', JSON.stringify(got)); } catch (e) { }
+    }
+  }
+  var host = null, tmr = 0;
+  function boot() {
+    host = $('paperHost') || document.body;
+    new MutationObserver(function () { clearTimeout(tmr); tmr = setTimeout(watch, 120); }).observe(host, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

@@ -1338,7 +1338,7 @@ window.A99_FIN={"flow": "top", "turn": "line", "old": "off", "unit": "kr"};   /*
 </nav>
 
 <script>
-var BUILD_VER='v2026.11.01-B';
+var BUILD_VER='v2026.11.12-A';
 console.log('%c ANDRE99 '+BUILD_VER+' ','background:#F3F3F4;color:#0B0B0C;font-weight:700');
 var API='https://andre99-ioma5uwke8ugrgay.jhw5282435.workers.dev';
 /* 화면의 버전 표시를 BUILD_VER 에서 가져온다. 손으로 고칠 곳을 하나로 줄인다. */
@@ -1382,7 +1382,7 @@ function show(t){
   try{ marketStatus(); }catch(e){}
 }
 /* 모의투자 탭: 처음 누를 때만 paper/paper.js(차트 · 계산 엔진 · 화면)를 받아 온다 — 앱 첫 화면은 가볍게 */
-var PAPER_JS='paper/paper.js?v=2026.11.09-B', PAPER_LOADING=false;
+var PAPER_JS='paper/paper.js?v=2026.11.12-A', PAPER_LOADING=false;
 function paperOpen(){
   var host=$('paperHost');
   if(window.A99Paper){ window.A99Paper.mount(host); window.A99Paper.show(); return; }
@@ -1839,7 +1839,9 @@ function screenRows(d){
   }
   r.push((sx.insider&&sx.insider.net_shares!=null)
     ? row('스마트머니',sx.insider.net_shares>0?'p':(sx.insider.net_shares<0?'f':'m'),
-        '내부자 '+(sx.insider.net_shares>0?'순매수':(sx.insider.net_shares<0?'순매도':'중립')))
+        /* 2026.11.11-A 야후 집계는 주식 보상(지급)도 «취득»으로 센다 → 매수라고 부르지 않는다 */
+        '내부자 '+(sx.insider.net_shares>0?'순취득':(sx.insider.net_shares<0?'순처분':'중립'))+
+        (sx.insider.buy_count!=null&&sx.insider.sell_count!=null?' · 취득 '+sx.insider.buy_count+'건 · 처분 '+sx.insider.sell_count+'건':'')+' (보상 포함)')
     : row('스마트머니','m','내부자 거래 데이터 연동 후 표시'));
   r.push(row('거버넌스','m','판정 기준 정리 중'));
   return r;
@@ -1902,13 +1904,13 @@ function improvementFull(d){
     v: (up!=null&&dn!=null) ? ('상향 '+up+' · 하향 '+dn) : null,
     rule:'최근 30일 상향이 하향의 1.5배 이상' });
 
-  // 내부자 매수
+  // 내부자 순취득 (2026.11.11-A 매수 → 순취득: 주식 보상 포함 집계)
   var ins = sx.insider;
-  items.push({ k:'insider', n:'내부자 매수',
+  items.push({ k:'insider', n:'내부자 순취득',
     ok: (ins&&ins.net_shares!=null) ? (ins.net_shares > 0) : null,
     v: (ins&&ins.net_shares!=null)
-        ? ((ins.net_shares>0?'순매수 ':'순매도 ')+Math.abs(ins.net_shares).toLocaleString()+'주') : null,
-    rule:'최근 6개월 내부자 순매수' });
+        ? ((ins.net_shares>0?'순취득 ':'순처분 ')+Math.abs(ins.net_shares).toLocaleString()+'주 (보상 포함)') : null,
+    rule:'최근 6개월 내부자 순취득 · 주식 보상(지급)도 취득으로 셈' });
 
   // 주목 증가 (애널리스트 수)
   var an = d.yahoo_analyst && d.yahoo_analyst.number_of_analysts;
@@ -3019,7 +3021,10 @@ function drawNews(t){
         '<div class="npb">'+esc(x.publisher)+'</div></a>';
     }).join('');
   }else{
-    o+='<div class="nsh">한국어 기사</div><div class="tvnote">한국어 기사를 찾지 못했습니다 · 측정중</div>';
+    /* 2026.11.11-A 받을 수 없는 것(blocked)과 기사가 없는 것(none)을 나눠 말한다 */
+    o+='<div class="nsh">한국어 기사</div><div class="tvnote">'+(t.ko_state==='blocked'
+      ? '한국어 기사를 지금 받을 수 없어요 · 뉴스 제공처가 연결을 막고 있어요'
+      : '한국어 기사를 찾지 못했습니다 · 측정중')+'</div>';
   }
   o+='<div class="nsh" style="margin-top:22px">원문 기사 <span class="note">영어</span></div>';
   if(en.length){
@@ -3029,7 +3034,9 @@ function drawNews(t){
         '<div class="ntt">'+esc(x.title)+'</div>'+
         '<div class="npb">'+esc(x.publisher)+'</div></a>';
     }).join('');
-  }else{ o+='<div class="tvnote">원문 기사를 불러오지 못했습니다 · 측정중</div>'; }
+  }else{ o+='<div class="tvnote">'+(t.en_hidden>0?'이 종목을 직접 다룬 원문 기사가 없어요':'원문 기사를 불러오지 못했습니다 · 측정중')+'</div>'; }
+  /* 2026.11.11-A 관련도: 기사에 붙은 관련 종목에 이 종목이 없는 기사는 뺐다 */
+  if(t.en_hidden>0) o+='<div class="tvnote">이 종목과 관련이 낮은 기사 '+t.en_hidden+'건은 뺐어요</div>';
   o+='<div class="tnb">제목과 링크만 전달합니다. 요약·본문·사진은 가져오지 않으며 번역하지 않습니다.<br>'+
      '제목을 누르면 언론사 원문으로 이동합니다.<br>'+
      '구글 뉴스 · 야후 파이낸스를 통해 수집했습니다.</div>';
@@ -3303,9 +3310,9 @@ function loadFinancials(sym){
     }).catch(done);
 }
 
-/* 피어도 뒤에서 (업종 밴드용) */
+/* 피어도 뒤에서 (업종 밴드용) — 2026.11.11-A 피어만 받는다(peers=only). 본 데이터는 첫 요청에서 이미 받았다 */
 function loadPeers(sym){
-  fetchT(API+'/?symbol='+encodeURIComponent(sym), 20000)
+  fetchT(API+'/?symbol='+encodeURIComponent(sym)+'&peers=only', 20000)
     .then(function(r){return r.json()})
     .then(function(j){
       if(!LAST || (LAST.symbol||'')!==sym) return;
@@ -5719,8 +5726,8 @@ initPush();
 
     // 탭
     var chartSec = document.createElement('div'); chartSec.className = 'sec sf-chart'; chartSec.id = 'sfChart';   /* 2026.10.25 차트 칸 */
-    var G = { scr: [P.scr, hub, P.ovw], fin: [P.turn, P.xb], earn: [P.earn], chart: [chartSec], news: [P.news], fil: [P.fil] };
-    var T = [['scr', '요약'], ['fin', '재무'], ['earn', '실적'], ['chart', '차트'], ['fil', '공시']]
+    var G = { scr: [P.scr, hub, P.ovw], fin: [P.turn, P.xb], earn: [P.earn], chart: [chartSec], fil: [P.news, P.fil] };   /* 2026.11.12-A 소식 = 뉴스 + 공시 */
+    var T = [['scr', '요약'], ['fin', '재무'], ['earn', '실적'], ['chart', '분석실'], ['fil', '소식']]
       .filter(function (x) { return G[x[0]].some(Boolean); });
     var bar = document.createElement('nav'); bar.className = 'sf-toc'; bar.id = 'sfToc'; bar.setAttribute('role', 'tablist'); bar.setAttribute('aria-label', '종목 화면');
     bar.innerHTML = T.map(function (x) { return '<button type="button" role="tab" data-k="' + x[0] + '" id="sfT_' + x[0] + '">' + x[1] + '</button>'; }).join('');
@@ -5730,10 +5737,12 @@ initPush();
 
     var loaded = {};
     function go(k, scroll) {
+      if (k === 'news') k = 'fil';
       if (!G[k]) k = 'scr';
-      CUR = k;
+      var PREV = CUR; CUR = k;
       Array.prototype.forEach.call(bar.children, function (b) { var on = b.dataset.k === k; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
       Object.keys(G).forEach(function (g) { G[g].forEach(function (e) { if (e) e.hidden = g !== k; }); });
+      if (window.A99DzTab) { try { window.A99DzTab(k, PREV, G[k]); } catch (e) { } }
       if (k === 'fin' && !loaded.fin) { loaded.fin = 1; window.loadXbrl && window.loadXbrl(sym); }
       if (k === 'chart' && !loaded.chart) { loaded.chart = 1; window.A99Chart && window.A99Chart.mount(chartSec, sym); }
       if (scroll) {
@@ -6383,7 +6392,9 @@ select.pa-in{padding-right:6px}
         card('열린 포지션 · 주문', n0(o.positions) + ' · ' + n0(o.orders), '', '') +
         card('체결', n0(o.fills24h) + '건 / 24시간', '누적 ' + n0(o.fillsTotal) + '건', '') +
         card('1분 감시', last ? ago(last.at) : '기록 없음', last ? last.ms + 'ms · 외부 호출 ' + last.calls : '', late ? 'bad' : '') +
-        card('서버 판', esc(o.ver || '—'), '종목 ' + ((o.specs && o.specs.n) || 0) + '개', '') + '</div>' +
+        card('서버 판', esc(o.ver || '—'), '종목 ' + ((o.specs && o.specs.n) || 0) + '개', '') +
+        (o.seedN != null ? card('연습 참가자', n0(o.seedN) + '명 표시 중', (o.settings && o.settings.seed === false) ? '꺼짐 · 설정에서 켜기' : '실제 12명부터 0명 · 설정에서 끄기', '') : '') +
+        (o.fb && o.fb.sum ? card('화면 평가 · 종목 요약', n0(Object.keys(o.fb.sum).reduce(function (a, k) { return a + o.fb.sum[k]; }, 0)) + '명', '쉬워요 ' + n0(o.fb.sum.easy) + ' · 숫자 많아요 ' + n0(o.fb.sum.many) + ' · 용어 어려워요 ' + n0(o.fb.sum.term) + ' · 더 보고 싶어요 ' + n0(o.fb.sum.more), '') : '') + '</div>' +
         '<div class="pa-row"><button type="button" data-re="1">새로 고침</button></div><p class="pa-st" id="paMsg"></p>';
       B.innerHTML = h;
     });
@@ -6711,6 +6722,7 @@ select.pa-in{padding-right:6px}
       var s = x.j.settings || {};
       B.innerHTML = '<div class="pa-set">' +
         '<label><span>초기화 승인 모드<small>켜면 모든 회원(정책 「기본」)의 초기화를 운영자가 승인해야 해요. 끄면 쿠폰만 있으면 바로.</small></span><input type="checkbox" id="psAp"' + (s.approval ? ' checked' : '') + '></label>' +
+        '<label><span>연습 참가자로 순위 채우기<small>실제 참가자와 합쳐 12명이 되게 채워요. 실제가 12명을 넘으면 저절로 0명. 끄면 바로 사라져요. 레전드 · TOP 5 · 대결 티어는 진짜 회원끼리만 계산해요.</small></span><input type="checkbox" id="psSd"' + (s.seed !== false ? ' checked' : '') + '></label>' +
         '<label><span>순위 기준<small>바꾸면 이번 달 순위가 바로 다시 계산돼요.</small></span><select class="pa-in" id="psRm"><option value="ret"' + (s.rankMetric !== 'gain' ? ' selected' : '') + '>수익률</option><option value="gain"' + (s.rankMetric === 'gain' ? ' selected' : '') + '>자산 증가액</option></select></label>' +
         '<label><span>매달 주는 초기화 쿠폰<small>새 달 첫 접속 때 이 수로 다시 채워요.</small></span><input class="pa-in" id="psCp" type="number" min="0" max="10" value="' + (s.coupons != null ? s.coupons : 2) + '" style="width:70px"></label>' +
         '<label><span>최대 레버리지 · 1군 (BTC · ETH)<small>1~200배. 저장하면 바로 적용돼요(이미 연 포지션은 그대로).</small></span><input class="pa-in" id="psL1" type="number" min="1" max="200" value="' + ((s.levCaps || [])[0] || 125) + '" style="width:70px"></label>' +
@@ -6833,7 +6845,7 @@ select.pa-in{padding-right:6px}
     if (TAB === 'syms' && symClick(t)) return;
     if (t.id === 'psGo') {
       t.disabled = true;
-      return call('settings', { approval: $('psAp').checked, rankMetric: $('psRm').value, coupons: +$('psCp').value, levCaps: [+$('psL1').value, +$('psL2').value, +$('psL3').value, +$('psL4').value] }).then(function (x) {
+      return call('settings', { approval: $('psAp').checked, seed: $('psSd') ? $('psSd').checked : undefined, rankMetric: $('psRm').value, coupons: +$('psCp').value, levCaps: [+$('psL1').value, +$('psL2').value, +$('psL3').value, +$('psL4').value] }).then(function (x) {
         t.disabled = false; toast(x.s === 200 ? '저장했어요' : '실패');
       });
     }
@@ -7206,6 +7218,11 @@ select.pa-in{padding-right:6px}
     return s + '</svg>';
   }
   function sparkCol(arr) { return arr[arr.length - 1] >= arr[0] ? T().up : T().dn; }
+  function dzDot(arr, h, pt, pb, c) {   /* 2026.11.12-A 끝점 — 선이 늘어나도 동그랗게 (svg 밖에 그린다) */
+    if (!arr || arr.length < 2) return '';
+    var mn = Math.min.apply(null, arr), mx = Math.max.apply(null, arr), rg = (mx - mn) || 1, y = pt + (h - pt - pb) * (1 - (arr[arr.length - 1] - mn) / rg);
+    return '<i class="dz-dot" style="bottom:' + (h - y - 3).toFixed(1) + 'px;background:' + c + '"></i>';
+  }
 
   /* ── 큰 차트 (C) · 오른쪽에 최고·최저 눈금 ── */
   function heroChart(arr, W, H) {
@@ -7240,7 +7257,7 @@ select.pa-in{padding-right:6px}
         return '<div class="mkx-t' + (sp ? ' sp' : '') + '" style="box-shadow:inset 0 0 0 1px ' + tint(c.v || 0, 0.10 + rel * 0.32) + ';background:linear-gradient(160deg,var(--s1) 45%,' + tint(c.v || 0, 0.05 + rel * 0.16) + ')">' +
           '<div class="k">' + E(x.name) + ses(x) + '</div><div class="v">' + vTxt(x) + '</div>' +
           '<div class="c ' + cls(c.v) + '">' + c.t + '</div>' +
-          (sp ? spark(x.spark, 100, 36, sparkCol(x.spark), { area: 0.28, fluid: 1, pt: 4, pb: 0, sw: 1.5 }) : '') + '</div>';
+          (sp ? spark(x.spark, 100, 36, sparkCol(x.spark), { fluid: 1, pt: 5, pb: 5, sw: 1.6 }) + dzDot(x.spark, 36, 5, 5, sparkCol(x.spark)) : '') + '</div>';
       }).join('') + '</div>';
     }
     if (mode === 'list') {
@@ -8632,7 +8649,7 @@ html.fx-turnline #turnWrap{display:none!important}
     'United Kingdom': '영국', 'UK': '영국', 'Japan': '일본', 'Korea': '한국', 'South Korea': '한국', 'Germany': '독일', 'Switzerland': '스위스', 'Ireland': '아일랜드',
     'France': '프랑스', 'Brazil': '브라질', 'India': '인도', 'Singapore': '싱가포르', 'Hong Kong': '홍콩', 'Bermuda': '버뮤다', 'Cayman Islands': '케이맨 제도',
     'Luxembourg': '룩셈부르크', 'Denmark': '덴마크', 'Sweden': '스웨덴', 'Argentina': '아르헨티나', 'Mexico': '멕시코', 'Australia': '호주', 'Uruguay': '우루과이' };
-  var HEART = '<svg viewBox="0 0 24 24" fill="FILL" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-9.2-8.6C1.3 8.5 3 5 6.4 5c2 0 3.4 1.1 4.1 2.3h3C14.2 6.1 15.6 5 17.6 5 21 5 22.7 8.5 21.2 11.4 19 15.6 12 20 12 20z"/></svg>';
+  var HEART = '<svg viewBox="0 0 24 24" fill="FILL" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.6l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.7 1-5.8L3.5 9.8l5.9-.9z"/></svg>';
 
   function heart(h, sym) {
     var hb = h.querySelector('.sf-hb'); if (!hb || hb.querySelector('.sp-w')) return;
@@ -9263,6 +9280,7 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     comments: function (id) { return req('cmts?id=' + encodeURIComponent(id)).then(function (j) { return j.list || []; }); },
     comment: function (id, text) { return req('cmt', { post: id, body: text }); },
     like: function (id) { return req('like', { post: id }); },
+    dislike: function (id) { return req('like', { post: id, down: 1 }); },
     vote: function (id, choice, dev) { return req('vote', { poll: id, choice: choice, dev: dev || vdev() }); },
     gvote: function (id, choice, dev) { return req('gvote', { poll: id, choice: choice, dev: dev || vdev() }); },
     write: function (o) { return req('write', { cat: o.cat, title: o.title, body: o.body, tags: o.tags || [], card: o.card ? snap(o.card) : null }).then(function (j) { return j.post; }); },
@@ -9363,7 +9381,8 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
   function metaHTML(p) {
     var cat = p.official ? '<span class="ps-cat notice">공지</span>' : (p.cat && p.cat !== 'free' && CATN[p.cat] ? '<span class="ps-cat">' + esc(CATN[p.cat]) + '</span>' : '');
     var badge = p.official ? '<span class="ps-badge off">공식</span>' : (p.months != null ? '<span class="ps-badge">' + (p.months < 1 ? '이번 달 가입' : p.months + '개월째') + '</span>' : '');
-    return '<div class="ps-meta">' + cat + '<b class="ps-nick">' + esc(p.nick) + '</b>' + badge + '<span>· ' + ago(p.t) + (p.edited ? ' · 수정됨' : '') + '</span></div>';
+    var tier = (!p.official && p.tier != null && DZ_TN[p.tier]) ? '<span class="dz-tier t' + (+p.tier) + '">' + DZ_TN[p.tier] + '</span>' : '';
+    return '<div class="ps-meta">' + cat + '<b class="ps-nick">' + esc(p.nick) + '</b>' + tier + badge + '<span>· ' + ago(p.t) + (p.edited ? ' · 수정됨' : '') + '</span></div>';
   }
   /* 글 안의 $NVDA 는 누르면 그 종목이 열린다 */
   function linky(t) { return esc(t).replace(/\$([A-Za-z][A-Za-z.]{0,5})(?![A-Za-z])/g, function (m, x) { return '<span class="cm-tag in" role="button" tabindex="0" data-sym="' + x.toUpperCase() + '">$' + x.toUpperCase() + '</span>'; }); }
@@ -9371,9 +9390,18 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     if (p.title) return '<h3 class="ps-title">' + esc(p.title) + '</h3><p class="ps-body' + (full ? ' full' : '') + '">' + linky(p.body) + '</p>' + tagsHTML(p.tags);   /* 예전 글(제목 있음) */
     return '<p class="ps-text' + (full ? ' full' : '') + '">' + linky(p.body) + '</p>';
   }
+  var DZ_TN = ['개미', '불개미', '슈퍼개미', '프로', '탑', '레전드'];
+  var DZ_UP = '<svg viewBox="0 0 24 24"><path d="M7 10v10H4V10zM7 10l4-7c1.7 0 2.7 1.2 2.3 2.8L12.6 9H19a2 2 0 012 2.3l-1.2 6.5A2.5 2.5 0 0117.3 20H7"/></svg>';
+  var DZ_DN = '<svg viewBox="0 0 24 24" style="transform:scaleY(-1)"><path d="M7 10v10H4V10zM7 10l4-7c1.7 0 2.7 1.2 2.3 2.8L12.6 9H19a2 2 0 012 2.3l-1.2 6.5A2.5 2.5 0 0117.3 20H7"/></svg>';
+  function dzThumb(p) {   /* 사진 자리: 숫자 카드 · 태그 종목의 로고, 없으면 분류 글자 (서버에 사진은 없다) */
+    var s = (p.card && p.card.sym) || (p.tags && p.tags[0]) || '';
+    if (s && typeof window.logoUrl === 'function') return '<span class="dz-pth" data-l="' + esc(s.charAt(0)) + '"><img alt="" data-dzth="1" loading="lazy" src="' + esc(window.logoUrl(s)) + '"><em>' + esc(s) + '</em></span>';
+    var g = p.official ? '공지' : (CATN[p.cat] || '자유');
+    return '<span class="dz-pth tx c-' + esc(p.official ? 'notice' : (p.cat || 'free')) + '">' + esc(g) + '</span>';
+  }
+  function dzAct(p) { return '<div class="ps-act"><span class="' + (p.liked ? 'on' : '') + '">' + DZ_UP + p.likes + '</span><span class="' + (p.disliked ? 'on' : '') + '">' + DZ_DN + (p.dislikes != null ? p.dislikes : '') + '</span><span>' + ICON.cmt + p.comments + '</span></div>'; }
   function postHTML(p) {
-    return '<div class="cm-post" role="button" tabindex="0" data-post="' + esc(p.id) + '">' + metaHTML(p) + textHTML(p, false) + cardHTML(p.card) +
-      '<div class="ps-act"><span class="' + (p.liked ? 'on' : '') + '">' + ICON.like + p.likes + '</span><span>' + ICON.cmt + p.comments + '</span></div></div>';
+    return '<div class="cm-post dz-th" role="button" tabindex="0" data-post="' + esc(p.id) + '" data-mine="' + (p.mine ? 1 : 0) + '"><div class="dz-pb">' + metaHTML(p) + textHTML(p, false) + cardHTML(p.card) + dzAct(p) + '</div>' + dzThumb(p) + '</div>';
   }
   function total(q) { return q.total != null ? q.total : (q.yes || 0) + (q.no || 0); }
   /* 결과 한 줄: 예 | 아니오 나눈 막대 하나(회원 · 비회원 합침). 숫자는 답한 뒤 · 합계 30명이 넘을 때만(판정 뒤에는 모두) */
@@ -9413,7 +9441,8 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     var box = $('cmFeed'); if (!box) return;
     var D = S.data;
     if (!D) { box.innerHTML = '<p class="cm-empty">불러오는 중…</p>'; return; }
-    var o = '', posts = D.posts.filter(function (p) { return S.cat === 'all' || p.cat === S.cat || (S.cat === 'info' && p.official); });
+    var hid = dzHid(), nHid = 0;
+    var o = '', posts = D.posts.filter(function (p) { if (hid.indexOf(p.id) >= 0) { nHid++; return false; } return S.cat === 'all' || p.cat === S.cat || (S.cat === 'info' && p.official); });
     if (S.cat === 'all' || S.cat === 'poll') {
       var open = D.polls.filter(function (q) { return q.state !== 'done'; }), sh = function (q) { return q.closed || q.close <= Date.now() ? 1 : 0; };
       open.sort(function (a, b) { return sh(a) - sh(b) || a.close - b.close; });   /* 답할 수 있는 질문 먼저, 판정 기다리는 질문은 뒤로 */
@@ -9424,8 +9453,9 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
       var done = D.polls.filter(function (q) { return q.state === 'done'; });
       if (done.length) o += '<div class="cm-sec-h"><h3>지난 질문</h3><span>틀린 결과도 그대로 남겨요</span></div>' + done.map(pollHTML).join('');
     } else {
-      o += '<div class="cm-sec-h"><h3>' + (S.cat === 'all' ? '새 글' : esc(CATN[S.cat])) + '</h3><span>' + posts.length + '개</span></div>';
-      o += posts.length ? posts.map(postHTML).join('') : '<p class="cm-empty">아직 글이 없어요. 첫 글을 남겨 보세요.</p>';
+      o += '<div class="cm-sec-h"><h3>' + (S.cat === 'all' ? '새 글' : esc(CATN[S.cat])) + '</h3><span>' + posts.length + '개</span>' + (nHid ? '<button type="button" class="dz-unhide" data-act="unhide">숨긴 글 ' + nHid + '개 다시 보기</button>' : '') + '</div>';
+      var openQ = D.polls.filter(function (q) { return q.state !== 'done' && !(q.closed || q.close <= Date.now()); }).length;
+      o += posts.length ? posts.map(postHTML).join('') : '<div class="dz-cmempty"><b>아직 글이 없어요</b><p>' + (openQ && S.cat === 'all' ? '위 「오늘의 질문」에 먼저 답해 보세요. 첫 글도 좋아요.' : '첫 글을 남겨 보세요. 질문도 좋아요.') + '</p><button type="button" class="dz-sec" data-act="write">첫 글 쓰기</button></div>';
     }
     o += '<p class="cm-legal">커뮤니티 글과 투표는 개인의 의견이에요. 안드레99의 의견이나 투자 자문이 아니에요. 종목 추천 · 목표가 · 유료방 안내 글은 지워요.</p>';
     box.innerHTML = o;
@@ -9472,13 +9502,13 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
       '<li>허위 정보 · 욕설 · 혐오 · 개인정보 · 광고는 지워요.</li>' +
       '<li>투표는 의견 모음이에요. 비회원도 한 기기에서 한 번 답할 수 있어요. 돈 · 포인트 · 경품은 걸지 않아요.</li>' +
       '<li>신고된 글은 확인할 때까지 가려질 수 있어요(최대 30일).</li></ol>' +
-      '<p>글과 투표는 회원 개인의 의견이에요. 안드레99의 의견이나 투자 자문이 아니에요.</p></div>');
+      '<p>글과 투표는 회원 개인의 의견이에요. 안드레99의 의견이나 투자 자문이 아니에요.</p></div>').classList.add('dz-bs');
   }
 
   function openPost(id) {
     var p = findPost(id); if (!p) return;
     OPEN_PID = id;
-    var el = sheet('글', '<div class="cm-post" style="border-bottom:0">' + metaHTML(p) + textHTML(p, true) + cardHTML(p.card) + '<button type="button" class="cm-like' + (p.liked ? ' on' : '') + '" data-like="' + esc(p.id) + '" aria-pressed="' + (p.liked ? 'true' : 'false') + '">♡ 좋아요 <span>' + p.likes + '</span></button></div>' +
+    var el = sheet('글', '<div class="cm-post" style="border-bottom:0">' + metaHTML(p) + textHTML(p, true) + cardHTML(p.card) + '<div class="dz-pbtns"><button type="button" class="cm-like' + (p.liked ? ' on' : '') + '" data-like="' + esc(p.id) + '" aria-pressed="' + (p.liked ? 'true' : 'false') + '">' + DZ_UP + '좋아요 <span>' + p.likes + '</span></button><button type="button" class="cm-like dz-dis' + (p.disliked ? ' on' : '') + '" data-dislike="' + esc(p.id) + '" aria-pressed="' + (p.disliked ? 'true' : 'false') + '">' + DZ_DN + '싫어요 <span>' + (p.dislikes != null ? p.dislikes : '') + '</span></button><button type="button" class="cm-like dz-link" data-plink="' + esc(p.id) + '">링크 복사</button></div><p class="dz-dnote">' + (p.dislikes != null ? '싫어요 숫자는 글쓴이와 운영자만 볼 수 있어요' : '싫어요는 숫자로 공개되지 않고 글쓴이에게만 전해져요') + '</p></div>' +
         '<div class="cm-cmts" id="cmCmts"><p class="cm-empty">댓글 불러오는 중…</p></div>',
       S.me.member ? '<form class="cm-cin" data-cmt="' + esc(p.id) + '"><input id="cmCin" maxlength="500" placeholder="댓글 남기기" autocomplete="off" aria-label="댓글"><button type="submit" disabled>올리기</button></form>'
         : '<div class="cm-lock-note"><span>댓글은 회원만 쓸 수 있어요</span><button type="button" data-act="join">로그인</button></div>',
@@ -9557,12 +9587,21 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
       }
       api().write({ cat: W.cat, title: '', body: text, tags: tagsOf(text), card: W.card }).then(function (p) {
         if (!findPost(p.id)) S.data.posts.unshift(p);
-        close(el); S.cat = 'all'; paintCats(); render(); toast('올렸어요');
+        close(el); S.cat = 'all'; paintCats(); render();
+        if (window.A99Dz && window.A99Dz.sendFly) window.A99Dz.sendFly(function () { toast('올렸어요'); }); else toast('올렸어요');
       }).catch(function (e) { go.disabled = false; er.hidden = false; er.textContent = fail(e); });
     });
     setTimeout(function () { b.focus(); }, 60);
   }
 
+  function dzHid() { try { return JSON.parse(localStorage.getItem('a99_cm_hide') || '[]'); } catch (e) { return []; } }
+  function dzSwipeAct(k, id) {
+    var p = findPost(id); if (!p) return;
+    if (k === 'rep') openReport('post:' + id);
+    else if (k === 'hide') { var h = dzHid(); if (h.indexOf(id) < 0) h.push(id); try { localStorage.setItem('a99_cm_hide', JSON.stringify(h.slice(-200))); } catch (e) { } render(); toast('이 기기에서 숨겼어요'); }
+    else if (k === 'edit') openWrite(p);
+    else if (k === 'del') { if (!confirm('이 글을 지울까요? 댓글 · 좋아요도 함께 지워지고 되돌릴 수 없어요.')) return; api().del('post:' + id).then(function () { dropPost(id); render(); toast('지웠어요'); }, function (e) { toast(fail(e)); }); }
+  }
   function dropPost(id) { if (S.data) S.data.posts = S.data.posts.filter(function (p) { return p.id !== id; }); }
   function postMenu(id) {
     var p = findPost(id); if (!p) return;
@@ -9622,10 +9661,26 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
       toast((choice === 'yes' ? '「예」' : '「아니오」') + '로 답했어요' + (mem ? '' : ' · 비회원 표'));
     }, function (e) { if (e && e.data && e.data.id) { Object.assign(q, e.data); render(); } toast(fail(e)); });
   }
+  function dzPaintReact(p) {   /* 글 화면의 좋아요 · 싫어요 버튼을 서버 숫자로 */
+    [['[data-like]', p.liked, p.likes], ['[data-dislike]', p.disliked, p.dislikes]].forEach(function (x) {
+      [].slice.call(document.querySelectorAll('.cm-sheet ' + x[0])).forEach(function (b) { b.classList.toggle('on', !!x[1]); b.setAttribute('aria-pressed', x[1] ? 'true' : 'false'); var sp = b.querySelector('span'); if (sp) sp.textContent = x[2] == null ? '' : x[2]; });
+    });
+  }
+  function dzReact(p, r) { p.liked = !!r.liked; p.likes = r.likes; if (r.disliked != null) { p.disliked = !!r.disliked; p.dislikes = r.dislikes; } dzPaintReact(p); render(); }
   function like(id, btn) {
     if (!need('좋아요')) return;
     var p = findPost(id); if (!p) return;
-    api().like(id).then(function (r) { p.liked = r.liked; p.likes = r.likes; if (btn) { btn.classList.toggle('on', r.liked); btn.setAttribute('aria-pressed', r.liked ? 'true' : 'false'); btn.querySelector('span').textContent = r.likes; } render(); }, function (e) { toast(fail(e)); });
+    api().like(id).then(function (r) { dzReact(p, r); }, function (e) { toast(fail(e)); });
+  }
+  function dislike(id) {
+    if (!need('싫어요')) return;
+    var p = findPost(id); if (!p || !api().dislike) return;
+    api().dislike(id).then(function (r) { dzReact(p, r); }, function (e) { toast(fail(e)); });
+  }
+  function plink(id) {
+    var url = location.origin + location.pathname.replace(/[^/]*$/, '') + '?cm=' + encodeURIComponent(id);
+    var ok = function () { toast('링크를 복사했어요'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(ok, function () { toast(url); }); else toast(url);
   }
   function openSym(sym) {
     closeAll();
@@ -9638,6 +9693,9 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     if ((x = e.target.closest('[data-sym]'))) { e.stopPropagation(); openSym(x.dataset.sym); return; }
     if ((x = e.target.closest('[data-vote]'))) { var pl = x.closest('[data-poll]'); vote(pl.dataset.poll, x.dataset.vote); return; }
     if ((x = e.target.closest('[data-like]'))) { like(x.dataset.like, x); return; }
+    if ((x = e.target.closest('[data-dislike]'))) { dislike(x.dataset.dislike); return; }
+    if ((x = e.target.closest('[data-plink]'))) { plink(x.dataset.plink); return; }
+    if ((x = e.target.closest('[data-dzsw]'))) { dzSwipeAct(x.dataset.dzsw, x.dataset.pid); return; }
     if ((x = e.target.closest('[data-pmenu]'))) { postMenu(x.dataset.pmenu); return; }
     if ((x = e.target.closest('[data-cdel]'))) { delCmt(x.dataset.cdel); return; }
     if ((x = e.target.closest('[data-cadm]'))) { opMod('cmt:' + x.dataset.cadm, 'delete'); return; }
@@ -9647,6 +9705,7 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
       if (a === 'write') openWrite(); else if (a === 'rules') openRules(); else if (a === 'join') openJoin();
       else if (a === 'paper') { closeAll(); if (window.show) window.show('paper'); }
       else if (a === 'retry') load();
+      else if (a === 'unhide') { try { localStorage.removeItem('a99_cm_hide'); } catch (e2) { } render(); }
       else if (a === 'mkpoll' || a === 'judge') toCenter('cmpoll');
       return;
     }
@@ -9680,7 +9739,7 @@ html.cm-lock,html.cm-lock body{overflow:hidden}
     var w = function (t) { _show(t); if (t === 'cm') { if (window.A99Auth && window.A99Auth.blocked('cm')) return; if (!S.data || Date.now() - (S.at || 0) > 60000 || sig() !== S.sig) load(); else render(); } };
     w._cm = 1; window.show = w;
   }
-  window.A99CM = { reload: load, render: render };
+  window.A99CM = { reload: load, render: render, open: function (id) { if (findPost(id)) { openPost(id); return true; } return false; }, ready: function () { return !!S.data; } };
   document.addEventListener('a99:auth', function () { S.at = 0; var pg = $('p-cm'); if (pg && pg.classList.contains('on') && !(window.A99Auth && window.A99Auth.blocked('cm'))) load(); });   /* 로그인 · 로그아웃하면 다시 받는다 */
   var n = 0;
   function boot() { if (!api()) return; if (!build()) { if (++n < 40) setTimeout(boot, 250); return; } hookShow(); }
@@ -9972,7 +10031,8 @@ html.au-noscroll,html.au-noscroll body{overflow:hidden}
         go.disabled = su ? !both() : false;
         if (x.s === 200 && x.j.token) {
           lsSet(TOKK, x.j.token); lsSet(ACK, { nick: x.j.nick || nick, at: Date.now() });
-          close(); changed(); toast(nick + ' 님, ' + (su ? '가입을 환영해요' : '어서 오세요'));
+          close(); changed();
+          if (su && window.A99Dz && window.A99Dz.welcome) window.A99Dz.welcome(x.j.nick || nick); else toast(nick + ' 님, ' + (su ? '가입을 환영해요' : '어서 오세요'));
           return;
         }
         var t = AUTH_ERR[x.j.err] || '처리하지 못했어요. 잠시 뒤 다시 해 주세요.';
@@ -10450,5 +10510,853 @@ window.A99_LEGAL = {"ver": 2, "date": "2026.11.03", "contact": "reanissanz@gmail
   if(/[?&]duel=/.test(location.search)) setTimeout(function(){ var nb=document.querySelector('.nb[data-tab="paper"]'); if(nb) nb.click(); var n=0,t=setInterval(function(){ n++; if(window.A99Paper&&window.A99Paper._setView&&document.getElementById('pp-dlv')){ clearInterval(t); window.A99Paper._setView('duel'); } else if(n>80) clearInterval(t); },100); },300);
 })();
 </script>
+<!-- ══ 2026.11.12-A 고른 부품 층 (dz) — 부품 실험실에서 운영자가 고른 105곳을 앱에 옮긴다.
+     원래 그리는 코드는 그대로 두고, 그 위에 고른 모양을 입힌다. 이 층(dz_*)을 빼면 11.11-A 화면으로 돌아간다.
+     서버에 없는 값은 지어내지 않는다(글 티어 · 사진 · 싫어요 · 랭킹 최대 낙폭은 서버가 줄 때만). ══ -->
+<style id="dzCss">
+/* ── 공통 · 버튼 키트 (모든 탭 같은 모양 · 9가지 상태) ── */
+:root{--dz-r:12px;--dz-line:#333338;--dz-gold:#F5C542}
+.au-go,.pbtn:not(.ghost),.cm-go,.ovl-act button.main,.shareBtn.main,.dz-pri{border-radius:var(--dz-r)!important;font-weight:800!important;background:var(--tx)!important;color:#0B0B0C!important;border:0!important}
+.au-gh,.pbtn.ghost,.ovl-act button:not(.main),.dz-sec,.mc-retry,.mv-retry{border-radius:var(--dz-r)!important;font-weight:700!important;background:transparent!important;color:var(--tx)!important;border:1px solid var(--dz-line)!important}
+.au-go,.au-gh,.pbtn,.dz-pri.lg,.dz-sec.lg{min-height:48px!important;font-size:15px!important}
+.cm-go,.cm-wbtn,.dz-pri,.dz-sec,.mc-retry,.mv-retry{min-height:40px}
+.cm-wbtn{border-radius:var(--dz-r)!important}
+.au-go,.au-gh,.pbtn,.cm-go,.cm-wbtn,.ovl-act button,.dz-pri,.dz-sec,.mc-retry,.mv-retry,.dl-cta,.dl-ghost,.sf-hb button,.dz-chip{transition:transform .08s ease,filter .12s ease,background-color .12s ease,opacity .12s ease;position:relative}
+.au-go:active,.au-gh:active,.pbtn:active,.cm-go:active,.cm-wbtn:active,.ovl-act button:active,.dz-pri:active,.dz-sec:active,.dl-cta:active,.dl-ghost:active,.sf-hb button:active,.dz-chip:active{transform:scale(.97);filter:brightness(.88)}
+@media (hover:hover){.au-go:hover,.pbtn:hover,.cm-go:hover,.cm-wbtn:hover,.dz-pri:hover,.dl-cta:hover{filter:brightness(.94)}.au-gh:hover,.dz-sec:hover,.dl-ghost:hover{background:rgba(255,255,255,.05)!important}}
+.au-go:focus-visible,.au-gh:focus-visible,.pbtn:focus-visible,.cm-go:focus-visible,.cm-wbtn:focus-visible,.dz-pri:focus-visible,.dz-sec:focus-visible,.dl-cta:focus-visible,.dl-ghost:focus-visible,.dz-chip:focus-visible{outline:2px solid var(--tx);outline-offset:3px}
+.au-go:disabled,.au-gh:disabled,.pbtn:disabled,.cm-go:disabled,.cm-wbtn:disabled,.dz-pri:disabled,.dz-sec:disabled,.dl-cta:disabled,.dl-ghost:disabled{opacity:.4!important;cursor:not-allowed;transform:none;filter:none}
+.dz-busy{color:transparent!important;pointer-events:none}
+.dz-busy::after{content:"";position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:2px solid rgba(11,11,12,.25);border-top-color:#0B0B0C;animation:dzSpin .7s linear infinite}
+.au-gh.dz-busy::after,.dz-sec.dz-busy::after,.dl-ghost.dz-busy::after{border-color:rgba(255,255,255,.2);border-top-color:#fff}
+.dz-busy:disabled{opacity:1!important}
+.dz-okb{background:#1F7A4D!important;color:#fff!important}
+.dz-errb{background:transparent!important;color:var(--up)!important;border:1px solid var(--up)!important;animation:dzShake .32s}
+@keyframes dzSpin{to{transform:rotate(360deg)}}
+@keyframes dzShake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.dz-chip{display:inline-flex;align-items:center;min-height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--dz-line);background:transparent;color:var(--tx2);font-size:13px;font-weight:700;white-space:nowrap}
+.dz-chip[aria-pressed="true"],.dz-chip.on{background:var(--tx);color:#0B0B0C;border-color:var(--tx)}
+
+/* ── 공통 · 위쪽 진행 막대 (불러오는 중 글자 대신) ── */
+#dzProg{position:fixed;left:0;right:0;top:0;height:2px;z-index:3000;pointer-events:none;opacity:0;transition:opacity .25s}
+#dzProg.on{opacity:1}
+#dzProg u{display:block;height:100%;width:0;background:var(--tx);box-shadow:0 0 6px rgba(255,255,255,.5);transition:width .4s ease}
+.dz-ld{color:transparent!important;min-height:22px;user-select:none}
+.dz-ld *{visibility:hidden}
+
+/* ── 공통 · 알림 한 줄 → 체크 그리기 (잘 된 일에만) ── */
+.dz-chk{position:fixed;left:50%;top:42%;z-index:2200;transform:translate(-50%,-50%);min-width:170px;max-width:80%;padding:18px 18px 14px;border-radius:18px;background:rgba(32,32,36,.96);box-shadow:0 12px 40px rgba(0,0,0,.5);text-align:center;pointer-events:none;animation:dzPop .18s ease-out}
+.dz-chk svg{width:52px;height:52px;display:block;margin:0 auto 8px}
+.dz-chk circle{fill:none;stroke:#2FBF71;stroke-width:3;stroke-dasharray:183;stroke-dashoffset:183;animation:dzDraw .45s ease-out forwards}
+.dz-chk path{fill:none;stroke:#fff;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:dzDraw .3s .35s ease-out forwards}
+.dz-chk b{display:block;font-size:14px;font-weight:700;line-height:1.45;color:var(--tx)}
+.dz-chk.out{opacity:0;transition:opacity .25s}
+@keyframes dzDraw{to{stroke-dashoffset:0}}
+@keyframes dzPop{from{transform:translate(-50%,-50%) scale(.9);opacity:0}}
+@media(prefers-reduced-motion:reduce){.dz-chk circle,.dz-chk path{stroke-dashoffset:0!important}}
+
+/* ── 공통 · 하단 메뉴 5칸 (랭킹) ── */
+.nav .nb[data-tab="rk"] svg{stroke-width:1.8}
+
+/* ── 공통 · 장 상태 = 위 막대 아래 띠 배너 (종목 · 마켓) ── */
+html.dz-band .top .mstat{display:none}
+#dzBand{display:none;align-items:center;gap:7px;padding:7px 16px;background:#1C1A14;color:#E9D7A8;font-size:12.5px;line-height:1.4;border-top:1px solid #2A2618}
+html.dz-band #dzBand{display:flex}
+#dzBand i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--up)}
+#dzBand i.pre{background:#F5A524}#dzBand i.off{background:var(--tx3)}
+#dzBand b{font-weight:800;color:#F7E6BC}
+#dzBand span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── 종목 · 머리 (로고 썸네일 + 글자 표시) ── */
+#stockBody .shead.dz-hasl .dz-logo{float:left;width:46px;height:46px;margin:3px 12px 0 0;border-radius:13px;background:#fff;overflow:hidden;display:grid;place-items:center;font-weight:900;font-size:19px;color:#0B0B0C}
+#stockBody .shead.dz-hasl .dz-logo img{width:100%;height:100%;object-fit:contain;padding:5px}
+#stockBody .shead.dz-hasl .dz-logo.tx{background:var(--s3);color:var(--tx)}
+#stockBody .shead.dz-hasl .bdgs{clear:left;padding-top:8px}
+#stockBody .shead .bdgs .bdg{background:none!important;border:0!important;padding:0!important;font-size:12.5px!important;font-weight:500!important;color:var(--tx2)!important}
+#stockBody .shead .bdgs .bdg{margin:0!important}
+#stockBody .shead .bdgs .bdg+.bdg::before{content:"·";margin:0 6px;color:var(--tx3)}
+#stockBody .shead .tk.sp-long{font-size:22px}
+/* 가격 · 등락 = 색 + 화살표 */
+#stockBody .shead .chg.dz-ar{letter-spacing:-.01em}
+/* 원화 환산 = 접어 두기 */
+#stockBody .krw.dz-fold{padding:0;background:transparent;border:1px solid var(--line);border-radius:12px}
+#stockBody .krw.dz-fold>:not(.dz-krwbar){display:none}
+#stockBody .krw.dz-fold.open{background:var(--s1)}
+#stockBody .krw.dz-fold.open>:not(.dz-krwbar){display:block;padding:0 14px}
+#stockBody .krw.dz-fold.open>.krw-f{padding-bottom:12px}
+.dz-krwbar{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:0 14px;text-align:left;font-size:13px;color:var(--tx2)}
+.dz-krwbar b{color:var(--tx);font-weight:700}.dz-krwbar b.up{color:var(--up)}.dz-krwbar b.dn{color:var(--dn)}
+.dz-krwbar .m{flex:none;font-size:12px;color:var(--tx3)}
+/* 머리 버튼: 공유(안드로이드 아이콘) · 차트 · 관심(별) */
+.sf-hb .dz-share{width:38px;padding:0!important;justify-content:center}
+.sf-hb .dz-share svg{width:17px!important;height:17px!important}
+.sf-hb .sp-w.on{color:var(--dz-gold)!important}
+/* 종목 탭 = 밀어서 넘기는 탭 */
+.sf-toc{justify-content:flex-start;padding:0 10px!important;scroll-padding:0 16px}
+.sf-toc button{flex:0 0 auto!important;padding:0 14px!important}
+/* 탭을 바꿀 때 = 옆으로 밀림 */
+.dz-in-r{animation:dzInR .26s cubic-bezier(.2,.8,.2,1) both}
+.dz-in-l{animation:dzInL .26s cubic-bezier(.2,.8,.2,1) both}
+@keyframes dzInR{from{transform:translateX(28px);opacity:0}}
+@keyframes dzInL{from{transform:translateX(-28px);opacity:0}}
+/* 지표 목록 = 벤토 */
+#stockBody .sm .sm-rows{display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:0;grid-auto-flow:dense}
+#stockBody .sm .sm-r{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--s1);min-width:0}
+#stockBody .sm .sm-r .k{font-size:12px}
+#stockBody .sm .sm-r .v{font-size:17px}
+#stockBody .sm .sm-r .s{width:100%;height:22px}
+#stockBody .sm .sm-r .s:empty{display:none}
+#stockBody .sm .sm-r .c{text-align:left;font-size:11px}
+#stockBody .sm .sm-r .c:empty,#stockBody .sm .sm-r .c:has(>br:only-child){display:none}
+#stockBody .sm .sm-r:first-child{grid-row:span 2;justify-content:center}
+#stockBody .sm .sm-r:first-child .v{font-size:26px}
+#stockBody .sm .sm-r:first-child .s{height:40px}
+#stockBody .sm .sm-r:last-child:nth-child(even){grid-column:span 2}
+#stockBody .sm .sm-r[data-k]:active{background:var(--s2)}
+/* 애널리스트 의견 = 매수 쪽 비율 원 */
+.dz-an{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--s1)}
+.dz-an .h{display:flex;align-items:baseline;gap:8px}
+.dz-an .h b{font-size:14px}
+.dz-an .h span{font-size:11px;color:#C9B37A;border:1px solid rgba(201,179,122,.5);border-radius:999px;padding:0 7px}
+.dz-an .rw{display:flex;align-items:center;gap:14px;margin-top:10px}
+.dz-an .rw svg text{font-weight:800;font-family:inherit}
+.dz-an .rt{font-size:12.5px;color:var(--tx2);line-height:1.55}
+.dz-an .rt b{display:block;font-size:16px;color:var(--tx)}
+.dz-an .sm-tg{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line)}
+/* 뉴스 칸 = 카드 2열 · 공시 칸 = 시간 줄 */
+#sfHub .hb-g.dz-news{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#sfHub .hb-g.dz-news>.hb-h,#sfHub .hb-g.dz-news>.hb-w{grid-column:1/-1}
+#sfHub .hb-g.dz-news>.hb-i{border:1px solid var(--line);border-radius:12px;background:var(--s1);padding:10px 11px;display:flex;flex-direction:column;justify-content:space-between;min-height:104px}
+#sfHub .hb-g.dz-news>.hb-i .t{-webkit-line-clamp:3;font-size:13px}
+#sfHub .hb-g.dz-fil{position:relative}
+#sfHub .hb-g.dz-fil>.hb-i{position:relative;padding-left:20px;border-bottom:0}
+#sfHub .hb-g.dz-fil>.hb-i::before{content:"";position:absolute;left:5px;top:0;bottom:0;width:2px;background:var(--s3)}
+#sfHub .hb-g.dz-fil>.hb-i::after{content:"";position:absolute;left:1px;top:17px;width:10px;height:10px;border-radius:50%;background:var(--tx3);box-shadow:0 0 0 3px var(--bg)}
+#sfHub .hb-g.dz-fil>.hb-i.warn::after{background:#E8A317}
+#sfHub .hb-g.dz-fil>.hb-i.warn .t{color:var(--tx)}
+#sfHub .hb-h[data-tab="news"]{pointer-events:auto!important}
+#sfHub .hb-h[data-tab="news"]>:not(:first-child){display:inline!important}
+/* 이 화면 평가 = 평가 태그 */
+.dz-fb{margin:22px 16px 0;padding:14px;border:1px dashed var(--dz-line);border-radius:14px}
+.dz-fb p{margin:0 0 10px;font-size:13px;color:var(--tx2)}
+.dz-fb .tg{display:flex;flex-wrap:wrap;gap:6px}
+.dz-fb .ok{font-size:13px;color:var(--tx2);margin:0}
+</style>
+<div id="dzProg" aria-hidden="true"><u></u></div>
+<script>
+/* ══ 2026.11.12-A 고른 부품 층 · 공통 + 종목 요약 ══ */
+(function () {
+  'use strict';
+  if (window.A99Dz) return;
+  var Dz = window.A99Dz = { v: '2026.11.12-A' };
+  function $(id) { return document.getElementById(id); }
+  function q(s, r) { return (r || document).querySelector(s); }
+  function qa(s, r) { return [].slice.call((r || document).querySelectorAll(s)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  Dz.esc = esc;
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
+  var reduce = false; try { reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { }
+
+  /* ── 1. 알림 한 줄: 잘 된 일은 체크 그리기, 안내 · 오류는 원래 한 줄 ── */
+  var T0 = window.A99Toast, chkT = 0;
+  function okMsg(m) { m = String(m || '').trim(); return m.length <= 40 && /(했어요|했습니다|담았어요|뺐어요|올렸어요|저장됨|저장했어요|복사했어요|바꿨어요|지웠어요|보냈어요|남겼어요|됐어요)[.!]?$/.test(m) && !/(실패|못 |못했|없어요|않|아니|주세요|다시)/.test(m); }
+  function check(m) {
+    var o = $('dzChk'); if (o) o.remove(); clearTimeout(chkT);
+    o = document.createElement('div'); o.id = 'dzChk'; o.className = 'dz-chk'; o.setAttribute('role', 'status');
+    o.innerHTML = '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29"/><path d="M20 33l8 8 16-17"/></svg><b>' + esc(m) + '</b>';
+    document.body.appendChild(o);
+    chkT = setTimeout(function () { o.classList.add('out'); setTimeout(function () { o.remove(); }, 260); }, 1500);
+  }
+  window.A99Toast = function (msg) { if (okMsg(msg)) return check(msg); if (typeof T0 === 'function') return T0.apply(this, arguments); };
+  Dz.check = check;
+
+  /* ── 2. 위쪽 진행 막대: 서버 자료를 기다리는 동안만 (0.3초 넘게 걸릴 때) ── */
+  var F0 = window.fetch, inflight = 0, pT = 0, shown = false, bar = $('dzProg'), u = bar && bar.firstChild;
+  function track(s) { return /workers\.dev/.test(s) && !/\/p\/(me|k|marks|sweep|pub|d\/state|d\/live)\b/.test(s) && !/\/version\b/.test(s); }
+  function pStart() { inflight++; if (inflight === 1) { clearTimeout(pT); pT = setTimeout(function () { if (!inflight || !bar) return; shown = true; bar.classList.add('on'); u.style.transition = 'none'; u.style.width = '0'; void u.offsetWidth; u.style.transition = ''; u.style.width = '72%'; }, 300); } }
+  function pDone() { inflight = Math.max(0, inflight - 1); if (inflight) return; clearTimeout(pT); if (!shown || !bar) return; u.style.width = '100%'; setTimeout(function () { if (inflight) return; bar.classList.remove('on'); shown = false; setTimeout(function () { if (!inflight) u.style.width = '0'; }, 260); }, 220); }
+  if (typeof F0 === 'function') {
+    window.fetch = function (input) {
+      var s = ''; try { s = String(input && input.url ? input.url : input); } catch (e) { }
+      var tr = track(s), p = F0.apply(this, arguments);
+      if (tr) { pStart(); p.then(pDone, pDone); }
+      return p;
+    };
+  }
+  // 「불러오는 중」 글자는 숨기고 자리만 둔다 (막대가 대신 알려 준다)
+  var LD = '.skel,.tvnote,.hb-w,.mc-wait,.cm-empty,.pp-load,.ck-wait,.sm-wait,.pa-st,.fx-wait span,#idxNote,#fearS,.blegend .ft,.finload';
+  function hideLd(root) { qa(LD, root || document).forEach(function (e) { var on = /불러오는 중/.test(e.textContent || ''); e.classList.toggle('dz-ld', on); if (on) e.setAttribute('aria-busy', 'true'); else e.removeAttribute('aria-busy'); }); }
+  Dz.hideLd = hideLd;
+
+  /* ── 3. 버튼 9가지 상태: 누른 직후 잠기면 「로딩」 ── */
+  var lastTap = { b: null, at: 0 };
+  document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('button'); if (b) lastTap = { b: b, at: Date.now() }; }, true);
+  var KIT = '.au-go,.au-gh,.pbtn,.cm-go,.cm-wbtn,.dz-pri,.dz-sec,.dl-cta,.dl-ghost';
+  new MutationObserver(function (ms) {
+    ms.forEach(function (m) {
+      var b = m.target; if (!b.matches || !b.matches(KIT)) return;
+      if (b.disabled && lastTap.b === b && Date.now() - lastTap.at < 600) { b.classList.add('dz-busy'); b.setAttribute('aria-busy', 'true'); }
+      if (!b.disabled && b.classList.contains('dz-busy')) { b.classList.remove('dz-busy'); b.removeAttribute('aria-busy'); }
+    });
+  }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['disabled'] });
+  Dz.btn = function (b, st) { if (!b) return; b.classList.remove('dz-busy', 'dz-okb', 'dz-errb'); if (st === 'busy') b.classList.add('dz-busy'); else if (st === 'ok') { b.classList.add('dz-okb'); setTimeout(function () { b.classList.remove('dz-okb'); }, 1400); } else if (st === 'err') { b.classList.add('dz-errb'); setTimeout(function () { b.classList.remove('dz-errb'); }, 1600); } };
+
+  /* ── 4. 하단 메뉴 5칸: 마켓 · 종목 · 트레이딩 · 랭킹 · 커뮤니티 ── */
+  var RKSVG = '<svg viewBox="0 0 24 24"><path d="M5 20v-6h4v6M10 20V9h4v11M15 20v-9h4v9"/></svg>';
+  function pview() { try { return window.A99Paper && window.A99Paper._view ? window.A99Paper._view() : ''; } catch (e) { return ''; } }
+  function navPaint() {
+    var rk = q('.nav .nb[data-tab="rk"]'), pb = q('.nav .nb[data-tab="paper"]'); if (!rk || !pb) return;
+    var onPaper = typeof CUR_PAGE !== 'undefined' && CUR_PAGE === 'paper', isRank = onPaper && pview() === 'rank';
+    rk.classList.toggle('on', isRank); pb.classList.toggle('on', onPaper && !isRank);
+  }
+  function goRank() {
+    if (typeof window.show === 'function') window.show('paper');
+    var n = 0, t = setInterval(function () { n++; if (window.A99Paper && window.A99Paper._setView && $('pp-rkv')) { clearInterval(t); window.A99Paper._setView('rank'); navPaint(); } else if (n > 80) clearInterval(t); }, 100);
+  }
+  function navBuild() {
+    var pb = q('.nav .nb[data-tab="paper"]'); if (!pb) return false;
+    var ex = q('.nav .nb[data-tab="rk"]');
+    if (ex) { if (ex.previousElementSibling !== pb) pb.parentNode.insertBefore(ex, pb.nextSibling); return true; }
+    var b = document.createElement('button'); b.className = 'nb'; b.type = 'button'; b.dataset.tab = 'rk';
+    b.innerHTML = RKSVG + '<span>랭킹</span>'; b.setAttribute('aria-label', '랭킹');
+    pb.parentNode.insertBefore(b, pb.nextSibling);
+    b.addEventListener('click', goRank);
+    return true;
+  }
+  document.addEventListener('a99:pview', navPaint);
+  Dz.navPaint = navPaint;
+
+  /* ── 5. 장 상태 띠 (종목 · 마켓 화면) ── */
+  function bandBuild() {
+    if ($('dzBand')) return; var top = q('header.top'); if (!top) return;
+    var d = document.createElement('div'); d.id = 'dzBand'; d.setAttribute('role', 'status'); d.innerHTML = '<i></i><span></span>';
+    top.appendChild(d);
+  }
+  function bandPaint() {
+    var page = typeof CUR_PAGE !== 'undefined' ? CUR_PAGE : 'home', on = page === 'home' || page === 'stock';
+    document.documentElement.classList.toggle('dz-band', on);
+    var b = $('dzBand'); if (!b || !on) return;
+    var st = ($('mStat') || {}).textContent || '', tm = ($('mTime') || {}).textContent || '', dt = ($('mDot') || {}).className || '';
+    var tail = '';
+    if (page === 'stock') tail = /프리|애프터/.test(st) ? ' · 지금 가격은 장 밖 거래 기준' : /마감|휴장/.test(st) ? ' · 가격은 마지막 종가 기준' : ' · 가격은 약 15분 늦어요';
+    else tail = window.DZ_MKT_STAMP ? ' · ' + window.DZ_MKT_STAMP : '';
+    var ic = /pre/.test(dt) ? 'pre' : /off/.test(dt) ? 'off' : '', html = '<b>' + esc(st) + '</b>' + (tm && tm !== '--:--' ? ' · ' + esc(tm) : '') + esc(tail);
+    if (b.dataset.h === ic + html) return; b.dataset.h = ic + html;
+    b.querySelector('i').className = ic; b.querySelector('span').innerHTML = html;
+  }
+  Dz.bandPaint = bandPaint;
+
+  /* ── 6. 종목 화면 ── */
+  var STAR = '<svg viewBox="0 0 24 24" fill="FILL" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.6l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17l-5.2 2.7 1-5.8L3.5 9.8l5.9-.9z"/></svg>';
+  var ANDR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="18" cy="5.5" r="2.3"/><circle cx="6" cy="12" r="2.3"/><circle cx="18" cy="18.5" r="2.3"/><path d="M8 10.9l7.9-4.3M8 13.1l7.9 4.3"/></svg>';
+  function symNow() { var d = window.LAST || {}; return String(d.symbol || window.TECH_SYM || '').toUpperCase(); }
+  function shareStock(sym) {
+    var d = window.LAST || {}, nm = d.name_ko || (window.A99_KO || {})[sym] || d.name || sym;
+    var url = location.origin + location.pathname.replace(/[^/]*$/, '') + '?s=' + encodeURIComponent(sym);
+    var title = nm + ' (' + sym + ') · 안드레99';
+    if (navigator.share) { navigator.share({ title: title, text: title + ' — 10가지 체크 · 실적 · 공시', url: url }).catch(function () { }); return; }
+    var done = function () { window.A99Toast('링크를 복사했어요'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { window.A99Toast(url); });
+    else window.A99Toast(url);
+  }
+  function stockHead() {
+    var h = q('#stockBody .shead'); if (!h || !$('sfToc')) return;
+    var sym = symNow(); if (!sym) return;
+    // 로고 썸네일
+    if (h.dataset.dzh !== sym && typeof window.logoUrl === 'function') {
+      h.dataset.dzh = sym; var old = q('.dz-logo', h); if (old) old.remove();
+      var lg = document.createElement('span'); lg.className = 'dz-logo'; lg.setAttribute('aria-hidden', 'true');
+      var im = new Image(); im.alt = ''; im.decoding = 'async';
+      im.onerror = function () { lg.classList.add('tx'); lg.textContent = sym.charAt(0); };
+      im.src = window.logoUrl(sym); lg.appendChild(im);
+      h.insertBefore(lg, h.firstChild); h.classList.add('dz-hasl');
+    }
+    // 머리 버튼: 공유 + 관심 별
+    var hb = q('.sf-hb', h);
+    if (hb && !q('.dz-share', hb)) {
+      var sb = document.createElement('button'); sb.type = 'button'; sb.className = 'dz-share'; sb.setAttribute('aria-label', sym + ' 공유하기'); sb.innerHTML = ANDR;
+      sb.addEventListener('click', function () { shareStock(symNow()); });
+      hb.insertBefore(sb, hb.firstChild);
+    }
+    // 가격 등락 = 색 + 화살표
+    var c = q('.chg', h);
+    if (c) {
+      var t = c.textContent.trim(), m = /^([+\-−])\s?\$?([\d,.]+)\s+[+\-−]?([\d.,]+)%$/.exec(t);
+      if (m) { var z = +m[2].replace(/,/g, '') === 0; c.textContent = (z ? '' : (m[1] === '+' ? '▲ ' : '▼ ')) + '$' + m[2] + ' (' + m[3] + '%)'; c.classList.add('dz-ar'); }
+    }
+    // 원화 환산 = 접어 두기
+    var k = q('.krw', h);
+    if (k) {
+      var bar = q('.dz-krwbar', k);
+      if (!bar) {
+        k.classList.add('dz-fold'); bar = document.createElement('button'); bar.type = 'button'; bar.className = 'dz-krwbar'; bar.setAttribute('aria-expanded', 'false');
+        k.insertBefore(bar, k.firstChild);
+        bar.addEventListener('click', function () { var o = k.classList.toggle('open'); bar.setAttribute('aria-expanded', String(o)); krwBar(k, bar); });
+      }
+      krwBar(k, bar);
+    }
+  }
+  function krwBar(k, bar) {
+    var v = q('.krw-v', k), r = q('.krw-r b', k), o = k.classList.contains('open');
+    var html = '<span>원화로 보면 <b>' + esc(v ? v.textContent : '') + '</b>' + (r ? ' · <b class="' + esc(r.className) + '">' + esc(r.textContent) + '</b>' : '') + '</span><span class="m">' + (o ? '접기 ‹' : '펼치기 ›') + '</span>';
+    if (bar.dataset.h !== html) { bar.dataset.h = html; bar.innerHTML = html; }
+  }
+  // 애널리스트 의견 = 매수 쪽 비율 원 (서버 recommendation 그대로 · 인용)
+  function ringSvg(p, txt) {
+    var sz = 64, sw = 7, r = (sz - sw) / 2, c = 2 * Math.PI * r;
+    return '<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="' + r + '" fill="none" stroke="#2A2A2E" stroke-width="7"/><circle cx="32" cy="32" r="' + r + '" fill="none" stroke="#B9B9C0" stroke-width="7" stroke-linecap="round" stroke-dasharray="' + (c * p).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 32 32)"/><text x="32" y="37" text-anchor="middle" font-size="15" fill="#F3F3F4">' + txt + '</text></svg>';
+  }
+  function analyst() {
+    var tg = q('#stockBody .sm .sm-tg'), d = window.LAST || {}, R = d.recommendation;
+    if (!tg || tg.closest('.dz-an')) return;
+    if (!R || !(R.total > 0)) return;
+    var bull = (R.strong_buy || 0) + (R.buy || 0), bear = (R.sell || 0) + (R.strong_sell || 0), hold = R.hold || 0, tot = R.total, p = bull / tot;
+    var box = document.createElement('div'); box.className = 'dz-an';
+    box.innerHTML = '<div class="h"><b>애널리스트 의견</b><span>의견 인용</span></div><div class="rw">' + ringSvg(p, Math.round(p * 100) + '%') +
+      '<div class="rt">매수 쪽 의견<b>' + tot + '건 중 ' + bull + '건</b>보유 ' + hold + ' · 매도 쪽 ' + bear + '</div></div>';
+    tg.parentNode.insertBefore(box, tg); box.appendChild(tg);
+  }
+  // 요약 허브: 뉴스 = 카드 2열 · 공시 = 시간 줄 · 평가 태그
+  var FB_UNTIL = Date.UTC(2026, 10, 26);   /* 새 화면을 연 첫 2주만 묻는다 */
+  function hub() {
+    var hb = $('sfHub'); if (!hb) return;
+    qa('.hb-g', hb).forEach(function (g) {
+      var t = q('.hb-h', g), k = t && t.dataset.tab;
+      g.classList.toggle('dz-news', k === 'news'); g.classList.toggle('dz-fil', k === 'fil');
+    });
+    if (Date.now() < FB_UNTIL && !q('.dz-fb', hb)) {
+      var done = lsGet('a99_fb_sum');
+      var f = document.createElement('div'); f.className = 'dz-fb'; f.dataset.s = 'sum';
+      f.innerHTML = done ? '<p class="ok">평가해 주셔서 고마워요 · 「' + esc(done) + '」</p>' :
+        '<p>이 화면 어땠나요? <span style="color:var(--tx3)">(한 번만 물어요)</span></p><div class="tg">' + [['easy', '쉬워요'], ['many', '숫자가 많아요'], ['term', '용어가 어려워요'], ['more', '더 보고 싶어요']].map(function (x) { return '<button type="button" class="dz-chip" data-fb="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
+      hb.appendChild(f);
+    }
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.dz-fb [data-fb]'); if (!b) return;
+    var f = b.closest('.dz-fb'), s = f.dataset.s, lab = b.textContent;
+    lsSet('a99_fb_' + s, lab);
+    var api = window.A99P_API || 'https://andre99-paper.jhw5282435.workers.dev', dev = lsGet('a99_vdev') || '';
+    try { F0.call(window, api + '/p/fb', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ s: s, t: b.dataset.fb, dev: dev }) }).catch(function () { }); } catch (x) { }
+    f.innerHTML = '<p class="ok">평가해 주셔서 고마워요 · 「' + esc(lab) + '」</p>';
+    check('평가를 남겼어요');
+  });
+  // 탭을 바꿀 때 = 옆으로 밀림 (앱의 탭 코드가 부른다)
+  var ORDER = ['scr', 'fin', 'earn', 'chart', 'fil'];
+  window.A99DzTab = function (k, prev, els) {
+    var tb = $('sfT_' + k); if (tb && tb.scrollIntoView) { try { tb.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { } }
+    if (reduce || !prev || prev === k) return;
+    var cls = ORDER.indexOf(k) > ORDER.indexOf(prev) ? 'dz-in-r' : 'dz-in-l';
+    (els || []).forEach(function (e) { if (!e) return; e.classList.remove('dz-in-r', 'dz-in-l'); void e.offsetWidth; e.classList.add(cls); setTimeout(function () { e.classList.remove(cls); }, 320); });
+  };
+  function stockPass() { try { stockHead(); analyst(); hub(); } catch (e) { } }
+  Dz.stockPass = stockPass;
+
+  /* ── 7. 공유 링크로 들어오면 그 종목 바로 열기 (?s=AAPL) ── */
+  function deepLink() {
+    var m = /[?&]s=([A-Za-z0-9.^=\-]{1,15})(?:&|$)/.exec(location.search); if (!m) return;
+    var sym = decodeURIComponent(m[1]).toUpperCase(), n = 0;
+    var t = setInterval(function () { n++; if (typeof window.loadStock === 'function' && typeof window.show === 'function') { clearInterval(t); try { window.show('stock'); var inp = $('q'); if (inp) inp.value = sym; window.loadStock(sym); } catch (e) { } } else if (n > 60) clearInterval(t); }, 150);
+  }
+
+  /* ── 돌리기 ── */
+  var pend = 0, lastRun = 0;
+  function page() { return typeof CUR_PAGE !== 'undefined' ? CUR_PAGE : 'home'; }
+  function pass() {
+    pend = 0; lastRun = Date.now(); var pg = page();
+    bandBuild(); bandPaint();   /* 11.12 운영자 결정: 하단 메뉴 4칸 그대로 · 랭킹은 트레이딩 안 탭에만 (navBuild 안 씀) */
+    if (pg === 'stock') stockPass();
+    hideLd($('p-' + pg) || document);
+    if (Dz.more) Dz.more.forEach(function (f) { try { f(pg); } catch (e) { } });
+  }
+  Dz.more = [];
+  Dz.kick = function () { if (pend) return; var w = Math.max(30, 140 - (Date.now() - lastRun)); pend = setTimeout(pass, w); };
+  new MutationObserver(function () { Dz.kick(); }).observe(document.body, { childList: true, subtree: true });
+  if (typeof window.show === 'function' && !window.show._dz) { var S0 = window.show; window.show = function (t) { var r = S0.apply(this, arguments); Dz.kick(); return r; }; window.show._dz = 1; for (var kk in S0) if (Object.prototype.hasOwnProperty.call(S0, kk)) window.show[kk] = S0[kk]; }
+  setInterval(bandPaint, 30000);
+  deepLink();
+  pass();
+})();
+</script>
+
+<style id="dzMktCss">
+/* ══ 2026.11.12-A 고른 부품 층 · 마켓 ══ */
+/* 위 탭 = 밑줄 탭 */
+#mkSub.ec-tabs{gap:0;padding:0 8px;border-bottom:1px solid var(--line)}
+#mkSub .ec-tab{flex:0 0 auto;min-height:44px;padding:0 14px;border-radius:0;background:transparent;color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-1px;font-size:15px;font-weight:700}
+#mkSub .ec-tab.on{background:transparent;color:var(--tx);border-bottom-color:var(--tx)}
+/* 기준 시각 = 띠 배너 (위 막대 아래 띠로 옮김) */
+#p-home .mk-us>.idxhead{display:none}
+html.dz-band #dzBand span{white-space:normal}
+/* 미국 지수 = 2 × 2 · 작은 선 = 선 + 끝점 */
+#mkGridX .mkx-g3:not(.term){grid-template-columns:repeat(2,minmax(0,1fr))}
+#mkGridX .mkx-t .v{font-size:18px}
+.mkx-t .dz-dot{position:absolute;right:2px;width:6px;height:6px;margin-right:-3px;border-radius:50%;z-index:1;box-shadow:0 0 0 2px var(--s1)}
+/* 오른 곳 · 내린 곳 = 원형 */
+.mkx-br.dz-r>:not(.dz-ring){display:none}
+.dz-ring{display:flex;align-items:center;gap:14px}
+.dz-ring svg text{font-weight:800;font-family:inherit}
+.dz-ring b{display:block;font-size:15px}
+.dz-ring small{display:block;font-size:12px;color:var(--tx3);margin-top:2px}
+/* 이번 주 실적 발표 칸이 비었을 때 = 안내 + 버튼 */
+.wk3-e .dz-sec{display:inline-flex;align-items:center;margin-top:10px;padding:0 14px;font-size:13px}
+/* 많이 오른 곳 / 내린 곳 = 칩 + 방향마다 다른 표현 */
+#mvBox .ta-days{gap:6px}
+#mvBox .ta-d{flex:0 0 auto;min-height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--dz-line);background:transparent;color:var(--tx2);font-size:13px;font-weight:700}
+#mvBox .ta-d[data-mv="up"]::before{content:"▲ ";font-size:10px}
+#mvBox .ta-d[data-mv="down"]::before{content:"▼ ";font-size:10px}
+#mvBox .ta-d.on[data-mv="up"]{background:rgba(255,77,79,.15);border-color:rgba(255,77,79,.7);color:#FF8F90}
+#mvBox .ta-d.on[data-mv="down"]{background:rgba(47,128,237,.17);border-color:rgba(47,128,237,.7);color:#93B9FF}
+.dz-dirh{display:flex;flex-direction:column;gap:2px;padding:2px 0 4px}
+.dz-dirh b{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.dz-dirh span{font-size:12px;color:var(--tx3)}
+#mvBox.dz-up .dz-dirh b{color:var(--up)}#mvBox.dz-down .dz-dirh b{color:var(--dn)}
+/* 급변한 종목 목록 = 카드 (2열) */
+#mvBox>.sec{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 16px}
+#mvBox>.sec>:not(.mv-row){grid-column:1/-1}
+#mvBox>.sec>.ta-days,#mvBox>.sec>.ta-lead,#mvBox>.sec>.tnb{padding-left:0;padding-right:0}
+#mvBox .mv-row{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--s1);min-width:0;position:relative;overflow:hidden}
+#mvBox.dz-up .mv-row{box-shadow:inset 0 3px 0 rgba(255,77,79,.75)}
+#mvBox.dz-down .mv-row{box-shadow:inset 0 3px 0 rgba(47,128,237,.8)}
+#mvBox .mv-row:active{background:var(--s2)}
+#mvBox .mv-hd{flex-direction:column;align-items:flex-start;gap:2px;margin:0}
+#mvBox .mv-nm{width:100%}
+#mvBox .mv-nm b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mvBox .mv-nm .en,#mvBox .mv-nm>span{display:none}
+#mvBox .mv-pc{font-size:20px;order:-1}
+#mvBox.dz-up .mv-pc::before{content:"▲ ";font-size:12px}
+#mvBox.dz-down .mv-pc::before{content:"▼ ";font-size:12px}
+#mvBox .mv-rs{display:block}
+#mvBox .mv-r{display:block;font-size:11.5px;line-height:1.45}
+#mvBox .mv-r:not(:first-child),#mvBox .mv-r .d{display:none}
+#mvBox .mv-r .k{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:4px;color:var(--tx2)}
+#mvBox .mv-none{font-size:11.5px;color:var(--tx3);line-height:1.45}
+/* 매크로 · 오늘 움직임 = 2열 */
+#mcToday .mc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* 매크로 · 연준 지표 = 발표 시간 줄 */
+#mcRel .mc-grid{display:block;position:relative;margin:0 16px;padding:0 0 0 18px}
+#mcRel .mc-grid::before{content:"";position:absolute;left:4px;top:14px;bottom:14px;width:2px;background:var(--s3)}
+#mcRel .mc-rel{position:relative;display:grid;grid-template-columns:1fr auto;grid-template-areas:"k v" "d c";column-gap:10px;row-gap:1px;width:100%;min-height:0;padding:10px 0;background:transparent!important;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important}
+#mcRel .mc-rel::before{content:"";position:absolute;left:-18px;top:16px;width:10px;height:10px;border-radius:50%;background:var(--tx3);box-shadow:0 0 0 3px var(--bg)}
+#mcRel .mc-rel .k{grid-area:k;font-size:13px;color:var(--tx)}
+#mcRel .mc-rel .v{grid-area:v;text-align:right}
+#mcRel .mc-rel .c{grid-area:c;text-align:right;margin:0}
+#mcRel .mc-rel .d{grid-area:d;margin:0}
+/* 매크로 · 신용 경고등 = 신호등 */
+.ck-st{display:flex!important;align-items:center;gap:10px;padding:14px 16px 0!important}
+.ck-st div{flex:none;width:30px;height:30px;min-height:0!important;padding:0;border-radius:50%!important;border:0!important;font-size:0!important;background:#26262A!important;box-shadow:none!important}
+.ck-st div i{display:none}
+.ck-st .on.calm{background:var(--ck-calm,#34C17B)!important;box-shadow:0 0 14px rgba(52,193,123,.7)!important}
+.ck-st .on.watch{background:var(--ck-watch,#F5C542)!important;box-shadow:0 0 14px rgba(245,197,66,.7)!important}
+.ck-st .on.alert{background:var(--ck-alert,#FF8A3D)!important;box-shadow:0 0 14px rgba(255,138,61,.7)!important}
+.ck-st .dz-lab{width:auto;height:auto;border-radius:0!important;background:none!important;font-size:12px!important;color:var(--tx3);margin-left:4px}
+/* 매크로 · 기간 고르기 = 드롭다운 */
+.mc-days.dz-hide>button{display:none}
+.dz-sel{position:relative;flex:1}
+.dz-sel select{-webkit-appearance:none;appearance:none;width:100%;min-height:42px;padding:0 38px 0 14px;border-radius:var(--dz-r);border:1px solid var(--dz-line);background:var(--s1);color:var(--tx);font:inherit;font-size:14px;font-weight:700}
+.dz-sel::after{content:"▾";position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--tx3);pointer-events:none}
+/* 일정 · 요일 고르기 = 달력 */
+#dateStrip.datestrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;overflow:visible;padding:4px 16px 8px}
+#dateStrip .dchip{width:auto;background:transparent;border-radius:12px;padding:4px 0 6px;display:flex;flex-direction:column;align-items:center;gap:3px}
+#dateStrip .dchip .wd{font-size:11px;color:var(--tx3);order:-1}
+#dateStrip .dchip .dd{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font-size:15px}
+#dateStrip .dchip .ct{font-size:9.5px}
+#dateStrip .dchip.on{background:transparent}
+#dateStrip .dchip.on .dd{background:var(--dn);color:#fff}
+#dateStrip .dchip.on .wd{color:var(--tx)}
+#dateStrip .dchip.on .ct{color:var(--tx2)}
+#dateStrip .dchip.wknd{opacity:.45}
+/* 일정 · 더 보기 = 내리면 자동으로 (뼈대) */
+#calMore.dz-auto{display:block;width:calc(100% - 32px);margin:10px 16px;height:46px;border-radius:12px;font-size:0;color:transparent;background:linear-gradient(90deg,var(--s1),var(--s2),var(--s1));background-size:200% 100%;animation:dzShim 1.2s linear infinite;border:0}
+@keyframes dzShim{to{background-position:-200% 0}}
+</style>
+<script>
+/* ══ 2026.11.12-A 고른 부품 층 · 마켓 ══ */
+(function () {
+  'use strict';
+  var Dz = window.A99Dz; if (!Dz) return;
+  function $(id) { return document.getElementById(id); }
+  function q(s, r) { return (r || document).querySelector(s); }
+  function qa(s, r) { return [].slice.call((r || document).querySelectorAll(s)); }
+  var esc = Dz.esc;
+  function ringSvg(p, txt, col) {
+    var r = 28.5, c = 2 * Math.PI * r;
+    return '<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="' + r + '" fill="none" stroke="#2A2A2E" stroke-width="7"/><circle cx="32" cy="32" r="' + r + '" fill="none" stroke="' + col + '" stroke-width="7" stroke-linecap="round" stroke-dasharray="' + (c * p).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 32 32)"/><text x="32" y="37" text-anchor="middle" font-size="14" fill="#F3F3F4">' + txt + '</text></svg>';
+  }
+  function stamp() {
+    var n = $('idxNote'), a = $('mkxAgo'), t = (n ? n.textContent : '').trim();
+    if (!t || /불러오는 중/.test(t)) { window.DZ_MKT_STAMP = ''; return; }
+    window.DZ_MKT_STAMP = t.replace(/^미국\s*/, '지수는 ') + (a && a.textContent.trim() ? ' ' + a.textContent.trim() : '');
+  }
+  function breadth() {
+    var b = $('breadthX'); if (!b || q('.dz-ring', b)) return;
+    var u = q('.tp .u b', b), d = q('.tp .d b', b); if (!u || !d) return;
+    var up = +u.textContent || 0, dn = +d.textContent || 0, tot = 11, fl = Math.max(0, tot - up - dn);
+    var col = getComputedStyle(document.documentElement).getPropertyValue('--up').trim() || '#FF4D4F';
+    if (dn > up) col = getComputedStyle(document.documentElement).getPropertyValue('--dn').trim() || '#2F80ED';
+    var w = document.createElement('div'); w.className = 'dz-ring';
+    w.innerHTML = ringSvg(Math.max(up, dn) / tot, (up >= dn ? up : dn) + '/' + tot, col) + '<div><b>' + tot + '개 중 ' + (up >= dn ? up + '개 상승' : dn + '개 하락') + '</b><small>' + (up >= dn ? '하락 ' + dn : '상승 ' + up) + ' · 보합 ' + fl + ' · 섹터 ETF 기준</small></div>';
+    b.appendChild(w); b.classList.add('dz-r');
+  }
+  function earnEmpty() {
+    var e = q('#wk3 .wk3-e'); if (!e || q('.dz-sec', e)) return;
+    var nx = /다음 주/.test(e.textContent);
+    e.textContent = (nx ? '다음 주' : '이번 주') + ' 남은 주요 발표가 없어요.';
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'dz-sec'; b.textContent = nx ? '전체 일정 보기 ›' : '다음 주 일정 보기 ›';
+    b.addEventListener('click', function () {
+      if (window.A99Struct && window.A99Struct.go) window.A99Struct.go('cal'); else { var t = q('#mkSub [data-s="cal"]'); if (t) t.click(); }
+      if (!nx) setTimeout(function () { var n = $('wkNext'); if (n) n.click(); }, 250);
+      window.scrollTo(0, 0);
+    });
+    e.appendChild(document.createElement('br')); e.appendChild(b);
+  }
+  function movers() {
+    var box = $('mvBox'); if (!box) return;
+    var dir = (typeof MV_DIR !== 'undefined' && MV_DIR === 'down') ? 'down' : 'up';
+    box.classList.toggle('dz-up', dir === 'up'); box.classList.toggle('dz-down', dir === 'down');
+    var sec = q(':scope > .sec', box), lead = sec && q('.ta-lead', sec);
+    if (lead && !q('.dz-dirh', sec)) {
+      var n = qa('.mv-row', sec).length, h = document.createElement('div'); h.className = 'dz-dirh';
+      h.innerHTML = dir === 'up' ? '<b>▲ 오늘 많이 오른 ' + n + '곳</b><span>오른 이유를 공시 · 실적에서 찾아봤어요</span>' : '<b>▼ 오늘 많이 내린 ' + n + '곳</b><span>내린 이유를 공시 · 실적에서 찾아봤어요</span>';
+      sec.insertBefore(h, lead);
+    }
+  }
+  function credit() { var st = q('.ck-st'); if (!st || q('.dz-lab', st)) return; var on = q('.on', st); var l = document.createElement('div'); l.className = 'dz-lab'; l.textContent = '평온 · 주의 · 경계'; st.appendChild(l); }
+  function period() {
+    var d = q('#mcFlow .mc-days'); if (!d) return;
+    var bs = qa('button', d); if (!bs.length) return;
+    var sel = q('.dz-sel select', d), cur = bs.filter(function (b) { return b.classList.contains('on'); })[0];
+    if (!sel) {
+      var w = document.createElement('label'); w.className = 'dz-sel'; w.setAttribute('aria-label', '기간');
+      w.innerHTML = '<select>' + bs.map(function (b, i) { return '<option value="' + i + '">최근 ' + esc(b.textContent) + '</option>'; }).join('') + '</select>';
+      d.appendChild(w); d.classList.add('dz-hide'); sel = q('select', w);
+      sel.addEventListener('change', function () { var b = qa('button', d)[+sel.value]; if (b) b.click(); });
+    }
+    if (cur) { var i = bs.indexOf(cur); if (+sel.value !== i) sel.value = String(i); }
+  }
+  var io = window.IntersectionObserver ? new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting && e.target.isConnected) { io.unobserve(e.target); setTimeout(function () { if (e.target.isConnected) e.target.click(); }, 350); } }); }, { rootMargin: '120px' }) : null;
+  function calMore() {
+    var m = $('calMore'); if (!m || m.classList.contains('dz-auto')) return;
+    m.classList.add('dz-auto'); m.setAttribute('aria-label', m.textContent + ' (내리면 자동으로 불러와요)');
+    if (io) io.observe(m);
+  }
+  Dz.more.push(function (pg) {
+    if (pg !== 'home') return;
+    stamp(); breadth(); earnEmpty(); movers(); credit(); period(); calMore();
+  });
+})();
+</script>
+
+<style id="dzCmCss">
+/* ══ 2026.11.12-A 고른 부품 층 · 커뮤니티 ══ */
+/* 글쓰기 = 떠 있는 버튼 (FAB) */
+#p-cm .cm-hd .cm-wbtn{display:none}
+.dz-fab{position:fixed;right:16px;bottom:calc(var(--nav-h,60px) + 18px + env(safe-area-inset-bottom,0px));z-index:40;width:56px;height:56px;border-radius:50%;background:var(--tx);color:#0B0B0C;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.55);transition:transform .08s}
+.dz-fab:active{transform:scale(.94)}
+.dz-fab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#p-cm:not(.on) .dz-fab{display:none}
+html.cm-lock .dz-fab{display:none}
+/* 설명 = 띠 배너 */
+#p-cm .cm-sub{margin:4px 16px 8px;padding:10px 12px;border-radius:10px;background:var(--s1);color:var(--tx2);font-size:12.5px}
+#p-cm .cm-sub::before{content:"ⓘ ";color:var(--tx3)}
+/* 글 분류 = 밑줄 탭 */
+#p-cm .cm-cats{gap:0;padding:0 8px;border-bottom:1px solid var(--line)}
+#p-cm .cm-cats button{min-height:44px;padding:0 13px;border-radius:0;background:transparent;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--tx3);font-size:14px;font-weight:700}
+#p-cm .cm-cats button[aria-pressed="true"]{background:transparent;color:var(--tx);border-bottom-color:var(--tx)}
+/* 오늘의 질문 = 예 · 아니오 버튼 */
+#p-cm .pl-btns button{min-height:50px;border-radius:var(--dz-r);border:1px solid var(--dz-line);background:var(--s2);font-size:16px;font-weight:800}
+#p-cm .pl-btns button:active{transform:scale(.97);filter:brightness(.9)}
+/* 글 목록 = 사진 자리 + 제목 */
+.cm-post.dz-th{display:flex;gap:12px;align-items:flex-start;touch-action:pan-y;position:relative;background:var(--bg);transition:transform .2s ease}
+.cm-post.dz-th .dz-pb{flex:1;min-width:0}
+.dz-pth{flex:none;width:58px;height:58px;margin-top:20px;border-radius:12px;background:#fff;overflow:hidden;display:grid;place-items:center;position:relative}
+.dz-pth img{width:100%;height:100%;object-fit:contain;padding:8px}
+.dz-pth em{position:absolute;left:0;right:0;bottom:0;font-style:normal;font-size:9.5px;font-weight:800;text-align:center;background:rgba(11,11,12,.72);color:#fff;line-height:1.5}
+.dz-pth.tx{background:var(--s2);color:var(--tx2);font-size:11.5px;font-weight:800}
+.dz-pth.c-info{background:#13263F;color:#8FB4FF}.dz-pth.c-tech{background:#16251E;color:#7FD1A8}.dz-pth.c-qna{background:#2A2214;color:#F5C26B}.dz-pth.c-notice{background:var(--tx);color:#0B0B0C}
+/* 글쓴이 = 닉네임 + 티어 */
+.dz-tier{display:inline-block;padding:0 6px;border-radius:5px;font-size:10.5px;font-weight:800;background:var(--s3);color:var(--tx)}
+.dz-tier.t1{background:#2A1E14;color:#F0A36B}.dz-tier.t2{background:#2A2214;color:#F5C26B}.dz-tier.t3{background:#13263F;color:#8FB4FF}.dz-tier.t4{background:#251838;color:#C9A6FF}.dz-tier.t5{background:#3A3018;color:#FFD86B}
+/* 반응 = 좋아요 · 싫어요 */
+#p-cm .ps-act svg,.cm-sheet .cm-like svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round;vertical-align:-3px;margin-right:4px}
+#p-cm .ps-act .on svg,.cm-sheet .cm-like.on svg{fill:currentColor}
+.dz-pbtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.dz-pbtns .cm-like{display:inline-flex;align-items:center;min-height:38px;padding:0 13px;border-radius:999px;border:1px solid var(--dz-line);background:transparent;color:var(--tx2);font-size:13px;font-weight:700}
+.dz-pbtns .cm-like.on{background:var(--tx);color:#0B0B0C;border-color:var(--tx)}
+.dz-pbtns .cm-like span{margin-left:4px}
+.dz-pbtns .dz-link{margin-left:auto}
+.dz-dnote{margin:8px 0 0;font-size:11.5px;color:var(--tx3)}
+/* 글이 없을 때 */
+.dz-cmempty{margin:16px;padding:22px 16px;border:1px dashed var(--dz-line);border-radius:14px;text-align:center}
+.dz-cmempty b{font-size:16px}
+.dz-cmempty p{margin:6px 0 12px;font-size:13px;color:var(--tx2)}
+.dz-cmempty .dz-sec{padding:0 16px}
+.dz-unhide{margin-left:auto;font-size:12px;color:var(--tx3);text-decoration:underline;min-height:32px}
+/* 「⋯」 메뉴 = 밀어서 메뉴 */
+.dz-swl{position:relative;overflow:hidden}
+.dz-swa{position:absolute;right:0;top:0;bottom:0;display:flex}
+.dz-swa button{width:72px;font-size:13px;font-weight:800;color:#fff;background:#4A4A50}
+.dz-swa button.r{background:var(--up)}
+/* 이용 규칙 = 바텀시트 */
+.cm-sheet.dz-bs{top:auto;max-height:80vh;border-radius:20px 20px 0 0;box-shadow:0 0 0 100vmax rgba(0,0,0,.55),0 -10px 30px rgba(0,0,0,.5);animation:dzUp .22s ease-out}
+.cm-sheet.dz-bs .sh-bar{border-radius:20px 20px 0 0;padding-top:6px}
+.cm-sheet.dz-bs .sh-bar::before{content:"";position:absolute;left:50%;top:6px;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:#3A3A40}
+@keyframes dzUp{from{transform:translateY(40%);opacity:.4}}
+/* 글을 올린 뒤 = 보냄 애니메이션 */
+.dz-fly{position:fixed;left:50%;top:58%;width:46px;height:46px;margin-left:-23px;z-index:2300;color:var(--tx);pointer-events:none;animation:dzFly .8s ease-in forwards}
+.dz-fly svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@keyframes dzFly{0%{transform:translate(0,0) scale(1);opacity:1}55%{transform:translate(40px,-110px) rotate(-12deg) scale(.9);opacity:1}100%{transform:translate(170px,-320px) rotate(-22deg) scale(.4);opacity:0}}
+</style>
+<script>
+/* ══ 2026.11.12-A 고른 부품 층 · 커뮤니티 ══ */
+(function () {
+  'use strict';
+  var Dz = window.A99Dz; if (!Dz) return;
+  function $(id) { return document.getElementById(id); }
+  function q(s, r) { return (r || document).querySelector(s); }
+  var PEN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
+  var SEND = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4z"/></svg>';
+  // 글쓰기 FAB
+  function fab() { var pg = $('p-cm'); if (!pg || q('.dz-fab', pg)) return; var b = document.createElement('button'); b.type = 'button'; b.className = 'dz-fab'; b.dataset.act = 'write'; b.setAttribute('aria-label', '글쓰기'); b.innerHTML = PEN; pg.appendChild(b); }
+  // 보냄 애니메이션
+  Dz.sendFly = function (done) {
+    var r = false; try { r = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { }
+    if (r) { if (done) done(); return; }
+    var f = document.createElement('div'); f.className = 'dz-fly'; f.innerHTML = SEND; document.body.appendChild(f);
+    setTimeout(function () { f.remove(); if (done) done(); }, 780);
+  };
+  // 사진 자리: 로고가 없으면 글자
+  document.addEventListener('error', function (e) { var t = e.target; if (t && t.matches && t.matches('img[data-dzth]')) { var s = t.parentNode; s.classList.add('tx'); s.textContent = s.dataset.l || ''; } }, true);
+  // 밀어서 메뉴 (왼쪽으로 밀면 신고 · 숨김, 내 글이면 고치기 · 지우기)
+  var SW = null, OPEN = null;
+  function closeSw() { if (!OPEN) return; OPEN.post.style.transform = ''; var a = OPEN.acts; setTimeout(function () { if (a && a.parentNode) a.remove(); }, 220); OPEN = null; }
+  function acts(post) {
+    var id = post.dataset.post, mine = !!q('.ps-meta', post) && post.dataset.mine === '1';
+    var a = document.createElement('div'); a.className = 'dz-swa';
+    a.innerHTML = mine ? '<button type="button" data-dzsw="edit" data-pid="' + Dz.esc(id) + '">고치기</button><button type="button" class="r" data-dzsw="del" data-pid="' + Dz.esc(id) + '">지우기</button>'
+      : '<button type="button" class="r" data-dzsw="rep" data-pid="' + Dz.esc(id) + '">신고</button><button type="button" data-dzsw="hide" data-pid="' + Dz.esc(id) + '">숨김</button>';
+    return a;
+  }
+  function wrap(post) { var w = post.parentNode; if (w && w.classList.contains('dz-swl')) return w; w = document.createElement('div'); w.className = 'dz-swl'; post.parentNode.insertBefore(w, post); w.appendChild(post); return w; }
+  document.addEventListener('touchstart', function (e) {
+    var p = e.target.closest && e.target.closest('#cmFeed .cm-post.dz-th'); if (!p) { if (OPEN && !(e.target.closest && e.target.closest('.dz-swa'))) closeSw(); return; }
+    if (OPEN && OPEN.post !== p) closeSw();
+    var t = e.touches[0]; SW = { p: p, x: t.clientX, y: t.clientY, dx: 0, on: false, base: OPEN && OPEN.post === p ? -144 : 0 };
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (!SW) return; var t = e.touches[0], dx = t.clientX - SW.x, dy = t.clientY - SW.y;
+    if (!SW.on) { if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.3) { SW.on = true; var w = wrap(SW.p); if (!q('.dz-swa', w)) w.insertBefore(acts(SW.p), SW.p); SW.p.style.transition = 'none'; } else if (Math.abs(dy) > 10) { SW = null; return; } else return; }
+    SW.dx = dx; var x = Math.max(-160, Math.min(0, SW.base + dx)); SW.p.style.transform = 'translateX(' + x + 'px)';
+  }, { passive: true });
+  document.addEventListener('touchend', function () {
+    if (!SW) return; var s = SW; SW = null; if (!s.on) return;
+    s.p.style.transition = ''; var x = s.base + s.dx, w = s.p.parentNode;
+    if (x < -60) { s.p.style.transform = 'translateX(-144px)'; OPEN = { post: s.p, acts: q('.dz-swa', w) }; s.p.dataset.dzsw = String(Date.now()); }
+    else { s.p.style.transform = ''; OPEN = { post: s.p, acts: q('.dz-swa', w) }; closeSw(); }
+  });
+  // 밀어서 연 글을 누르면 글이 열리지 않고 닫히기만
+  document.addEventListener('click', function (e) { var p = e.target.closest && e.target.closest('#cmFeed .cm-post.dz-th'); if (p && OPEN && OPEN.post === p) { e.stopPropagation(); e.preventDefault(); closeSw(); } }, true);
+  // 글 링크로 들어오면 그 글 열기 (?cm=p12)
+  (function deep() {
+    var m = /[?&]cm=(p\d{1,9})(?:&|$)/.exec(location.search); if (!m) return;
+    var n = 0, t = setInterval(function () {
+      n++; if (!window.A99CM || typeof window.show !== 'function') { if (n > 80) clearInterval(t); return; }
+      if (n === 1 || !$('p-cm') || !$('p-cm').classList.contains('on')) window.show('cm');
+      if (window.A99CM.ready && window.A99CM.ready()) { clearInterval(t); if (!window.A99CM.open(m[1])) window.A99Toast('그 글을 찾지 못했어요 · 지워졌거나 오래된 글이에요'); }
+      else if (n > 80) clearInterval(t);
+    }, 200);
+  })();
+  Dz.more.push(function (pg) { if (pg === 'cm') fab(); });
+})();
+</script>
+
+<style id="dzGateCss">
+/* ══ 2026.11.12-A 고른 부품 층 · 계정 · 입구 ══ */
+/* 프로필 들어가는 곳 = 오른쪽 위 ⋮ 메뉴 (로그인했을 때) */
+#auBtn.dz-kb{width:44px;padding:0!important;display:grid;place-items:center;background:transparent!important;border:0!important}
+#auBtn.dz-kb svg{width:22px;height:22px;fill:var(--tx)}
+.dz-km{position:fixed;z-index:2150;top:calc(env(safe-area-inset-top,0px) + 52px);right:10px;min-width:190px;padding:6px 0;border-radius:14px;background:#232326;border:1px solid #34343A;box-shadow:0 14px 40px rgba(0,0,0,.55);animation:dzKm .14s ease-out}
+.dz-km .who{padding:8px 14px 6px;font-size:12px;color:var(--tx3)}
+.dz-km .who b{display:block;font-size:14px;color:var(--tx)}
+.dz-km button{display:flex;width:100%;align-items:center;justify-content:space-between;min-height:44px;padding:0 14px;font-size:14px;color:var(--tx);text-align:left;border-top:1px solid #2E2E33}
+.dz-km button.out{color:#FF6B6B}
+.dz-km button span{font-size:11.5px;color:var(--tx3);margin-left:8px}
+.dz-kmbd{position:fixed;inset:0;z-index:2149}
+@keyframes dzKm{from{transform:translateY(-6px);opacity:0}}
+/* 가입 단계 표시 · 비밀번호 강도 · 전체 동의 */
+.dz-gst{display:flex;list-style:none;margin:0 0 14px;padding:0}
+.dz-gst li{flex:1;text-align:center;font-size:11.5px;color:var(--tx3);position:relative}
+.dz-gst li i{display:grid;place-items:center;width:22px;height:22px;margin:0 auto 4px;border-radius:50%;background:var(--s3);font-style:normal;font-size:11px;font-weight:800;position:relative;z-index:1}
+.dz-gst li.done i{background:var(--tx);color:#0B0B0C}
+.dz-gst li.cur i{background:var(--bg);box-shadow:inset 0 0 0 2px var(--tx)}
+.dz-gst li.cur{color:var(--tx);font-weight:700}
+.dz-gst li::before{content:"";position:absolute;top:11px;left:-50%;width:100%;height:2px;background:var(--s3)}
+.dz-gst li:first-child::before{display:none}
+.dz-gst li.done::before,.dz-gst li.cur::before{background:var(--tx)}
+.dz-pwm{margin-top:6px}
+.dz-pwm .bar{display:flex;gap:4px}.dz-pwm .bar i{flex:1;height:6px;border-radius:3px;background:var(--s3)}
+.dz-pwm.l1 .bar i:nth-child(-n+1){background:#FF4D4F}.dz-pwm.l2 .bar i:nth-child(-n+2){background:#D2723A}.dz-pwm.l3 .bar i:nth-child(-n+3){background:#C8A23A}.dz-pwm.l4 .bar i{background:#2F9E62}
+.dz-pwm small{display:block;margin-top:4px;font-size:11.5px;color:var(--tx3)}
+.dz-all{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:0 12px;margin-top:4px;border:1px solid var(--dz-line);border-radius:12px;font-size:15px;font-weight:800;color:var(--tx);text-align:left}
+.dz-all .cb{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid #5A5A60;display:grid;place-items:center}
+.dz-all[aria-checked="true"] .cb{background:var(--tx);border-color:var(--tx)}
+.dz-all[aria-checked="true"] .cb::after{content:"✓";color:#0B0B0C;font-size:14px;font-weight:900}
+.dz-all .ex{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--tx3)}
+.dz-agw{margin-top:4px}
+.dz-agw[hidden]{display:none}
+/* 처음 쓰는 사람 안내 = 스포트라이트 */
+.dz-spot{position:fixed;z-index:2500;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.72);pointer-events:none;transition:all .2s}
+.dz-coach{position:fixed;z-index:2501;left:16px;right:16px;padding:14px;border-radius:14px;background:#F3F3F4;color:#0B0B0C;font-size:14px;font-weight:700;line-height:1.5}
+.dz-coach small{display:block;font-weight:500;color:#45454A;margin-top:2px}
+.dz-coach button{margin-top:10px;min-height:40px;padding:0 16px;border-radius:10px;background:#0B0B0C;color:#F3F3F4;font-weight:800}
+.dz-coach::before{content:"";position:absolute;top:-7px;left:40px;width:14px;height:14px;background:#F3F3F4;transform:rotate(45deg)}
+/* 가입 직후 = 웰컴 화면 */
+.dz-wel{position:fixed;inset:0;z-index:2600;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;animation:dzPop .2s ease-out}
+.dz-wel .k{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--tx3)}
+.dz-wel h2{margin:10px 0 0;font-size:30px;letter-spacing:-.03em}
+.dz-wel p{margin:10px 0 0;font-size:14.5px;color:var(--tx2);line-height:1.6}
+.dz-wel .chk{width:84px;height:84px;margin-bottom:8px}
+.dz-wel .chk circle{fill:none;stroke:#2FBF71;stroke-width:3;stroke-dasharray:183;stroke-dashoffset:183;animation:dzDraw .5s ease-out forwards}
+.dz-wel .chk path{fill:none;stroke:#fff;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:dzDraw .3s .4s ease-out forwards}
+.dz-wel .btns{display:grid;gap:8px;width:min(340px,100%);margin-top:26px}
+/* 알림 권한 = 먼저 이유 설명 */
+.dz-perm{position:fixed;inset:0;z-index:2600;background:rgba(0,0,0,.6);display:flex;align-items:flex-end}
+.dz-perm .in{width:100%;padding:22px 16px calc(18px + env(safe-area-inset-bottom,0px));border-radius:20px 20px 0 0;background:#1B1B1D;animation:dzUp .22s ease-out}
+.dz-perm b{font-size:17px}
+.dz-perm p{margin:8px 0 0;font-size:13.5px;color:var(--tx2);line-height:1.6}
+.dz-perm .btns{display:grid;gap:8px;margin-top:16px}
+</style>
+<script>
+/* ══ 2026.11.12-A 고른 부품 층 · 계정 · 입구 ══ */
+(function () {
+  'use strict';
+  var Dz = window.A99Dz; if (!Dz) return;
+  function $(id) { return document.getElementById(id); }
+  function q(s, r) { return (r || document).querySelector(s); }
+  var esc = Dz.esc;
+  function signed() { return !!(window.A99Auth && window.A99Auth.signedIn && window.A99Auth.signedIn()); }
+  var KEBAB = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>';
+  var PASS = false;   /* 원래 「내 계정」 창을 열 때만 잠깐 통과 */
+
+  /* ── 1. 오른쪽 위 ⋮ 메뉴 ── */
+  function kbPaint() {
+    var b = $('auBtn'); if (!b) return;
+    if (signed()) { if (!b.classList.contains('dz-kb') || b.innerHTML.indexOf('<svg') < 0) { b.classList.add('dz-kb'); b.innerHTML = KEBAB; b.setAttribute('aria-label', '메뉴 · 내 프로필 · 계정'); b.setAttribute('aria-haspopup', 'menu'); } }
+    else if (b.classList.contains('dz-kb')) { b.classList.remove('dz-kb'); b.removeAttribute('aria-haspopup'); if (window.A99Auth && window.A99Auth.refresh) { } }
+  }
+  function closeKm() { var m = $('dzKm'), bd = $('dzKmBd'); if (m) m.remove(); if (bd) bd.remove(); }
+  function goProf() {
+    closeKm(); if (typeof window.show === 'function') window.show('paper');
+    var n = 0, t = setInterval(function () { n++; if (window.A99Paper && window.A99Paper._setView && $('pp-pfv')) { clearInterval(t); window.A99Paper._setView('prof'); } else if (n > 80) clearInterval(t); }, 100);
+  }
+  function openAcctOrig() { var b = $('auBtn'); if (!b) return; PASS = true; try { b.click(); } finally { PASS = false; } }
+  Dz.logout = function () { closeKm(); openAcctOrig(); setTimeout(function () { var o = $('auOut'); if (o) o.click(); }, 30); };
+  Dz.quitInfo = function () { closeKm(); openAcctOrig(); };
+  Dz.pwChange = function () {
+    closeKm();
+    if (window.A99Paper && window.A99Paper._meSheet && $('pp-pfv')) { window.A99Paper._meSheet(); return; }
+    goProf(); var n = 0, t = setInterval(function () { n++; if (window.A99Paper && window.A99Paper._meSheet && $('pp-pfv')) { clearInterval(t); window.A99Paper._meSheet(); } else if (n > 80) clearInterval(t); }, 120);
+  };
+  function openKm() {
+    closeKm();
+    var nick = (window.A99Auth && window.A99Auth.nick && window.A99Auth.nick()) || '';
+    var bd = document.createElement('div'); bd.className = 'dz-kmbd'; bd.id = 'dzKmBd'; bd.addEventListener('click', closeKm);
+    var m = document.createElement('div'); m.className = 'dz-km'; m.id = 'dzKm'; m.setAttribute('role', 'menu');
+    m.innerHTML = '<div class="who">로그인한 계정<b>' + esc(nick || '회원') + '</b></div><button type="button" role="menuitem" data-km="prof">내 프로필 <span>티어 · 전적 · 배지</span></button><button type="button" role="menuitem" data-km="acct">내 계정</button><button type="button" role="menuitem" data-km="out" class="out">로그아웃</button>';
+    m.addEventListener('click', function (e) { var b = e.target.closest('[data-km]'); if (!b) return; var k = b.dataset.km; if (k === 'prof') goProf(); else if (k === 'acct') { closeKm(); openAcctOrig(); } else Dz.logout(); });
+    document.body.appendChild(bd); document.body.appendChild(m);
+    var f = q('[data-km]', m); if (f) f.focus();
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#auBtn'); if (!b || PASS || !signed()) return;
+    e.preventDefault(); e.stopImmediatePropagation(); if ($('dzKm')) closeKm(); else openKm();
+  }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeKm(); });
+
+  /* ── 2. 가입 칸: 단계 표시 · 비밀번호 강도 · 전체 동의 + 펼쳐 보기 ── */
+  function pwLevel(p) { if (!p) return 0; var lv = 0; if (p.length >= 8) lv++; if (p.length >= 12) lv++; if (/[a-zA-Z]/.test(p) && /\d/.test(p)) lv++; if (/[^a-zA-Z0-9]/.test(p) || p.length >= 16) lv++; return Math.max(1, Math.min(4, lv)); }
+  function signupPass() {
+    var f = $('auForm'), code = $('auCode'); if (!f || !code) return;
+    if (!q('.dz-gst', f)) { var o = document.createElement('ol'); o.className = 'dz-gst'; o.setAttribute('aria-label', '가입 단계'); f.insertBefore(o, f.firstChild); }
+    var pw = $('auPw'), pw2 = $('auPw2'), nick = $('auNick'), ag = $('auAgree'), pol = $('auPolicy');
+    if (pw && !q('.dz-pwm', f)) { var m = document.createElement('div'); m.className = 'dz-pwm'; m.innerHTML = '<div class="bar"><i></i><i></i><i></i><i></i></div><small>8자 이상 · 길고 문장처럼 만들수록 안전해요</small>'; pw.parentNode.appendChild(m); }
+    if (ag && pol && !q('.dz-all', f)) {
+      var l1 = ag.closest('label'), l2 = pol.closest('label'), w = document.createElement('div'); w.className = 'dz-agw'; w.hidden = true;
+      var all = document.createElement('button'); all.type = 'button'; all.className = 'dz-all'; all.setAttribute('role', 'checkbox');
+      all.innerHTML = '<span class="cb" aria-hidden="true"></span>전체 동의 <span class="ex" data-dzex="1">펼쳐 보기 ›</span>';
+      l1.parentNode.insertBefore(all, l1); l1.parentNode.insertBefore(w, l1); w.appendChild(l1); w.appendChild(l2);
+      all.addEventListener('click', function (e) {
+        if (e.target.closest('[data-dzex]')) { w.hidden = !w.hidden; e.target.closest('[data-dzex]').textContent = w.hidden ? '펼쳐 보기 ›' : '접기 ‹'; return; }
+        if (ag.checked && pol.checked) { ag.checked = false; ag.dispatchEvent(new Event('change')); pol.checked = false; pol.dispatchEvent(new Event('change')); paint(); return; }
+        if (!ag.checked) { ag.checked = true; ag.dispatchEvent(new Event('change')); }
+        if (!pol.checked) pol.click();   /* 운영방침은 팝업에서 「확인했어요」를 눌러야만 켜진다 (원래 규칙 그대로) */
+        paint();
+      });
+      [ag, pol].forEach(function (x) { x.addEventListener('change', paint); x.addEventListener('click', function () { setTimeout(paint, 0); }); });
+    }
+    function paint() {
+      var steps = [['초대코드', !!(code.value.trim())], ['닉네임 · 비밀번호', !!(nick && /^[가-힣a-zA-Z0-9_]{2,12}$/.test(nick.value.trim()) && pw && pw.value.length >= 8 && pw2 && pw2.value === pw.value)], ['동의', !!(ag && ag.checked && pol && pol.checked)]];
+      var at = 0; while (at < 3 && steps[at][1]) at++;
+      var o = q('.dz-gst', f), html = steps.map(function (s, i) { return '<li class="' + (i < at ? 'done' : i === at ? 'cur' : '') + '"><i>' + (i < at ? '✓' : i + 1) + '</i>' + s[0] + '</li>'; }).join('');
+      if (o && o.dataset.h !== html) { o.dataset.h = html; o.innerHTML = html; }
+      var mm = q('.dz-pwm', f); if (mm && pw) { var lv = pwLevel(pw.value); mm.className = 'dz-pwm l' + lv; mm.querySelector('small').textContent = !pw.value ? '8자 이상 · 길고 문장처럼 만들수록 안전해요' : pw.value.length < 8 ? '너무 짧아요 · 8자 이상' : ['', '약함', '보통', '강함', '아주 강함'][lv] + (lv < 3 ? ' · 숫자와 글자를 섞거나 더 길게' : ''); }
+      var all = q('.dz-all', f); if (all && ag && pol) all.setAttribute('aria-checked', String(ag.checked && pol.checked));
+    }
+    if (!f.dataset.dzg) { f.dataset.dzg = '1'; f.addEventListener('input', paint); }
+    paint();
+  }
+
+  /* ── 3. 가입 직후 = 웰컴 화면 ── */
+  Dz.welcome = function (nick) {
+    var w = document.createElement('div'); w.className = 'dz-wel'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true'); w.setAttribute('aria-label', '가입 완료');
+    w.innerHTML = '<svg class="chk" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29"/><path d="M20 33l8 8 16-17"/></svg><div class="k">WELCOME</div><h2>' + esc(nick || '') + ' 님, 환영해요</h2><p>가상 연습금 <b style="color:var(--tx)">10,000 USD</b>로 모의투자를 시작해요.<br>티어는 <b style="color:var(--tx)">개미</b>부터 · 이번 달 +5%면 불개미로 올라가요.</p><div class="btns"><button type="button" class="au-go" data-w="paper">모의투자 시작하기</button><button type="button" class="au-gh" data-w="x">둘러보기</button></div>';
+    document.body.appendChild(w);
+    w.addEventListener('click', function (e) { var b = e.target.closest('[data-w]'); if (!b) return; w.remove(); if (b.dataset.w === 'paper' && typeof window.show === 'function') window.show('paper'); });
+  };
+
+  /* ── 4. 알림 권한 = 먼저 이유 설명 (브라우저 창을 띄우기 전에 한 번 묻는다) ── */
+  try {
+    if (window.Notification && Notification.requestPermission && !Notification.requestPermission._dz) {
+      var R0 = Notification.requestPermission.bind(Notification);
+      var wrap = function () {
+        if (Notification.permission !== 'default') return R0();
+        return new Promise(function (res) {
+          var w = document.createElement('div'); w.className = 'dz-perm'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true');
+          w.innerHTML = '<div class="in"><b>알림을 켤까요?</b><p>도전장이 오거나 대결 · 관심 종목에 일이 생기면 한 번만 알려 드려요. 광고는 보내지 않아요. 언제든 휴대폰 설정에서 끌 수 있어요.</p><div class="btns"><button type="button" class="au-go" data-p="y">알림 켜기</button><button type="button" class="au-gh" data-p="n">나중에</button></div></div>';
+          document.body.appendChild(w);
+          w.addEventListener('click', function (e) { var b = e.target.closest('[data-p]'); if (!b && e.target !== w) return; w.remove(); if (b && b.dataset.p === 'y') R0().then(res, function () { res('default'); }); else res('default'); });
+        });
+      };
+      wrap._dz = 1; Notification.requestPermission = wrap;
+    }
+  } catch (e) { }
+
+  /* ── 5. 처음 쓰는 사람 안내 = 스포트라이트 (종목 검색창 · 한 번만) ── */
+  var coachT = 0;
+  function coach() {
+    if (/[?&](s|cm|duel)=/.test(location.search)) return;
+    try { if (localStorage.getItem('a99_dz_coach1')) return; } catch (e) { return; }
+    var pg = typeof CUR_PAGE !== 'undefined' ? CUR_PAGE : ''; if (pg !== 'stock') return;
+    var inp = $('q'); if (!inp || !inp.offsetParent || $('dzSpot') || q('.au-sheet') || q('#auGate') || q('#auLock')) return;
+    clearTimeout(coachT);
+    coachT = setTimeout(function () {
+      var box = inp.closest('.srch, .sbar, form, div') || inp, r = box.getBoundingClientRect(); if (!r.width) return;
+      try { localStorage.setItem('a99_dz_coach1', '1'); } catch (e) { }
+      var s = document.createElement('div'); s.className = 'dz-spot'; s.id = 'dzSpot';
+      s.style.cssText = 'left:' + (r.left - 6) + 'px;top:' + (r.top - 6) + 'px;width:' + (r.width + 12) + 'px;height:' + (r.height + 12) + 'px';
+      var c = document.createElement('div'); c.className = 'dz-coach'; c.id = 'dzCoach'; c.setAttribute('role', 'dialog'); c.style.top = (r.bottom + 16) + 'px';
+      c.innerHTML = '아무 미국 주식이나 여기서 검색해요<small>한글 이름도 돼요 · 예: 테슬라, 엔비디아</small><button type="button">알겠어요</button>';
+      document.body.appendChild(s); document.body.appendChild(c);
+      var end = function () { s.remove(); c.remove(); };
+      c.querySelector('button').addEventListener('click', function () { end(); try { inp.focus(); } catch (e) { } });
+      s.addEventListener('click', end);
+    }, 900);
+  }
+
+  Dz.more.push(function () { kbPaint(); signupPass(); coach(); });
+})();
+</script>
+
 </body>
 </html>
