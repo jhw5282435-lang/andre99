@@ -1,5 +1,5 @@
 # 안드레99 사업별 매출 자료 — 한 달에 두 번 스스로 돈다(운영자 손작업 없음)
-#   대상: S&P 500 + 나스닥 100 · 기간: 최근 3년(연간 3 + 분기 4) · 합계 검증 ±1% 통과한 칸만
+#   대상: S&P 500 + 나스닥 100 · 받는 자료 15개월 · 연간 3년(최신 10-K 의 비교 숫자 포함 · 표시함) + 분기 4 · 합계 검증 ±1% 통과한 칸만
 #   결과: 「data」 가지의 seg/<티커>.json (main 과 분리 — 운영 앱 파일은 건드리지 않음)
 #   앱은 사업별 칩을 열 때 https://cdn.jsdelivr.net/gh/jhw5282435-lang/andre99@data/seg/<티커>.json 하나만 읽는다
 # 연락처는 저장소 비밀값 SEC_UA 에서만 읽어요(코드 · 결과 · 기록에 안 나옴).
@@ -45,7 +45,7 @@ jobs:
         if: steps.chk.outputs.ok == 'true'
         env:
           SEC_UA: ${{ secrets.SEC_UA }}
-        run: python3 tools/sec_seg_build.py --data data --years 3
+        run: python3 tools/sec_seg_build.py --data data
       - name: 결과 요약 화면
         if: steps.chk.outputs.ok == 'true'
         run: |
