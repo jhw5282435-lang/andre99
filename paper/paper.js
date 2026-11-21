@@ -652,7 +652,7 @@ window.A99E = A99E;
 'use strict';
 if (window.A99Paper) return;
 
-var VER = '2026.11.12-A';
+var VER = '2026.11.20-A';
 var Q = 'US' + 'DT';                              // 모의 계좌 단위 표기 (가상 · 실제 돈 아님). 가격은 하이퍼리퀴드 달러 시세
 var WSURL = 'wss://api.hyperliquid.xyz/ws';      // 실시간 시세: 하이퍼리퀴드 공개 자료
 var HLI = 'https://api.hyperliquid.xyz/info';
@@ -3113,7 +3113,7 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
   function hms(s) { s = Math.max(0, Math.floor(s)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h + ':' + ('0' + m).slice(-2) + ':' + ('0' + x).slice(-2); }
   function leftTxt(s) { return s > 3600 ? Math.floor(s / 3600) + '시간 ' + Math.floor(s % 3600 / 60) + '분' : mmss(s); }
   function fire(n) { return n >= 3 ? '<span class="dl-fire" title="' + n + '연승">🔥' + n + '</span>' : ''; }
-  function tierTag(t) { t = TIERS[t] ? t : 0; return '<span class="dl-tier ' + TIERS[t][3] + '">' + TIERS[t][0] + '</span>'; }
+  function tierTag(t) { t = TIERS[t] ? t : 0; return '<span class="dl-tier ' + TIERS[t][3] + '">' + gl5(t + 1, 12) + TIERS[t][0] + '</span>'; }
   function toast(t, bad) { if (P() && P()._toast) P()._toast(t, bad); }
   function now() { return Date.now() + SKEW; }
   function logged() { return !!(P() && P()._me && P()._me()); }
@@ -3380,7 +3380,244 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
       else if (k === 'fan') { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, t + i * .09, i === 3 ? .45 : .12, 'square', .07); }); }
     } catch (e) { }
   }
+  /* ══ 2026.11.20-A 경기장 5판 — 순흑 · 선만 · 지형도 머리 · 티어 표시 ③ · 순간 모션 4종 ══
+     · 매칭 · 승급 = C 로고 궤도 + 지형도 사진 + 금 파동 + 큰 숫자 / 승리 · 패배 = B 데이터 피드(서버 수익률 흐름 막대) + 서킷 사진 + 유리 반사 + 카드 글
+     · 재료는 paper/m/ (재생기 lottie-web 5.12.2 light · MIT). 경기장(대결 · 랭킹 · 프로필)을 처음 열 때만 받는다.
+     · 재료가 아직 안 왔거나 실패하면 예전 효과(11.12-A) 그대로 — 대결 흐름은 그대로 두고 그 위에만 얹는다. */
+  var M5B = (function () { try { var s = document.currentScript && document.currentScript.src; if (s) return s.replace(/[?#].*$/, '').replace(/[^\/]*$/, '') + 'm/'; } catch (e) { } return 'paper/m/'; })(), M5Q = '?v=2026.11.20-A';
+  var M5 = { lib: 0, d: {}, img: {}, cache: {}, want: {}, retry: 0 };
+  var GL5 = {"d":["M16 11.3L16.3 11.3L16.5 11.3L16.8 11.3L17.1 11.3L17.3 11.4L17.6 11.4L17.8 11.5L18.1 11.6L18.3 11.7L18.6 11.8L18.8 12L19 12.1L19.2 12.3L19.4 12.5L19.6 12.7L19.8 12.9L20 13.1L20.2 13.3L20.3 13.5L20.4 13.8L20.6 14L20.7 14.3L20.8 14.5L20.9 14.8L20.9 15.1L21 15.3L21 15.6L21 15.9L21 16.2L21 16.4L21 16.7L20.9 17L20.9 17.3L20.8 17.5L20.7 17.8L20.6 18.1L20.5 18.3L20.3 18.5L20.2 18.8L20 19L19.9 19.2L19.7 19.4L19.5 19.6L19.3 19.8L19.1 20L18.8 20.1L18.6 20.3L18.4 20.4L18.1 20.5L17.8 20.6L17.6 20.7L17.3 20.8L17.1 20.9L16.8 20.9L16.5 20.9L16.2 20.9L16 20.9L15.7 20.9L15.4 20.9L15.2 20.8L14.9 20.8L14.6 20.7L14.4 20.6L14.1 20.5L13.9 20.4L13.7 20.2L13.4 20.1L13.2 19.9L13 19.7L12.9 19.5L12.7 19.3L12.9 19.1L13.1 19.2L13.3 19.4L13.5 19.5L13.7 19.6L13.9 19.7L14.2 19.8L14.4 19.9L14.6 19.9L14.8 20L15.1 20L15.3 20.1L15.5 20.1L15.7 20.1L16 20.1L16.2 20.1L16.4 20.1L16.6 20L16.9 20L17.1 19.9L17.3 19.9L17.5 19.8L17.7 19.7L17.9 19.6L18.1 19.4L18.3 19.3L18.4 19.2L18.6 19.1L18.8 18.9L18.9 18.7L19.1 18.6L19.2 18.4L19.3 18.2L19.5 18L19.6 17.8L19.7 17.6L19.8 17.4L19.8 17.2L19.9 17L19.9 16.8L20 16.6L20 16.4L20 16.1L20 15.9L20 15.7L20 15.5L20 15.2L19.9 15L19.9 14.8L19.8 14.6L19.7 14.4L19.6 14.2L19.5 14L19.4 13.8L19.3 13.6L19.2 13.4L19 13.2L18.9 13.1L18.7 12.9L18.5 12.8L18.4 12.6L18.2 12.5L18 12.3L17.8 12.2L17.6 12.1L17.4 12L17.1 11.9L16.9 11.9L16.7 11.8L16.5 11.7L16.2 11.7L16 11.7Z","M23.1 13.7L23.2 14.1L23.4 14.5L23.5 14.9L23.6 15.3L23.7 15.7L23.7 16.1L23.7 16.6L23.7 17L23.6 17.4L23.6 17.8L23.5 18.3L23.4 18.7L23.2 19.1L23.1 19.5L22.9 19.9L22.7 20.3L22.4 20.6L22.2 21L21.9 21.3L21.6 21.6L21.3 21.9L21 22.2L20.6 22.5L20.2 22.7L19.9 23L19.5 23.2L19.1 23.4L18.7 23.5L18.3 23.6L17.8 23.7L17.4 23.8L17 23.9L16.5 23.9L16.1 23.9L15.7 23.9L15.2 23.9L14.8 23.8L14.4 23.7L13.9 23.6L13.5 23.4L13.1 23.3L12.8 23.1L12.4 22.9L12 22.6L11.7 22.4L11.3 22.1L11.1 21.8L10.8 21.5L10.5 21.2L10.3 20.8L10.1 20.5L10.5 20.1L10.8 20.4L11.1 20.6L11.4 20.8L11.7 21L12 21.2L12.3 21.4L12.6 21.6L13 21.8L13.3 21.9L13.6 22L14 22.1L14.3 22.2L14.7 22.3L15 22.3L15.4 22.3L15.7 22.3L16.1 22.3L16.4 22.3L16.8 22.3L17.1 22.2L17.4 22.1L17.8 22L18.1 21.9L18.4 21.8L18.8 21.7L19.1 21.5L19.4 21.3L19.6 21.1L19.9 20.9L20.2 20.7L20.4 20.5L20.7 20.2L20.9 20L21.1 19.7L21.4 19.4L21.5 19.1L21.7 18.8L21.9 18.5L22 18.2L22.2 17.9L22.3 17.5L22.4 17.2L22.4 16.8L22.5 16.5L22.6 16.1L22.6 15.8L22.6 15.4L22.6 15L22.6 14.6L22.6 14.3L22.5 13.9Z","M22 24.2L21.5 24.6L21.1 24.9L20.6 25.2L20.1 25.5L19.6 25.8L19.1 26L18.6 26.2L18 26.4L17.4 26.5L16.9 26.6L16.3 26.6L15.7 26.6L15.1 26.6L14.6 26.6L14 26.5L13.4 26.4L12.8 26.3L12.3 26.1L11.7 25.9L11.2 25.7L10.6 25.4L10.1 25.1L9.6 24.8L9.2 24.4L8.7 24L8.3 23.6L7.9 23.2L7.5 22.8L7.1 22.3L6.8 21.8L6.5 21.3L6.2 20.8L6 20.2L5.8 19.6L5.6 19.1L5.4 18.5L5.3 17.9L5.2 17.3L5.2 16.8L5.2 16.2L5.2 15.6L5.2 15L5.3 14.4L5.4 13.8L5.6 13.3L5.8 12.7L6 12.2L6.2 11.6L6.5 11.1L6.8 10.6L7.1 10.1L7.5 9.7L7.9 9.2L8.3 8.8L8.7 8.4L9.2 8.1L9.6 7.7L10.1 7.5L10.6 7.2L11.1 7L11.7 6.8L12.2 6.6L12.5 7.3L12.1 7.6L11.6 7.9L11.2 8.2L10.8 8.5L10.5 8.8L10.1 9.2L9.8 9.5L9.5 9.9L9.2 10.3L8.9 10.7L8.6 11.1L8.4 11.5L8.2 12L8 12.4L7.8 12.8L7.7 13.3L7.6 13.8L7.5 14.2L7.4 14.7L7.4 15.2L7.3 15.7L7.4 16.1L7.4 16.6L7.4 17.1L7.5 17.5L7.6 18L7.8 18.4L7.9 18.9L8.1 19.3L8.3 19.8L8.5 20.2L8.7 20.6L9 21L9.3 21.3L9.6 21.7L9.9 22.1L10.2 22.4L10.6 22.7L10.9 23L11.3 23.3L11.7 23.5L12.1 23.8L12.5 24L13 24.2L13.4 24.3L13.9 24.5L14.3 24.6L14.8 24.7L15.3 24.8L15.8 24.8L16.2 24.8L16.7 24.8L17.2 24.8L17.7 24.8L18.2 24.7L18.7 24.6L19.1 24.5L19.6 24.3L20.1 24.2L20.6 24L21 23.8L21.5 23.6Z","M8 27L7.3 26.7L6.6 26.3L6 25.8L5.4 25.3L4.9 24.8L4.3 24.2L3.9 23.5L3.4 22.9L3 22.2L2.6 21.5L2.3 20.8L2 20L1.8 19.2L1.6 18.4L1.5 17.6L1.4 16.8L1.3 16L1.3 15.2L1.4 14.4L1.5 13.6L1.6 12.8L1.8 12L2.1 11.2L2.4 10.5L2.7 9.7L3.1 9L3.5 8.3L3.9 7.6L4.4 7L5 6.4L5.5 5.8L6.1 5.3L6.8 4.8L7.4 4.3L8.1 3.9L8.8 3.5L9.5 3.1L10.3 2.9L11 2.6L11.8 2.4L12.6 2.3L13.3 2.2L14.1 2.1L14.9 2.1L15.7 2.2L16.4 2.4L16.4 3.5L15.7 3.7L15 3.8L14.4 4L13.7 4.2L13.1 4.4L12.5 4.7L11.9 4.9L11.3 5.2L10.7 5.5L10.2 5.9L9.7 6.3L9.2 6.7L8.7 7.1L8.2 7.5L7.8 8L7.4 8.5L7 9L6.6 9.5L6.3 10L6 10.6L5.7 11.2L5.5 11.7L5.2 12.3L5 12.9L4.9 13.5L4.8 14.1L4.7 14.8L4.6 15.4L4.6 16L4.6 16.7L4.6 17.3L4.7 17.9L4.8 18.6L4.9 19.2L5 19.8L5.2 20.4L5.4 21L5.7 21.6L6 22.2L6.3 22.8L6.6 23.4L7 23.9L7.4 24.5L7.8 25L8.2 25.6L8.7 26.1Z"],"cx":16,"cy":16,"r":16.31,"vb":"-1.51 -1.51 35.03 35.03"};
+  function m5Lot() { return window.lottie || window.bodymovin || null; }
+  function m5Json(k, f) {
+    if (M5.d[k] != null) return; M5.d[k] = 0;
+    fetch(M5B + f + '.json' + M5Q).then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); }).then(function (j) { M5.d[k] = j; }).catch(function () { delete M5.d[k]; });
+  }
+  function m5Load() {
+    if (!M5.lib) { M5.lib = 1; var s = document.createElement('script'); s.src = M5B + 'lottie_light.min.js' + M5Q; s.async = true; s.onerror = function () { M5.lib = 0; s.remove(); }; document.head.appendChild(s); }
+    m5Json('match', 'C_match'); m5Json('ripple', 'fx_ripple'); m5Json('sweep', 'fx_sweep');
+    ['ops', 'cast'].forEach(function (k) { if (M5.img[k] != null) return; M5.img[k] = 0; var im = new Image(); im.onload = function () { M5.img[k] = 1; }; im.onerror = function () { delete M5.img[k]; }; im.src = M5B + k + '.jpg' + M5Q; });
+  }
+  function m5Ready(k, fx, bg) { return !!(m5Lot() && (k === 'bars' || M5.d[k]) && M5.d[fx] && M5.img[bg] === 1); }
+  function m5Reduce() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+  /* 티어 표시 ③ — 로고의 호 4개가 차례로 켜지고 T5 = 고리 · T6 = 꽉 찬 원판. 금색은 T5 · T6 만 */
+  function m5Sprite() {
+    if (document.getElementById('dl5-spr') || !document.body) return;
+    var d = document.createElement('div'); d.id = 'dl5-spr'; d.setAttribute('aria-hidden', 'true'); d.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+    d.innerHTML = '<svg width="0" height="0" focusable="false"><defs>' + GL5.d.map(function (p, i) { return '<path id="dl5a' + i + '" d="' + p + '"/>'; }).join('') + '</defs></svg>';
+    document.body.appendChild(d);
+  }
+  function gl5(t, size, all) {
+    var col = t >= 5 ? 'var(--hi5,#F5C542)' : 'currentColor', lit = all ? 4 : Math.min(t, 4), inv = t === 6 && !all;
+    var s = '<svg class="dl5-gl" width="' + size + '" height="' + size + '" viewBox="' + GL5.vb + '" aria-hidden="true" focusable="false">';
+    if (t >= 5 && !all) s += '<circle cx="' + GL5.cx + '" cy="' + GL5.cy + '" r="' + GL5.r + '" fill="' + (inv ? col : 'none') + '" stroke="' + col + '" stroke-width="1.3"/>';
+    for (var i = 0; i < 4; i++) s += '<use href="#dl5a' + i + '" fill="' + (inv ? '#000' : i < lit ? (all ? 'currentColor' : col) : 'rgba(255,255,255,.16)') + '"/>';
+    return s + '</svg>';
+  }
+  /* 경기장 바탕 · 선 · 머리 사진 (거래 화면은 손대지 않는다) */
+  function m5Css() {
+    if (document.getElementById('dl5-css')) return;
+    var A = 'html.dl5 :is(#pp-dlv,#pp-rkv,#pp-pfv)', OPS = 'url("' + M5B + 'ops.jpg' + M5Q + '")';
+    var css = [
+      'html.dl5{--hi5:#F5C542;--ln5:#3A3A40}',
+      'html.dl5-on #p-paper,html.dl5-on #paperHost{background:#000}',
+      A + '{--s1:transparent;--s2:#0F0F11;--s3:#1A1A1E;--line:#3A3A40;--tx2:#A0A0A5;--tx3:#8A8A90;--pc1:#000;--pl:#3A3A40;--dlbg:transparent;--dlb:#E8E8EA;position:relative;isolation:isolate;background:#000}',
+      A + '::before{content:"";position:absolute;left:0;right:0;top:0;height:300px;z-index:-1;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,.28),#000 96%),' + OPS + ' center top/cover no-repeat}',
+      A + ' :is(.dl-card,.dl-board,.dl-share,.dl-qchart,.dl-qcard,.dl-res,.dl-gg,.dz-league,.dl-why,.dl-ask,.dl-match,.dl-spect,.dl-newb,.dl-foot){background:transparent;box-shadow:none}',
+      A + ' :is(.dl-card,.dl-board,.dl-share,.dl-qchart,.dl-res,.dl-gg,.dz-league,.dl-why,.dl-ask,.dl-newb,.dl-foot){border:1px solid var(--ln5);border-radius:8px}',
+      A + ' :is(.dl-qcard,.dl-match,.dl-spect){border:1px dashed var(--ln5)}',
+      A + ' .dl-why{color:#C9C9CE}' + A + ' .dl-why b{color:#F3F3F4}',
+      A + ' .dl-res.win{border-color:rgba(245,197,66,.55)}' + A + ' .dl-res.win .dl-k{color:var(--hi5)}',
+      A + ' .dl-res.has5 .dz-stamp{display:none}',
+      A + ' .dl-steps li{background:transparent;box-shadow:inset 0 0 0 1px var(--ln5)}' + A + ' .dl-steps li.now{background:transparent;box-shadow:inset 0 0 0 1px #F3F3F4}',
+      A + ' .dz-tipb,' + A + ' .dz-tipb::before{background:#000;border-color:var(--ln5)}',
+      A + ' .dz-rl,' + A + ' .dz-rl button,' + A + ' .dz-acc{border-color:var(--ln5)}',
+      A + ' .dl-spark{background:none}',
+      A + ' .dz-pod i{background:transparent;border:1px solid var(--ln5);border-bottom:0}' + A + ' .dz-pod i.h1{background:transparent;border-color:#F3F3F4;color:#F3F3F4}',
+      /* 티어 칩 · 엠블럼 = 선 + 로고 호 표시 */
+      'html.dl5 .dl-tier{display:inline-flex;align-items:center;gap:3px;background:transparent;border:1px solid var(--ln5);color:#E8E8EA;border-radius:4px;padding:0 5px 0 3px;line-height:15px}',
+      'html.dl5 .dl-tier.t4,html.dl5 .dl-tier.t5{color:var(--hi5);border-color:rgba(245,197,66,.55)}',
+      'html.dl5 .dl-tier .dl5-gl,html.dl5 .dl-emb .dl5-gl{flex:none;display:block}',
+      'html.dl5 .dl-emb{clip-path:none;background:transparent;border:1px solid var(--ln5);border-radius:10px;flex-direction:column;gap:5px;color:#E8E8EA;width:72px;height:auto;min-height:72px;padding:8px 4px}',
+      'html.dl5 .dl-emb.big{width:84px;min-height:84px}html.dl5 .dl-emb.huge{width:128px;min-height:128px;font-size:17px;gap:8px}',
+      'html.dl5 .dl-emb.t4,html.dl5 .dl-emb.t5{color:var(--hi5);border-color:rgba(245,197,66,.55)}',
+      /* 화면 전체 덮개(준비 · 승급 · 팝업)도 순흑 */
+      'html.dl5 .dl-vsx{background:linear-gradient(to bottom,rgba(0,0,0,.3),#000 320px),' + OPS + ' center top/min(100%,720px) auto no-repeat,#000}',
+      'html.dl5 .dl-promo,html.dl5 .dl-promo.down{background:#000}',
+      'html.dl5 .dl-popc,html.dl5 .dz-bpop .in{background:#000;border-color:var(--ln5)}',
+      'html.dl5 .dl-pm-k{color:#A0A0A5}',
+      'html.dl5 .dl-promo .dl-share{background:transparent;border:1px solid var(--ln5)}',
+      /* 순간 무대 */
+      '.dl5-mo{position:fixed;inset:0;z-index:98;display:flex;align-items:center;justify-content:center;padding:16px;background:#000;animation:dl5in .18s ease-out both}',
+      '.dl5-mo.out{animation:dl5out .22s ease both}',
+      '@keyframes dl5in{from{opacity:0}}@keyframes dl5out{to{opacity:0}}',
+      '.dl5-mo .dl5-mst{width:min(100%,440px)}',
+      '.dl5-skip{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));top:calc(12px + env(safe-area-inset-top,0px));font:inherit;font-size:12.5px;font-weight:700;color:#E8E8EA;background:rgba(0,0,0,.6);border:1px solid #3A3A40;border-radius:6px;padding:0 12px;min-height:36px}',
+      '.dl5-mst{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;container-type:inline-size;background:#000;isolation:isolate;border-radius:10px;border:1px solid #3A3A40;color:#F3F3F4;text-align:left}',
+      '.dl5-mst>.bg{position:absolute;inset:-4%;background-size:cover;background-position:center top;z-index:0}',
+      '.dl5-mst.run>.bg{animation:dl5zoom 9s ease-out both}',
+      '@keyframes dl5zoom{from{transform:scale(1)}to{transform:scale(1.07)}}',
+      '.dl5-mst>.dim{position:absolute;inset:0;z-index:1;background:#000;opacity:.55}',
+      '.dl5-mst>.L{position:absolute;inset:0;z-index:2}.dl5-mst>.L svg{display:block}',
+      '.dl5-mst>.tx{position:absolute;inset:0;z-index:4;pointer-events:none}',
+      '.dl5-mst .ov{position:absolute;white-space:nowrap}.dl5-mst .ov.c{left:50%;transform:translateX(-50%);text-align:center}',
+      '.dl5-mst .tx.run .ov[data-at]{animation:dl5ov .4s cubic-bezier(.16,1,.3,1) both}',
+      '@keyframes dl5ov{from{opacity:0;translate:0 6px}to{opacity:1;translate:0 0}}',
+      '.dl5-mst .tx.run .ov.gone{animation:dl5gone .25s ease both}',
+      '@keyframes dl5gone{from{opacity:1}to{opacity:0}}',
+      '.dl5-mst .k1{font-family:var(--mono,ui-monospace,monospace);font-size:max(9.5px,3.2cqw);color:#A0A0A5;letter-spacing:.05em}',
+      '.dl5-mst .k2{font-size:max(12px,4.6cqw);font-weight:800}',
+      '.dl5-mst .hero{font-family:var(--mono,ui-monospace,monospace);font-size:max(22px,11cqw);font-weight:700;line-height:1;font-variant-numeric:tabular-nums}',
+      '.dl5-mst .cardtop{left:5%;top:4.5%;display:flex;align-items:center;gap:1.8cqw}.dl5-mst .cardtop .dl5-gl{width:max(14px,5.4cqw);height:max(14px,5.4cqw);color:#F3F3F4}.dl5-mst .cardtop b{font-family:var(--mono,ui-monospace,monospace);font-size:max(9.5px,3.2cqw);letter-spacing:.16em}',
+      '.dl5-res{position:relative;max-width:420px;margin:4px auto 10px}',
+      '.dl5-mph:empty{display:none}',
+      '.dl5-play{position:absolute;right:8px;top:8px;z-index:6;font:inherit;font-size:12px;font-weight:700;color:#F3F3F4;background:rgba(0,0,0,.6);border:1px solid #3A3A40;border-radius:6px;padding:0 10px;min-height:32px}',
+      '.dl5-play:focus-visible,.dl5-skip:focus-visible{outline:2px solid #F3F3F4;outline-offset:2px}',
+      '@media (prefers-reduced-motion:reduce){.dl5-mo,.dl5-mo.out,.dl5-mst.run>.bg,.dl5-mst .tx.run .ov[data-at],.dl5-mst .tx.run .ov.gone{animation:none}}'
+    ].join('\n');
+    var s = document.createElement('style'); s.id = 'dl5-css'; s.textContent = css; document.head.appendChild(s);
+  }
+  function m5Arena(v) {
+    var on = !!v && v !== 'trade';
+    document.documentElement.classList.toggle('dl5-on', on);
+    if (on) { m5Sprite(); m5Load(); }
+  }
+  /* 승리 · 패배 막대: 서버 수익률 흐름(15분마다 [시각, 나, 상대]) → 2시간 12칸, 칸마다 끝 시점 값 */
+  function m5Bucket(curve, n) {
+    n = n || 12; if (!curve.length) return { me: [], op: [] };
+    var t0 = curve[0][0] - 900e3, w = 24 * 3600e3 / n, me = [], op = [], j = 0;
+    for (var b = 0; b < n; b++) { var end = t0 + w * (b + 1), last = null; while (j < curve.length && curve[j][0] <= end + 1) { last = curve[j]; j++; } if (!last) break; me.push(last[1] * 100); op.push(last[2] * 100); }
+    return { me: me, op: op };
+  }
+  var m5Bars = (function () {
+    var GOLD = [0.961, 0.773, 0.259], INK = [0.953, 0.953, 0.957], T2 = [0.627, 0.627, 0.647], T3 = [0.541, 0.541, 0.565], IND = 0;
+    function st(k) { return { a: 0, k: k }; }
+    function an(keys, z0) { return { a: 1, k: keys.map(function (q, i) { var k = { t: q[0], s: Array.isArray(q[1]) ? q[1] : [q[1]] }; if (i < keys.length - 1) { var z = z0 || [0.16, 1, 0.3, 1]; k.o = { x: [z[0]], y: [z[1]] }; k.i = { x: [z[2]], y: [z[3]] }; } return k; }) }; }
+    function tr(t) { t = t || {}; return { ty: 'tr', p: t.p || st([0, 0]), a: t.a || st([0, 0]), s: t.s || st([100, 100]), r: st(0), o: st(100), sk: st(0), sa: st(0) }; }
+    function rc(x, y, w, h) { return { ty: 'rc', p: st([x, y]), s: st([w, h]), r: st(0) }; }
+    function ln(x1, y1, x2, y2) { return { ty: 'sh', ks: st({ i: [[0, 0], [0, 0]], o: [[0, 0], [0, 0]], v: [[x1, y1], [x2, y2]], c: false }) }; }
+    function fl(c, o) { return { ty: 'fl', c: c.a !== undefined ? c : st(c.concat([1])), o: typeof o === 'object' ? o : st(o == null ? 100 : o), r: 1 }; }
+    function sk(c, w, o) { return { ty: 'st', c: st(c.concat([1])), o: typeof o === 'object' ? o : st(o == null ? 100 : o), w: st(w), lc: 1, lj: 2, ml: 4 }; }
+    function tm(e) { return { ty: 'tm', s: st(0), e: e, o: st(0), m: 1 }; }
+    function lay(nm, shapes, o, OP) { return { ddd: 0, ind: ++IND, ty: 4, nm: nm, sr: 1, ks: { o: o || st(100), r: st(0), p: st([0, 0, 0]), a: st([0, 0, 0]), s: st([100, 100, 100]) }, ao: 0, shapes: shapes, ip: 0, op: OP, st: 0, bm: 0 }; }
+    return function (me, op, win) {
+      IND = 0; var OP = win ? 112 : 96, n = me.length, zy = 196, mx = Math.max.apply(null, me.concat(op).map(Math.abs).concat([1])), k = Math.min(26, 104 / mx), dx = Math.min(21.5, 260 / Math.max(n, 1)), x0 = 180 - dx * (n - 1) / 2, bars = [], marks = [], L = [];
+      me.forEach(function (v, i) {
+        var x = x0 + i * dx, h = v * k, t = 6 + i * (win ? 4 : 4.5), last = i === n - 1, hh = Math.max(1, Math.abs(h));
+        var shape = !win && last ? [rc(x, zy - h / 2, 12, hh), sk(T2, 1.5)] : [rc(x, zy - h / 2, 13, hh), fl(win ? (v >= 0 ? INK : T2) : T2, win ? (last ? 100 : 78) : 60)];
+        if (win && last) shape[1] = fl({ a: 1, k: [{ t: 66, s: INK.concat([1]), o: { x: [0.16], y: [1] }, i: { x: [0.3], y: [1] } }, { t: 78, s: GOLD.concat([1]) }] }, 100);
+        bars.push({ ty: 'gr', nm: 'b' + i, it: shape.concat([tr({ p: st([x, zy]), a: st([x, zy]), s: an([[t, [100, 0]], [t + (win ? 16 : 18), [100, 100]]], win ? null : [0.33, 0, 0.2, 1]) })]) });
+        var oy = zy - op[i] * k; marks.push({ ty: 'gr', nm: 'm' + i, it: [ln(x - 7, oy, x + 7, oy), sk(win ? T2 : T3, 2, an([[t + 6, 0], [t + 12, win ? 100 : 90]])), tr()] });
+      });
+      if (win && n) { var lx = x0 + (n - 1) * dx, lh = me[n - 1] * k; L.push(lay('마지막 금 테', [{ ty: 'gr', nm: 'o', it: [rc(lx, zy - lh / 2, 21, Math.abs(lh) + 10), sk(GOLD, 1.5), tr()] }], an([[76, 0], [82, 100]]), OP)); }
+      if (!win) L.push(lay('기록 저장 막대', [{ ty: 'gr', nm: 's', it: [ln(150, 306, 210, 306), tm(an([[66, 0], [90, 100]], [0.33, 0, 0.2, 1])), { ty: 'st', c: st(T3.concat([1])), o: st(100), w: st(2), lc: 2, lj: 2, ml: 4 }, tr()] }], null, OP));
+      L.push(lay('상대 표시', marks, null, OP), lay('내 막대', bars, null, OP), lay('0% 선', [{ ty: 'gr', nm: 'z', it: [ln(48, zy, 312, zy), tm(an([[0, 0], [16, 100]])), sk(T3, 1, 70), tr()] }], null, OP));
+      return { v: '5.7.4', fr: 60, ip: 0, op: OP, w: 360, h: 360, nm: win ? 'bars-win' : 'bars-loss', ddd: 0, assets: [], layers: L, markers: [] };
+    };
+  })();
+  /* 순간 무대 하나: 사진 · 어둡게 · 본 모션 · 마무리 효과 · 글 (확정 조합 그대로) */
+  function m5Stage(o) {
+    var el = document.createElement('div'); el.className = 'dl5-mst';
+    if (o.aria) { el.setAttribute('role', 'img'); el.setAttribute('aria-label', o.aria); }
+    el.innerHTML = '<div class="bg" style="background-image:url(\'' + M5B + o.bg + '.jpg' + M5Q + '\')"></div><div class="dim"></div><div class="L" data-l="main"></div><div class="L" data-l="fx"></div><div class="tx" aria-hidden="true">' + o.text + '</div>';
+    var Lt = m5Lot(), opt = function (c, d) { return { container: el.querySelector('[data-l="' + c + '"]'), renderer: 'svg', loop: false, autoplay: false, animationData: JSON.parse(JSON.stringify(d)), rendererSettings: { preserveAspectRatio: 'xMidYMid meet' } }; };
+    var main = Lt.loadAnimation(opt('main', o.d)), fx = Lt.loadAnimation(opt('fx', M5.d[o.fx])), timers = [];
+    var fxDur = (M5.d[o.fx].op - M5.d[o.fx].ip) / (M5.d[o.fx].fr || 60), dur = Math.max(o.d.op / (o.d.fr || 60), o.imp + fxDur);
+    function clear() { timers.forEach(clearTimeout); timers = []; }
+    function rest() {
+      clear(); main.goToAndStop(o.d.op - 1, true); fx.goToAndStop(M5.d[o.fx].op - 1, true); fx.wrapper.style.visibility = 'visible';
+      el.classList.remove('run'); var tx = el.querySelector('.tx'); tx.classList.remove('run');
+      tx.querySelectorAll('.old').forEach(function (x) { x.style.opacity = '0'; });
+      tx.querySelectorAll('[data-cnt]').forEach(function (x) { x.textContent = sp(+x.dataset.cnt); });
+    }
+    function play() {
+      clear(); if (m5Reduce()) { rest(); return; }
+      var tx = el.querySelector('.tx'); tx.classList.remove('run'); el.classList.remove('run'); void tx.offsetWidth;
+      tx.querySelectorAll('.ov[data-at]').forEach(function (x) { x.style.animationDelay = x.dataset.at + 's'; x.classList.remove('gone'); x.style.opacity = ''; });
+      tx.classList.add('run'); el.classList.add('run');
+      tx.querySelectorAll('.old').forEach(function (x) { timers.push(setTimeout(function () { x.style.animationDelay = '0s'; x.classList.add('gone'); }, Math.max(0, +x.dataset.off) * 1000)); });
+      tx.querySelectorAll('[data-cnt]').forEach(function (x) { var to = +x.dataset.cnt; x.textContent = sp(0); timers.push(setTimeout(function () { var t0 = performance.now(); (function step(nw) { var q = Math.min(1, (nw - t0) / 700), e = 1 - Math.pow(1 - q, 3); x.textContent = sp(to * e); if (q < 1) requestAnimationFrame(step); })(t0); }, +x.dataset.cntAt * 1000)); });
+      main.goToAndPlay(0, true); fx.wrapper.style.visibility = 'hidden'; fx.goToAndStop(0, true);
+      timers.push(setTimeout(function () { fx.wrapper.style.visibility = 'visible'; fx.goToAndPlay(0, true); }, o.imp * 1000));
+    }
+    return { el: el, play: play, rest: rest, dur: dur, destroy: function () { clear(); try { main.destroy(); fx.destroy(); } catch (e) { } } };
+  }
+  /* 화면 전체 순간(매칭 · 승급): 누르면 건너뛰기 · 끝나면 다음 화면 */
+  function m5Moment(o, done) {
+    var w = document.createElement('div'); w.className = 'dl5-mo'; w.setAttribute('role', 'status'); w.setAttribute('aria-label', o.label);
+    var sg; try { sg = m5Stage(o); } catch (e) { done(); return; }
+    w.appendChild(sg.el); w.insertAdjacentHTML('beforeend', '<button type="button" class="dl5-skip">건너뛰기</button>');
+    document.body.appendChild(w);
+    var fin = false, end = function () { if (fin) return; fin = true; w.classList.add('out'); setTimeout(function () { sg.destroy(); w.remove(); done(); }, 220); };
+    w.addEventListener('click', end);
+    if (m5Reduce()) { sg.rest(); setTimeout(end, 1400); } else { sg.play(); setTimeout(end, (sg.dur + (o.hold || .5)) * 1000); }
+  }
+  function m5Scrim() { return '<div class="ov" style="left:0;right:0;bottom:0;height:38%;background:linear-gradient(transparent,#000 55%);white-space:normal"></div>'; }
+  function m5Me() { try { return (P()._me() || {}).nick || '나'; } catch (e) { return '나'; } }
   function matchFX(label, cb) {
+    m5Load(); m5Sprite();
+    if (!m5Ready('match', 'ripple', 'ops')) return matchFX0(label, cb);
+    var d = S && S.duel, op = d && d.opp && d.opp.nick ? d.opp.nick : '상대';
+    sfx(U.snd);
+    try { if (navigator.vibrate) navigator.vibrate([30, 40, 60]); } catch (e) { }
+    var tx = m5Scrim() + '<div class="ov c" style="bottom:6%;display:grid;gap:1.4cqw" data-at="1.00"><span class="k1">MATCH FOUND · ' + esc(label) + '</span><span class="k2">' + esc(m5Me()) + ' vs ' + esc(op) + '</span></div>';
+    m5Moment({ d: M5.d.match, fx: 'ripple', bg: 'ops', imp: 1.0, hold: .5, label: '매칭 확정 · ' + label, text: tx }, cb);
+  }
+  function promo(from, to) {
+    if (to <= from || document.querySelector('.dl-promo')) return;
+    if (document.querySelector('.dl5-mo')) { promo0(from, to); return; }
+    var t = to + 1, k = 'tu' + t, tries = 0; m5Load(); m5Sprite(); m5Json(k, 'C_tierup_t' + t);
+    (function wait() {
+      if (m5Ready(k, 'ripple', 'ops')) {
+        var gold = to >= 4 ? 'color:var(--hi5,#F5C542)' : '';
+        var tx = m5Scrim() + '<div class="ov c old" style="bottom:6%" data-at="0.05" data-off="1.40"><span class="hero">T' + (from + 1) + '</span></div>' +
+          '<div class="ov c" style="bottom:6%;display:grid;gap:1.2cqw" data-at="1.50"><span class="k1">TIER UP · ' + esc(TIERS[to][0]) + '</span><span class="hero" style="' + gold + '">T' + t + '</span></div>';
+        m5Moment({ d: M5.d[k], fx: 'ripple', bg: 'ops', imp: 1.5, hold: .8, label: '승급 · ' + TIERS[to][0], text: tx }, function () { promo0(from, to); });
+        return;
+      }
+      if (++tries > 30) { promo0(from, to); return; }   // 3초 안에 재료가 안 오면 기존 승급 화면
+      setTimeout(wait, 100);
+    })();
+  }
+  /* 결과 화면 맨 위 무대 — 처음 볼 때 한 번 재생, 다시 그려져도 같은 무대를 옮겨 꽂아 끊기지 않게 */
+  function m5Has(r) { return !!(r && !r.void && r.curve && r.curve.length >= 2); }
+  function m5Ph(r, first) {
+    if (!m5Has(r)) return '';
+    if (first && !M5.want[r.id]) M5.want[r.id] = Date.now();
+    return '<div class="dl5-mph" data-m5r="' + esc(r.id) + '"></div>';
+  }
+  function m5Mount(host) {
+    var ph = host && host.querySelector('.dl5-mph'); var r = S && S.last;
+    Object.keys(M5.cache).forEach(function (id) { if (!r || id !== String(r.id)) { M5.cache[id].sg.destroy(); delete M5.cache[id]; } });
+    if (!ph || !m5Has(r) || ph.getAttribute('data-m5r') !== String(r.id)) return;
+    var c = M5.cache[r.id];
+    if (c) { ph.appendChild(c.el); return; }
+    var win = !!r.win && !r.draw;
+    if (!m5Ready('bars', 'sweep', 'cast')) {
+      m5Load();
+      if (M5.retry < 40) { M5.retry++; setTimeout(function () { var h = $('pp-dlv'); if (h && !h.hidden) m5Mount(h); }, 250); }
+      return;
+    }
+    M5.retry = 0;
+    var cv = r.curve.slice(); cv.push([cv[cv.length - 1][0] + 1, r.ra, r.rb]);   // 마지막 칸 = 최종 수익률
+    var B = m5Bucket(cv), imp = win ? 1.3 : 1.15, at = function (x) { return (imp + x).toFixed(2); };
+    var num = '<span' + (win ? ' data-cnt="' + (r.ra * 100).toFixed(4) + '" data-cnt-at="' + at(0) + '"' : '') + ' style="color:' + col(r.ra) + '">' + sp(r.ra * 100) + '</span>';
+    var tx = m5Scrim() + '<div class="ov cardtop" data-at="0.05">' + gl5(1, 16, true) + '<b>ANDRE99</b><span class="k1">1:1 DUEL · 24H</span></div>' +
+      '<div class="ov" style="left:6%;bottom:6%;display:grid;gap:1cqw" data-at="' + at(0) + '"><span class="k1" style="color:' + (win ? 'var(--hi5,#F5C542)' : '#A0A0A5') + '">' + (r.draw ? '무승부' : win ? '승리' : '패배') + ' · vs ' + esc(r.opp.nick) + '</span><span class="hero">' + num + '</span></div>';
+    var sg;
+    try { sg = m5Stage({ d: m5Bars(B.me, B.op, win), fx: 'sweep', bg: 'cast', imp: imp, text: tx, aria: '24시간 수익률 흐름 · 2시간마다 막대 · 나 ' + sp(r.ra * 100) + ' · ' + r.opp.nick + ' ' + sp(r.rb * 100) }); } catch (e) { return; }
+    var box = document.createElement('div'); box.className = 'dl5-res'; box.appendChild(sg.el);
+    box.insertAdjacentHTML('beforeend', '<button type="button" class="dl5-play" aria-label="결과 순간 다시 재생">▶ 다시</button>');
+    box.querySelector('.dl5-play').addEventListener('click', function (e) { e.stopPropagation(); sg.play(); });
+    M5.cache[r.id] = { el: box, sg: sg }; ph.appendChild(box);
+    var w0 = M5.want[r.id]; if (w0 && Date.now() - w0 < 8000) { delete M5.want[r.id]; sg.play(); } else sg.rest();
+  }
+  document.addEventListener('a99:pview', function (e) { m5Arena(e && e.detail); });
+  document.documentElement.classList.add('dl5');
+  m5Css();
+  try { m5Arena(P() && P()._view ? P()._view() : ''); } catch (e) { }
+
+  /* 11.12-A 매칭 효과 — 재료가 아직 없을 때 쓴다 */
+  function matchFX0(label, cb) {
     var w = document.createElement('div'); w.className = 'dl-mfx'; w.setAttribute('role', 'status');
     var Pt = linePts(LIVEPX.length > 1 ? LIVEPX : [1, 2, 1.5, 3], 400, 240, 20), pts = Pt.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
     w.innerHTML = '<svg class="ln" viewBox="0 0 400 240" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '" fill="none" style="stroke:var(--dla)" stroke-width="3" vector-effect="non-scaling-stroke" pathLength="1"/></svg><b>MATCH FOUND</b><span>' + esc(label) + '</span>';
@@ -3389,7 +3626,7 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
     try { if (navigator.vibrate) navigator.vibrate([30, 40, 60]); } catch (e) { }
     setTimeout(function () { w.classList.add('out'); setTimeout(function () { w.remove(); cb(); }, 220); }, 950);
   }
-  function card(who, tier, rec, recent, info, k, fireN, rdy) { return '<div class="dl-vs-s dl-vs-' + k + '"><div class="dl-emb ' + TIERS[tier][3] + '">' + TIERS[tier][0].replace(' 트레이더', '') + '</div><b class="dl-vs-n">' + esc(who) + (fireN >= 3 ? ' 🔥' + fireN : '') + '</b>' + tierTag(tier) + '<span class="dl-vs-rec">' + rec + '</span>' + wl(recent) + '<small>' + info + '</small><span class="dl-rdy' + (rdy ? ' on' : '') + '" id="dl-rdy-' + k + '">' + rdy + '</span></div>'; }
+  function card(who, tier, rec, recent, info, k, fireN, rdy) { return '<div class="dl-vs-s dl-vs-' + k + '"><div class="dl-emb ' + TIERS[tier][3] + '">' + gl5(tier + 1, 34) + '<span>' + TIERS[tier][0].replace(' 트레이더', '') + '</span></div><b class="dl-vs-n">' + esc(who) + (fireN >= 3 ? ' 🔥' + fireN : '') + '</b>' + tierTag(tier) + '<span class="dl-vs-rec">' + rec + '</span>' + wl(recent) + '<small>' + info + '</small><span class="dl-rdy' + (rdy ? ' on' : '') + '" id="dl-rdy-' + k + '">' + rdy + '</span></div>'; }
   function oppInfo(o) { return o.main ? '주 종목 ' + nm(o.main) + (o.avgLev ? ' · 평균 ' + o.avgLev + '배' : '') : '첫 대결이에요'; }
   function prepScreen() {
     var d = S && S.duel; if (!d || now() >= d.start || $('dl-prep')) return;
@@ -3463,7 +3700,7 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
     if (r.void) return '<section class="dl-res lose"><div class="dl-k">' + (r.opp.nick ? 'vs ' + esc(r.opp.nick) : '도전장') + '</div><h3>' + (/^esc_/.test(r.why || '') ? '매칭 취소' : '도전장 종료') + '</h3></section><div class="dl-why"><b>안내</b> · ' + whyLine(r) + '</div><button type="button" class="dl-ghost" data-dl="ack:' + esc(r.id) + '">닫기</button>';
     var st = S.stats;
     var dzA = !DZ_SEEN[r.id]; DZ_SEEN[r.id] = 1;
-    var h = '<section class="dl-res dz-st ' + (r.win ? 'win' : 'lose') + '"><div class="dz-stamp' + (dzA ? ' anim' : '') + (r.draw ? ' draw' : r.win ? '' : ' lose') + '">' + (r.draw ? 'DRAW' : r.win ? 'WIN' : 'LOSE') + '</div><div class="dl-k">대결 종료 · vs ' + esc(r.opp.nick) + '</div><h3>' + (r.draw ? '무승부' : r.win ? '🏆 승리!' : '패배') + '</h3>' +
+    var h = m5Ph(r, dzA) + '<section class="dl-res dz-st ' + (m5Has(r) ? 'has5 ' : '') + (r.win ? 'win' : 'lose') + '"><div class="dz-stamp' + (dzA ? ' anim' : '') + (r.draw ? ' draw' : r.win ? '' : ' lose') + '">' + (r.draw ? 'DRAW' : r.win ? 'WIN' : 'LOSE') + '</div><div class="dl-k">대결 종료 · vs ' + esc(r.opp.nick) + '</div><h3>' + (r.draw ? '무승부' : r.win ? '🏆 승리!' : '패배') + '</h3>' +
       '<div class="dl-pp" style="color:' + (r.win ? 'var(--dla)' : r.draw ? 'var(--tx2,#9A9AA2)' : col(-1)) + '">' + (r.honor ? '명예전 · 연습' : r.draw ? '±0 USD (판돈 반환)' : (r.win ? '+' : '−') + usd(r.stake) + ' USD') + '</div>' +
       '<p class="dl-p" style="text-align:center">나 <b style="color:' + col(r.ra) + '">' + sp(r.ra * 100) + '</b> · ' + esc(r.opp.nick) + ' <b style="color:' + col(r.rb) + '">' + sp(r.rb * 100) + '</b></p>' +
       '<p class="dl-tiny" style="text-align:center">' + (r.honor ? '판돈 없는 연습 대결이에요 · 봇전 ' + st.bw + '승 ' + st.bl + '패' : !r.paid ? '정산 중이에요 · 곧 모의투자 계좌에 반영돼요' : '딴 돈 · 잃은 돈은 모의투자 계좌 잔고에 반영돼요 · 랭킹 수익률은 그대로') + '</p></section>';
@@ -3551,10 +3788,11 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
     return h;
   }
   /* ── 승급 · 강등 (그림 파일 없이 CSS만) ── */
-  function promo(from, to) {
+  /* 11.12-A 승급 화면 — 11.20-A 는 승급 순간 모션 뒤에 이 화면을 띄운다 */
+  function promo0(from, to) {
     if (to <= from || document.querySelector('.dl-promo')) return;
     var w = document.createElement('div'); w.className = 'dl-promo'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true'); w.setAttribute('aria-label', '승급');
-    w.innerHTML = '<div class="dl-pm-in"><p class="dl-pm-k">PROMOTION</p><div class="dl-emb huge ' + TIERS[to][3] + '">' + TIERS[to][0].replace(' 트레이더', '') + '</div><h3 class="dl-pm-h">승급!</h3><p class="dl-pm-ft">' + tierTag(from) + ' → ' + tierTag(to) + '</p>' +
+    w.innerHTML = '<div class="dl-pm-in"><p class="dl-pm-k">PROMOTION</p><div class="dl-emb huge ' + TIERS[to][3] + '">' + gl5(to + 1, 64) + '<span>' + TIERS[to][0].replace(' 트레이더', '') + '</span></div><h3 class="dl-pm-h">승급!</h3><p class="dl-pm-ft">' + tierTag(from) + ' → ' + tierTag(to) + '</p>' +
       '<p class="dl-p" style="text-align:center">' + (TIERS[to][1] ? '이번 달 실전 수익률 +' + TIERS[to][1] + '% 돌파' : '이번 달 1~3위') + ' · 한 판 최대 판돈 <b>' + usd(TIERS[from][2]) + ' → ' + usd(TIERS[to][2]) + ' USD</b></p>' +
       '<div class="dl-share" style="text-align:left"><div class="k">ANDRE99 PROMOTION</div><h4>' + TIERS[to][0] + ' 승급</h4><div class="dl-tiny">' + esc((P()._me() || {}).nick || '') + ' · 이번 달 ' + sp(S.me.ret * 100, 1) + ' · 대결 ' + S.stats.w + '승 ' + S.stats.l + '패</div><div class="f"><span>가상 연습금 · 투자 권유 아님</span><span>안드레99</span></div></div>' +
       '<div style="margin-top:10px;text-align:left">' + nextBar(to) + '</div><button type="button" class="dl-cta">확인</button></div>';
@@ -3564,7 +3802,7 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
   function demote(from, to) {
     if (to >= from || document.querySelector('.dl-promo')) return;
     var w = document.createElement('div'); w.className = 'dl-promo down'; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true'); w.setAttribute('aria-label', '강등');
-    w.innerHTML = '<div class="dl-pm-in"><p class="dl-pm-k" style="color:var(--dlo)">TIER DOWN</p><div class="dl-emb big ' + TIERS[to][3] + '" style="margin:10px auto 0">' + TIERS[to][0].replace(' 트레이더', '') + '</div><h3 class="dl-pm-h" style="font-size:24px">아쉽게 강등됐어요</h3><p class="dl-pm-ft">' + tierTag(from) + ' → ' + tierTag(to) + '</p>' +
+    w.innerHTML = '<div class="dl-pm-in"><p class="dl-pm-k" style="color:var(--dlo)">TIER DOWN</p><div class="dl-emb big ' + TIERS[to][3] + '" style="margin:10px auto 0">' + gl5(to + 1, 44) + '<span>' + TIERS[to][0].replace(' 트레이더', '') + '</span></div><h3 class="dl-pm-h" style="font-size:24px">아쉽게 강등됐어요</h3><p class="dl-pm-ft">' + tierTag(from) + ' → ' + tierTag(to) + '</p>' +
       '<p class="dl-p" style="text-align:center">' + (TIERS[from][1] ? '이번 달 실전 수익률이 +' + TIERS[from][1] + '% 아래로 내려갔어요.' : '이번 달 1~3위에서 벗어났어요.') + ' <b>다시 넘으면 바로 복귀</b>해요.<br>한 판 최대 판돈 ' + usd(TIERS[from][2]) + ' → ' + usd(TIERS[to][2]) + ' USD</p>' +
       '<p class="dl-why" style="text-align:left"><b>한 줄 점검</b> · 최근 손실이 컸던 매매를 「프로필 › 매매 기록」에서 확인해 보세요.</p><button type="button" class="dl-cta">다시 올라가기</button></div>';
     document.body.appendChild(w);
@@ -3575,7 +3813,7 @@ window.A99Paper = { mount: mount, show: show, hide: hide, ver: VER, openChart: o
   function render() {
     var host = $('pp-dlv'); if (!host) return;
     var f = document.activeElement && document.activeElement.id;
-    host.innerHTML = vDuel();
+    host.innerHTML = vDuel(); m5Mount(host);
     if (f === 'dl-nick') { var n = $('dl-nick'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }
     drawQ(); syncBadge();
   }
