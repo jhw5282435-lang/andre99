@@ -1,0 +1,110 @@
+[
+ {
+  "form": "10-Q",
+  "period": "20251031",
+  "filed": "20251119",
+  "total": 57006000000.0,
+  "axes": {
+   "사업별(제품 · 서비스)": {
+    "members": {
+     "Compute": 43028000000.0,
+     "Networking": 8187000000.0,
+     "Gaming": 4265000000.0,
+     "ProfessionalVisualization": 760000000.0,
+     "Automotive": 592000000.0,
+     "OEMAndOther": 174000000.0
+    },
+    "groups": {
+     "DataCenter": [
+      "Compute",
+      "Networking"
+     ]
+    },
+    "parents": {
+     "DataCenter": 51215000000.0
+    },
+    "sum": 57006000000.0,
+    "diff_pct": 0.0,
+    "ok": true
+   },
+   "지역별": {
+    "members": {
+     "US": 39177000000.0,
+     "TW": 13751000000.0,
+     "ChinaIncludingHongKong": 2973000000.0,
+     "AllOtherCountriesNotSeparatelyDisclosed": 1105000000.0
+    },
+    "groups": {},
+    "parents": {},
+    "sum": 57006000000.0,
+    "diff_pct": 0.0,
+    "ok": true
+   },
+   "사업부문별": {
+    "members": {
+     "ComputeAndNetworkingSegment": 50908000000.0,
+     "GraphicsSegment": 6098000000.0
+    },
+    "groups": {},
+    "parents": {},
+    "sum": 57006000000.0,
+    "diff_pct": 0.0,
+    "ok": true
+   }
+  }
+ },
+ {
+  "form": "10-K",
+  "period": "20260131",
+  "filed": "20260225",
+  "total": 215938000000.0,
+  "axes": {
+   "사업별(제품 · 서비스)": {
+    "members": {
+     "Compute": 162361000000.0,
+     "Networking": 31376000000.0,
+     "Gaming": 16042000000.0,
+     "ProfessionalVisualization": 3191000000.0,
+     "Automotive": 2349000000.0,
+     "OEMAndOther": 619000000.0
+    },
+    "groups": {
+     "DataCenter": [
+      "Compute",
+      "Networking"
+     ]
+    },
+    "parents": {
+     "DataCenter": 193737000000.0
+    },
+    "sum": 215938000000.0,
+    "diff_pct": 0.0,
+    "ok": true
+   },
+   "지역별": {
+    "members": {
+     "US": 149617000000.0,
+     "TW": 42345000000.0,
+     "ChinaIncludingHongKong": 19677000000.0,
+     "OtherCountries": 4299000000.0
+    },
+    "groups": {},
+    "parents": {},
+    "sum": 215938000000.0,
+    "diff_pct": 0.0,
+    "ok": true
+   },
+   "사업부문별": {
+    "members": {
+     "ComputeAndNetworkingSegment": 193479000000.0,
+     "GraphicsSegment": 22459000000.0
+    },
+    "groups": {},
+    "parents": {},
+    "sum": 215938000000.0,
+    "diff_pct": 0.0,
+    "ok": true
+   }
+  }
+ }
+]

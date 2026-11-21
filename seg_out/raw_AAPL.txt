@@ -1,0 +1,16 @@
+== 10-K 20250930
+      4162억  (합계)
+      3070억  ProductOrService=Product;
+      2096억  ProductOrService=IPhone;
+      2000억  Geographical=OtherCountries;
+      1784억  BusinessSegments=AmericasSegment;ConsolidationItems=OperatingSegments;
+      1518억  Geographical=US;
+      1110억  BusinessSegments=EuropeSegment;ConsolidationItems=OperatingSegments;
+      1092억  ProductOrService=Service;
+       644억  BusinessSegments=GreaterChinaSegment;ConsolidationItems=OperatingSegments;
+       644억  Geographical=CN;
+       357억  ProductOrService=WearablesHomeandAccessories;
+       337억  ProductOrService=Mac;
+       337억  BusinessSegments=RestOfAsiaPacificSegment;ConsolidationItems=OperatingSegments;
+       287억  BusinessSegments=JapanSegment;ConsolidationItems=OperatingSegments;
+       280억  ProductOrService=IPad;

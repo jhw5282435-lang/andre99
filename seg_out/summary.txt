@@ -1,0 +1,20 @@
+AAPL 10-K 20250930 전체 416161000000.0
+   사업별(제품 · 서비스): 5개 · 합계 차이 0.0% · 통과 · IPhone 2096억, Service 1092억, WearablesHomeandAccessories 357억, Mac 337억, IPad 280억
+      (소계 Product = IPhone + WearablesHomeandAccessories + Mac + IPad)
+   사업부문별: 5개 · 합계 차이 0.0% · 통과 · AmericasSegment 1784억, EuropeSegment 1110억, GreaterChinaSegment 644억, RestOfAsiaPacificSegment 337억, JapanSegment 287억
+   지역별: 3개 · 합계 차이 0.0% · 통과 · OtherCountries 2000억, US 1518억, CN 644억
+NVDA 10-Q 20251031 전체 57006000000.0
+   사업별(제품 · 서비스): 6개 · 합계 차이 0.0% · 통과 · Compute 430억, Networking 82억, Gaming 43억, ProfessionalVisualization 8억, Automotive 6억, OEMAndOther 2억
+      (소계 DataCenter = Compute + Networking)
+   지역별: 4개 · 합계 차이 0.0% · 통과 · US 392억, TW 138억, ChinaIncludingHongKong 30억, AllOtherCountriesNotSeparatelyDisclosed 11억
+   사업부문별: 2개 · 합계 차이 0.0% · 통과 · ComputeAndNetworkingSegment 509억, GraphicsSegment 61억
+NVDA 10-K 20260131 전체 215938000000.0
+   사업별(제품 · 서비스): 6개 · 합계 차이 0.0% · 통과 · Compute 1624억, Networking 314억, Gaming 160억, ProfessionalVisualization 32억, Automotive 23억, OEMAndOther 6억
+      (소계 DataCenter = Compute + Networking)
+   지역별: 4개 · 합계 차이 0.0% · 통과 · US 1496억, TW 423억, ChinaIncludingHongKong 197억, OtherCountries 43억
+   사업부문별: 2개 · 합계 차이 0.0% · 통과 · ComputeAndNetworkingSegment 1935억, GraphicsSegment 225억
+PLTR 10-Q 20250930 전체 1181092000.0
+   사업부문별: 2개 · 합계 차이 0.0% · 통과 · GovernmentOperatingSegment 6억, Commercial 5억
+PLTR 10-K 20251231 전체 4475446000.0
+   사업부문별: 2개 · 합계 차이 0.0% · 통과 · GovernmentOperatingSegment 24억, Commercial 21억
+파일 크기(앱이 받을 크기의 기준): AAPL 1195B, NVDA 2267B, PLTR 690B

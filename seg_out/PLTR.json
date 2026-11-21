@@ -1,0 +1,40 @@
+[
+ {
+  "form": "10-Q",
+  "period": "20250930",
+  "filed": "20251104",
+  "total": 1181092000.0,
+  "axes": {
+   "사업부문별": {
+    "members": {
+     "GovernmentOperatingSegment": 632676000.0,
+     "Commercial": 548416000.0
+    },
+    "groups": {},
+    "parents": {},
+    "sum": 1181092000.0,
+    "diff_pct": 0.0,
+    "ok": true
+   }
+  }
+ },
+ {
+  "form": "10-K",
+  "period": "20251231",
+  "filed": "20260217",
+  "total": 4475446000.0,
+  "axes": {
+   "사업부문별": {
+    "members": {
+     "GovernmentOperatingSegment": 2402287000.0,
+     "Commercial": 2073159000.0
+    },
+    "groups": {},
+    "parents": {},
+    "sum": 4475446000.0,
+    "diff_pct": 0.0,
+    "ok": true
+   }
+  }
+ }
+]
