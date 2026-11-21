@@ -1,0 +1,58 @@
+# 안드레99 사업별 매출 자료 — 한 달에 두 번 스스로 돈다(운영자 손작업 없음)
+#   대상: S&P 500 + 나스닥 100 · 기간: 최근 3년(연간 3 + 분기 4) · 합계 검증 ±1% 통과한 칸만
+#   결과: 「data」 가지의 seg/<티커>.json (main 과 분리 — 운영 앱 파일은 건드리지 않음)
+#   앱은 사업별 칩을 열 때 https://cdn.jsdelivr.net/gh/jhw5282435-lang/andre99@data/seg/<티커>.json 하나만 읽는다
+# 연락처는 저장소 비밀값 SEC_UA 에서만 읽어요(코드 · 결과 · 기록에 안 나옴).
+name: sec-segments
+on:
+  schedule:
+    - cron: '23 4 6,21 * *'      # 매달 6일 · 21일 04:23 UTC (한국 13:23) — SEC 월간 자료가 나온 뒤
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/sec-segments.yml', 'tools/sec_seg_build.py']
+permissions:
+  contents: write
+concurrency:
+  group: sec-segments
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - name: 비밀값 확인
+        id: chk
+        env:
+          SEC_UA: ${{ secrets.SEC_UA }}
+        run: |
+          if [ -z "$SEC_UA" ]; then echo "SEC_UA 비밀값이 없어요"; echo "ok=false" >> "$GITHUB_OUTPUT"; else echo "ok=true" >> "$GITHUB_OUTPUT"; fi
+      - name: data 가지 준비 (지난번 결과 · 처리 기록 이어받기)
+        if: steps.chk.outputs.ok == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin data >/dev/null 2>&1; then
+            git fetch -q origin data
+            git worktree add -q data FETCH_HEAD
+            cd data && git checkout -q -B data && cd ..
+          else
+            git worktree add -q --detach data
+            cd data && git checkout -q --orphan data && git rm -rf -q . && cd ..
+          fi
+      - name: 사업별 매출 뽑기 · 검증 · 종목 파일 만들기
+        if: steps.chk.outputs.ok == 'true'
+        env:
+          SEC_UA: ${{ secrets.SEC_UA }}
+        run: python3 tools/sec_seg_build.py --data data --years 3
+      - name: 결과 요약 화면
+        if: steps.chk.outputs.ok == 'true'
+        run: |
+          { echo '## 사업별 매출 자료'; echo '```'; cat data/seg/_report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: data 가지에 저장 (main 은 그대로)
+        if: steps.chk.outputs.ok == 'true'
+        run: |
+          cd data
+          git add -A
+          if git diff --cached --quiet; then echo "바뀐 자료 없음"; else git commit -q -m "사업별 매출 자료 $(date -u +%F)"; git push -q origin data; fi
