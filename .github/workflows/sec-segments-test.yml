@@ -4,7 +4,7 @@
 name: sec-segments-test
 on:
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
     paths: ['.github/workflows/sec-segments-test.yml', 'tools/sec_segments.py']
   workflow_dispatch:
 permissions:
@@ -38,6 +38,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout --orphan seg-test-out
           git rm -rf -q .
+          rm -rf seg_out
           cp -r /tmp/seg_out ./seg_out
           git add seg_out
           git commit -q -m "사업별 시험 결과 $(date -u +%F)"

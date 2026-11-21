@@ -44,16 +44,38 @@ def rows(zf, name):
         for r in rd:
             yield r
 
+NOOP = ('ConsolidationItems', 'StatementScenario')   # 「영업 부문 합계」 같은 보조 꼬리표 — 무시하고 남은 축으로 판단
+
 def axis_of(seg):
-    # 예: "ProductOrService=IPhone;" 또는 "srt:ProductOrServiceAxis=aapl:IPhoneMember;"
-    parts = [p for p in (seg or '').split(';') if p]
-    if len(parts) != 1 or '=' not in parts[0]:
+    # 예: "ProductOrService=IPhone;" / "BusinessSegments=GovernmentSegment;ConsolidationItems=OperatingSegments;"
+    parts = [p for p in (seg or '').split(';') if p and '=' in p]
+    keep = [p for p in parts if not any(p.split('=', 1)[0].split(':')[-1].replace('Axis', '').endswith(n) for n in NOOP)]
+    if len(keep) != 1:
         return None, None
-    ax, mem = parts[0].split('=', 1)
-    for k, v in AXES.items():
-        if ax.endswith(k) or ax == k:
+    ax, mem = keep[0].split('=', 1)
+    a = ax.split(':')[-1].replace('Axis', '')
+    for k, v in (('ProductOrService', '사업별(제품 · 서비스)'), ('BusinessSegments', '사업부문별'), ('Geographical', '지역별')):
+        if a.endswith(k):
             return v, mem.split(':')[-1].replace('Member', '')
     return None, None
+
+def split_subtotals(mem, tol=0.0005):
+    """소계 찾기: 어떤 항목이 다른 항목 몇 개의 합과 같으면(±0.05%) 그 항목은 소계(부모)로 보고 합계에서 뺀다.
+    예) 애플 Product = 아이폰 + 맥 + 아이패드 + 웨어러블 / 엔비디아 DataCenter = Compute + Networking"""
+    names = sorted(mem, key=lambda k: -mem[k]); parents = {}
+    for p in names:
+        others = [k for k in names if k != p and k not in parents and mem[k] < mem[p]][:16]
+        found = None
+        for mask in range(1, 1 << len(others)):
+            sub = [others[i] for i in range(len(others)) if mask >> i & 1]
+            if len(sub) < 2:
+                continue
+            if abs(sum(mem[k] for k in sub) - mem[p]) <= tol * mem[p]:
+                found = sub; break
+        if found:
+            parents[p] = found
+    leaves = {k: v for k, v in mem.items() if k not in parents}
+    return leaves, parents
 
 def main():
     ap = argparse.ArgumentParser()
@@ -67,6 +89,7 @@ def main():
     want = {int(c): t for t, c in (x.split(':') for x in a.tickers.split(','))}
     os.makedirs(a.out, exist_ok=True)
     result = {t: [] for t in want.values()}
+    diag = {}
     for m in a.months.split(','):
         raw = fetch_month(m, ua)
         if not raw:
@@ -118,9 +141,18 @@ def main():
                     groups.setdefault(ax, {})[mem] = max(groups.get(ax, {}).get(mem, 0), f[5])
             out = {'form': s['form'], 'period': per, 'filed': s['filed'], 'total': total, 'axes': {}}
             for ax, mem in groups.items():
-                ssum = sum(mem.values())
+                leaves, parents = split_subtotals(mem)
+                ssum = sum(leaves.values())
                 diff = (ssum / total - 1) * 100 if total else None
-                out['axes'][ax] = {'members': dict(sorted(mem.items(), key=lambda x: -x[1])), 'sum': ssum, 'diff_pct': diff, 'ok': diff is not None and abs(diff) <= 1}
+                out['axes'][ax] = {'members': dict(sorted(leaves.items(), key=lambda x: -x[1])), 'groups': parents, 'parents': {p: mem[p] for p in parents}, 'sum': ssum, 'diff_pct': diff, 'ok': diff is not None and abs(diff) <= 1}
+            # 진단: 이 공시 기간의 매출 꼬리표 조합을 모두 적어 둔다(축을 못 찾은 회사 확인용)
+            diag.setdefault(s['t'], []).append(f"== {s['form']} {per}")
+            seen = {}
+            for f in cur:
+                k = f[4] or '(합계)'
+                seen[k] = max(seen.get(k, 0), f[5])
+            for k, v in sorted(seen.items(), key=lambda x: -x[1])[:80]:
+                diag[s['t']].append(f"{v/1e8:>10.0f}억  {k}")
             result[s['t']].append(out)
     lines = []
     for t, L in result.items():
@@ -129,8 +161,12 @@ def main():
             lines.append(f"{t} {o['form']} {o['period']} 전체 {o['total']}")
             for ax, g in o['axes'].items():
                 lines.append(f"   {ax}: {len(g['members'])}개 · 합계 차이 {g['diff_pct'] if g['diff_pct'] is None else round(g['diff_pct'], 2)}% · {'통과' if g['ok'] else '확인 필요'} · " + ', '.join(f"{k} {v/1e8:.0f}억" for k, v in list(g['members'].items())[:6]))
+                for p, c in g.get('groups', {}).items():
+                    lines.append(f"      (소계 {p} = {' + '.join(c)})")
         if not L:
             lines.append(f'{t}: 이 달 자료에 공시 없음')
+    for t, d in diag.items():
+        open(os.path.join(a.out, 'raw_' + t + '.txt'), 'w').write('\n'.join(d))
     sizes = ', '.join(f"{t} {os.path.getsize(os.path.join(a.out, t + '.json'))}B" for t in result)
     lines.append('파일 크기(앱이 받을 크기의 기준): ' + sizes)
     open(os.path.join(a.out, 'summary.txt'), 'w').write('\n'.join(lines))
